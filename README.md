@@ -1,7 +1,22 @@
 # OpenPartsLibrary
 OpenPartsLibrary in Python
 
-This table outlines the part metadata used in the OpenPartsLibrary.
+## Quickstart
+
+``` 
+pip install openpartslibrary
+```
+
+```python 
+from openpartslibrary import create_parts
+
+session = 
+```
+
+
+
+## Part schema
+This table outlines the `Part` properties used in the OpenPartsLibrary.
 
 | Property | Description |
 |----------|-------------|

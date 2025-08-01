@@ -9,7 +9,8 @@ Install the openpartslibrary via pip
 pip install openpartslibrary
 ```
 
-Install the openpartslibrary via pip
+A minimal OpenPartsLibrary application looks something like this:
+
 ```python 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker

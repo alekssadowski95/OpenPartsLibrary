@@ -4,8 +4,8 @@ from datetime import datetime
 
 Base = declarative_base()
 
-class Component(Base):
-    __tablename__ = 'components'
+class Part(Base):
+    __tablename__ = 'parts'
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(32), unique=True, nullable=False)

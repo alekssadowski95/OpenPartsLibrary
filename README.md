@@ -19,6 +19,8 @@ session = create_session()
 print_all_parts(session)
 ```
 
+## Modifying the parts library
+
 Adding a new part to the library:
 
 ```python 
@@ -28,7 +30,7 @@ part_1 = Part(name='Trochoidal milling cutter', number='TRX-230-100')
 session.add(part_1)
 session.commit()
 
-print_all_parts(session)
+print_parts(session)
 ```
 
 

@@ -1,16 +1,36 @@
 # OpenPartsLibrary
-OpenPartsLibrary in Python
+**OpenPartsLibrary** is a Python library designed to serve as a centralized parts database for Bill of Materials (BOM), Product Data Management (PDM), and Product Lifecycle Management (PLM) systems. It provides structured data models and APIs for managing components, part metadata, sourcing, and lifecycle states. OpenPartsLibrary streamlines integration with engineering workflows, enabling consistent part usage and traceability across design and manufacturing processes.
 
 ## Quickstart
+
+Install the openpartslibrary via pip
 
 ``` 
 pip install openpartslibrary
 ```
 
+Install the openpartslibrary via pip
 ```python 
-from openpartslibrary import create_parts
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
-session = 
+from openpartslibrary.models import Part
+
+
+Base = declarative_base()
+
+engine = create_engine('sqlite:///example.db')
+
+Base.metadata.create_all(engine)
+
+SessionFactory = sessionmaker(bind=engine)
+session = SessionFactory()
+
+part_1 = User(name='Alice', number='alice@example.com')
+session.add(part_1)
+session.commit()
+
+print_all_parts(session)
 ```
 
 

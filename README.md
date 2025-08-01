@@ -27,7 +27,13 @@ Base.metadata.create_all(engine)
 SessionFactory = sessionmaker(bind=engine)
 session = SessionFactory()
 
-part_1 = User(name='Alice', number='alice@example.com')
+print_all_parts(session)
+```
+
+Adding a new part to the library:
+
+```python 
+part_1 = Part(name='Trochoidal milling cutter', number='TRX-230-100')
 session.add(part_1)
 session.commit()
 

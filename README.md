@@ -5,7 +5,7 @@
 
 Install the openpartslibrary via pip
 
-``` 
+```console
 pip install openpartslibrary
 ```
 

@@ -12,20 +12,9 @@ pip install openpartslibrary
 A minimal OpenPartsLibrary application looks something like this:
 
 ```python 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from openpartslibrary.db import create_session
 
-from openpartslibrary.models import Part
-
-
-Base = declarative_base()
-
-engine = create_engine('sqlite:///example.db')
-
-Base.metadata.create_all(engine)
-
-SessionFactory = sessionmaker(bind=engine)
-session = SessionFactory()
+session = create_session()
 
 print_all_parts(session)
 ```
@@ -33,6 +22,8 @@ print_all_parts(session)
 Adding a new part to the library:
 
 ```python 
+from openpartslibrary.models import Part
+
 part_1 = Part(name='Trochoidal milling cutter', number='TRX-230-100')
 session.add(part_1)
 session.commit()

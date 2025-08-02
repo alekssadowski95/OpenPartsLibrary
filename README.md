@@ -16,7 +16,31 @@ from openpartslibrary.db import create_session
 
 session = create_session()
 
-print_all_parts(session)
+print_parts(session)
+```
+
+```console
+    id                                  uuid       number                       name  ... supplier manufacturer_number unit_price currency
+0    1  1c0e85cd-73b7-4af3-9ccc-ae17d140c438  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+1    2  a8d2fa31-47e7-4fc0-b1a8-0df2079ff407  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+2    3  e2614ac3-4a17-464c-9fd7-c452fed55c03  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+3    4  058be9dc-54ca-434e-849f-07e6b49902c2  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+4    5  afc48527-c3a2-4be1-bd0e-06ba15a18dd8  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+5    6  262e3d32-9de6-4300-83cf-3aeba6bd7f40  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+6    7  aee95646-61a1-4ef7-b530-97fef65a5263  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+7    8  f839cc56-a3b8-4629-b18f-81c6b6a1a5e2  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+8    9  0ca04d9d-189a-4119-bf0b-510103b084ca  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+9   10  029bdd52-96d0-4488-9d25-dd95c459eadc  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+10  11  a4f55685-4d43-4093-aa9f-49dfb0d4cc5b  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+11  12  51b15d47-96b1-44b7-97ea-5a9790b5aef1  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+12  13  09fc376c-6740-405e-9a7b-c0502ac9b243  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+13  14  0d3b7791-63ec-463a-b66e-6fc1134a3f5f  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+14  15  78cdee85-0779-4a4d-b3a4-5104dcf35ad3  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+15  16  79662a17-c825-44bd-a20a-2b13580e47a6  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+16  17  dccd8e60-04ac-4c7f-8a46-0f391be4854d  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+17  18  9d6a9432-c8e4-412b-9333-872b81e2571c  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
+
+[18 rows x 24 columns]
 ```
 
 ## Modifying the parts library

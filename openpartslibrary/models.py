@@ -1,20 +1,21 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime
 
-Base = declarative_base()
+class Base(DeclarativeBase):
+  pass
 
 class Part(Base):
     __tablename__ = 'parts'
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(32), unique=True, nullable=False)
-    number = Column(String(50), unique=True, nullable=False)
+    number = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
-    description = Column(String(1000))
+    description = Column(String(1000), default="No description")
     revision = Column(String(10), default="1")
     lifecycle_state = Column(String(50), default="In Work")
-    owner = Column(String(100))
+    owner = Column(String(100), default="system")
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     material = Column(String(100))
@@ -32,8 +33,6 @@ class Part(Base):
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
 
-    def __repr__(self):
-        return f"<Part {self.part_number} - {self.part_name}>"
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}

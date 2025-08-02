@@ -30,21 +30,6 @@ class PartsLibrary:
 
         print(part_table)
 
-    def create_part(self, name, number):
-        part = Part(uuid=str(uuid.uuid4()), name=name, number=number)
-        self.session.add(part)
-        self.session.commit()
-    
-    def read_part(self, uuid):
-        part = self.session.query(Part).filter(Part.uuid == uuid).first()
-        return part
-
-    def update_part(self):
-        pass
-
-    def delete_part(self):
-        pass
-
     def delete_all(self):
         self.session.query(Part).delete()
         self.session.commit()

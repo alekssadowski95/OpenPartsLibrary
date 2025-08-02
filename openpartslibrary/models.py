@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime
 
+import uuid
+
 class Base(DeclarativeBase):
   pass
 
@@ -9,7 +11,7 @@ class Part(Base):
     __tablename__ = 'parts'
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
+    uuid = Column(String(32), unique=True, nullable=False, default=str(uuid.uuid4()))
     number = Column(String(50), nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(String(1000), default="No description")

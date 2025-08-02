@@ -19,6 +19,8 @@ session = create_session()
 print_parts(session)
 ```
 
+This will give you the following output, loading all the integrated parts of the library: 
+
 ```console
     id                                  uuid       number                       name  ... supplier manufacturer_number unit_price currency
 0    1  1c0e85cd-73b7-4af3-9ccc-ae17d140c438  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None

@@ -1,9 +1,9 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 setup(
     name='OpenPartsLibrary',
-    version='0.1.1',    
+    version='0.1.2',    
     description='Python library for creating a database of hardware components for manufacturing',
     long_description='Hello world',
     long_description_content_type='text/markdown',
@@ -11,7 +11,7 @@ setup(
     author='Aleksander Sadowski',
     author_email='aleksander.sadowski@alsado.de',
     license='MIT',
-    packages=['openpartslibrary'],
+    packages=find_packages(),
     install_requires=['sqlalchemy', 'datetime', 'pandas', 'openpyxl'],
 
     classifiers=[

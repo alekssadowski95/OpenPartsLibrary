@@ -3,8 +3,6 @@ from sqlalchemy.orm import sessionmaker
 
 import pandas as pd
 
-import uuid
-
 from datetime import datetime
 
 from .models import Base, Part
@@ -26,9 +24,17 @@ class PartsLibrary:
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
 
         pd.set_option('display.max_columns', 8)
-        pd.set_option('display.width', 200)
+        pd.set_option('display.width', 240)
 
         print(part_table)
+
+    def display_reduced(self):
+        part_table = pd.read_sql_table(table_name="parts", con=self.engine)
+        reduced_part_table = part_table[["id", "number", "name", "quantity", "mass", "lead_time", "supplier", "unit_price", "currency"]]
+        pd.set_option('display.max_columns', 9)
+        pd.set_option('display.width', 200)
+        print(reduced_part_table)
+    
 
     def delete_all(self):
         self.session.query(Part).delete()
@@ -69,3 +75,13 @@ class PartsLibrary:
         self.session.add_all(parts)
         self.session.commit()
         print(f"Imported {len(parts)} parts successfully from {file_path}")
+
+    def total_value(self):
+        from decimal import Decimal
+        all_parts = self.session.query(Part).all()
+
+        total_value = Decimal(0.0)
+        for part in all_parts:
+            total_value = Decimal(total_value) + (Decimal(part.unit_price) * part.quantity)
+
+        return total_value

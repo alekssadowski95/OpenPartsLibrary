@@ -10,11 +10,11 @@ pip install openpartslibrary
 
 A minimal OpenPartsLibrary application looks something like this:
 ```python 
-from openpartslibrary.db import create_session
+from openpartslibrary.db import PartsLibrary
 
-session = create_session()
+pl = PartsLibrary()
 
-print_parts(session)
+pl.display()
 ```
 
 This will give you the following output, loading all the integrated parts of the library:

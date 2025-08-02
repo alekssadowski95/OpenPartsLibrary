@@ -37,7 +37,7 @@ This will give you the following output, loading all the integrated parts of the
 
 ## Working with the parts library
 
-Adding a new part to the library:
+Creating a new part in the library:
 ```python 
 from openpartslibrary.models import Part
 
@@ -89,7 +89,7 @@ pl.session.commit()
 pl.display_reduced()
 ```
 
-Getting the total part library value:
+Getting the total value of all parts in the library:
 ```python 
 print('Total value of all parts in the library: ' + str(pl.total_value()) + ' EUR')
 ```

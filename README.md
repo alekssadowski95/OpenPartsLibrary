@@ -4,13 +4,11 @@
 ## Quickstart
 
 Install the openpartslibrary via pip
-
 ```console
 pip install openpartslibrary
 ```
 
 A minimal OpenPartsLibrary application looks something like this:
-
 ```python 
 from openpartslibrary.db import create_session
 
@@ -20,7 +18,6 @@ print_parts(session)
 ```
 
 This will give you the following output, loading all the integrated parts of the library:
-<div style="background-color: rgb(50, 50, 50); color: white;"> 
 ```console
     id                                  uuid       number                       name  ... supplier manufacturer_number unit_price currency
 0    1  1c0e85cd-73b7-4af3-9ccc-ae17d140c438  TRX-230-115  Trochoidal milling cutter  ...     None                None       None     None
@@ -44,12 +41,10 @@ This will give you the following output, loading all the integrated parts of the
 
 [18 rows x 24 columns]
 ```
-</div>
 
-## Modifying the parts library
+## Working with the parts library
 
 Adding a new part to the library:
-
 ```python 
 from openpartslibrary.models import Part
 
@@ -60,6 +55,20 @@ session.commit()
 print_parts(session)
 ```
 
+Loading a part from the library:
+```python 
+
+```
+
+Modifying a part from the library:
+```python 
+
+```
+
+Deleting a part from the library:
+```python 
+
+```
 
 
 ## Part schema

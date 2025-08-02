@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric
+from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum
 from sqlalchemy.orm import DeclarativeBase
 from datetime import datetime
 
@@ -27,12 +27,14 @@ class Part(Base):
     cad_reference = Column(String(200))
     attached_documents_reference = Column(String(200))
     lead_time = Column(Integer)
-    make_or_buy = Column(String(10))
+    make_or_buy = Column(Enum('make', 'buy', name='make_or_buy_enum'))
     supplier = Column(String(100))
     manufacturer_number = Column(String(100))
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
 
+    def __repr__(self):
+        return f"<Part(id={self.id}, number={self.number}, name={self.name})>"
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}

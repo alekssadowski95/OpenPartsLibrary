@@ -12,13 +12,13 @@ from .models import Base, Part
 
 class PartsLibrary:
     def __init__(self):
-        # Create an SQLite database in memory (use 'sqlite:///example.db' for file-based)
-        self.engine = create_engine('sqlite:///example.db')
+        import os
+        sqlite_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
+        print(sqlite_path)
+        self.engine = create_engine('sqlite:///' + sqlite_path)
 
-        # Create all tables
         Base.metadata.create_all(self.engine)
 
-        # Create a session
         self.session_factory = sessionmaker(bind=self.engine)
         self.session = self.session_factory()
 

@@ -94,6 +94,10 @@ Getting the total value of all parts in the library:
 print('Total value of all parts in the library: ' + str(pl.total_value()) + ' EUR')
 ```
 
+Creating parts from a parts list in a Excel-spreadsheet (*.xlsx). Take note, that the spreadsheet needs to implement the schema specified in this repository:
+```python 
+pl.create_parts_from_spreadsheet('C:/Users/Work/Documents/Github/OpenPartsLibrary/openpartslibrary/sample/parts_data_sample.xlsx')
+```
 
 ## Part schema
 This table outlines the `Part` properties used in the OpenPartsLibrary.

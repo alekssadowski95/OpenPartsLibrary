@@ -60,3 +60,8 @@ part = pl.session.query(Part).filter(Part.number == 'SCRW-1003').delete()
 pl.session.commit()
 pl.display_reduced()
 
+# Displaying the highest unit price parts
+highest_price_parts = pl.session.query(Part).order_by(Part.unit_price.desc()).limit(5).all()
+print("\nTop 5 Part with the highest unit price:")
+for part in highest_price_parts:
+    print(f"Number: {part.number}, Name: {part.name}, Unit Price: {part.unit_price} {part.currency}")

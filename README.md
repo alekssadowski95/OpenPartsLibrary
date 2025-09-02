@@ -135,3 +135,6 @@ This table outlines the `Part` properties used in the OpenPartsLibrary.
 
 Credits:
 icon: <a href="https://www.flaticon.com/free-icons/database" title="database icons">Database icons created by Smashicons - Flaticon</a>
+
+## How to Contribute
+This section helps in understanding how to contribute to the project.

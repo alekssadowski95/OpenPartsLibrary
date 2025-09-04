@@ -102,7 +102,7 @@ Creating parts from a parts list in a Excel-spreadsheet (*.xlsx). Take note, tha
 pl.create_parts_from_spreadsheet('C:/Users/Work/Documents/Github/OpenPartsLibrary/openpartslibrary/sample/parts_data_sample.xlsx')
 ```
 ## Database structure
-<img src="./openpartslibrary/openpartslibrary-database-structure.png" width="100%" alt="OpenPartsLibrary database structure"></img>
+<img src="./openpartslibrary-database-structure.png" width="100%" alt="OpenPartsLibrary database structure"></img>
 
 ## Part schema
 This table outlines the `Part` properties used in the OpenPartsLibrary.

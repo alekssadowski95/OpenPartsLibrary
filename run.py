@@ -1,3 +1,28 @@
+#Adding new columns to the Supplier model 
+import sqlite3
+db_path = 'openpartslibrary/data/parts.db'
+conn = sqlite3.connect(db_path)
+cursor = conn.cursor()
+
+columns_to_add = [
+    ("house_number", "INTEGER"),
+    ("street", "TEXT"),
+    ("city", "TEXT"),
+    ("postal_code", "INTEGER"),
+    ("country", "TEXT"),
+]
+
+for column, coltype in columns_to_add:
+    try:
+        cursor.execute(f"ALTER TABLE suppliers ADD COLUMN {column} {coltype}")
+        print(f"Added column: {column} ({coltype})")
+    except sqlite3.OperationalError as e:
+        if "duplicate column name" in str(e):
+            print(f"Column '{column}' already exists. Skipping.")
+        else:
+            raise
+
+
 from openpartslibrary.db import PartsLibrary
 
 # Initialize the parts library
@@ -6,6 +31,7 @@ pl.display()
 
 # Clear library and load new parts from spreadsheet
 import os
+import pandas as pd
 
 pl.delete_all()
 sample_path = os.path.join(os.path.dirname(__file__), 'openpartslibrary', 'sample', 'parts_data_sample.xlsx') 
@@ -13,7 +39,7 @@ pl.create_parts_from_spreadsheet(sample_path)
 pl.display()
 
 # Create a new single part and add it to the database
-from openpartslibrary.models import Part
+from openpartslibrary.models import Part, Supplier
 
 new_part = Part(
             number='SCRW-2001',
@@ -65,3 +91,11 @@ highest_price_parts = pl.session.query(Part).order_by(Part.unit_price.desc()).li
 print("\nTop 5 Part with the highest unit price:")
 for part in highest_price_parts:
     print(f"Number: {part.number}, Name: {part.name}, Unit Price: {part.unit_price} {part.currency}")
+
+
+# Displaying Supplier table contents
+supplier_sample_path = os.path.join(os.path.dirname(__file__), 'openpartslibrary', 'sample', 'suppliers_sample_data.xlsx')
+pl.create_suppliers_from_spreadsheet(supplier_sample_path)
+pl.add_sample_suppliers()
+pl.display_suppliers()
+

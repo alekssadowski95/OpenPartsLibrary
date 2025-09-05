@@ -7,6 +7,7 @@ from datetime import datetime
 
 from .models import Base, Part
 
+import uuid
 
 class PartsLibrary:
     def __init__(self):
@@ -27,6 +28,8 @@ class PartsLibrary:
         pd.set_option('display.width', 240)
 
         print(part_table)
+    
+   
 
     def display_reduced(self):
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
@@ -75,7 +78,8 @@ class PartsLibrary:
         self.session.add_all(parts)
         self.session.commit()
         print(f"Imported {len(parts)} parts successfully from {file_path}")
-
+    
+    
     def total_value(self):
         from decimal import Decimal
         all_parts = self.session.query(Part).all()
@@ -85,3 +89,71 @@ class PartsLibrary:
             total_value = Decimal(total_value) + (Decimal(part.unit_price) * part.quantity)
 
         return total_value
+    
+    def create_suppliers_from_spreadsheet(self, file_path):
+        from .models import Supplier
+        self.session.query(Supplier).delete()
+        self.session.commit()
+
+        df = pd.read_excel(file_path)
+
+        suppliers = []
+        for _, row in df.iterrows():
+            supplier = Supplier(
+                uuid=row.get("uuid", str(uuid.uuid4())),
+                name=row["name"],
+                description=row.get("description", "No description"),
+                street=row.get("street"),
+                city=row.get("city"),
+                postal_code=row.get("postal_code"),
+                house_number=row.get("house_number"),
+                country=row.get("country")   
+            )
+            suppliers.append(supplier)
+
+        self.session.add_all(suppliers)
+        self.session.commit()
+        print(f"Imported {len(suppliers)} suppliers successfully from {file_path}")
+    
+    def display_suppliers(self):
+        from tabulate import tabulate
+        import textwrap
+        query="SELECT * FROM suppliers"
+        suppliers_table = pd.read_sql_query(sql=query, con=self.engine)
+        suppliers_table["house_number"] = suppliers_table["house_number"].astype(str)
+        suppliers_table["postal_code"] = suppliers_table["postal_code"].astype(str)
+        pd.set_option('display.max_columns', 7)
+        pd.set_option('display.width', 200)
+        print(tabulate(suppliers_table, headers='keys', tablefmt='github'))
+
+    def add_sample_suppliers(self):
+        from .models import Supplier
+        siemens = Supplier(
+            uuid=str(uuid.uuid4()),
+            name="Siemens AG",
+            description="Siemens AG is a global powerhouse focusing on the areas of electrification, automation, and digitalization. One of the world's largest producers of energy-efficient, resource-saving technologies",
+            street="Werner-von-Siemens-Straße",
+            house_number="1",
+            postal_code="80333",
+            city="Munich",
+            country="Germany",
+            date_created=datetime.utcnow(),
+            date_modified=datetime.utcnow()
+        )
+        
+        kuka = Supplier(
+            uuid=str(uuid.uuid4()),
+            name="KUKA AG",
+            description="The KUKA Group is an internationally active automation group with revenue of approximately EUR 3.7 billion and approximately 15,000 employees. As one of the world's leading providers of intelligent, resource-efficient automation solutions, KUKA offers industrial robots, autonomous mobile robots (AMR) including controllers, software, and cloud-based digital services, as well as fully networked production systems for various industries and markets, such as automotive with a focus on e-mobility and batteries, electronics, metal and plastics, consumer goods, food, e-commerce, retail, and healthcare",
+            street="Zugspitzstraße",
+            house_number="140",
+            postal_code="86165",
+            city="Augsburg",
+            country="Germany",
+            date_created=datetime.utcnow(),
+            date_modified=datetime.utcnow()
+        )
+        self.session.add(siemens)
+        self.session.add(kuka)
+        self.session.commit()
+        print("Added sample suppliers: Siemens AG and KUKA AG")

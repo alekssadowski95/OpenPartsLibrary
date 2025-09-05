@@ -5,7 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 
-from .models import Base, Part
+from .models import Base, Part, Supplier
 
 import uuid
 
@@ -91,7 +91,6 @@ class PartsLibrary:
         return total_value
     
     def create_suppliers_from_spreadsheet(self, file_path):
-        from .models import Supplier
         self.session.query(Supplier).delete()
         self.session.commit()
 

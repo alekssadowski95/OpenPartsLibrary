@@ -1,28 +1,3 @@
-#Adding new columns to the Supplier model 
-import sqlite3
-db_path = 'openpartslibrary/data/parts.db'
-conn = sqlite3.connect(db_path)
-cursor = conn.cursor()
-
-columns_to_add = [
-    ("house_number", "INTEGER"),
-    ("street", "TEXT"),
-    ("city", "TEXT"),
-    ("postal_code", "INTEGER"),
-    ("country", "TEXT"),
-]
-
-for column, coltype in columns_to_add:
-    try:
-        cursor.execute(f"ALTER TABLE suppliers ADD COLUMN {column} {coltype}")
-        print(f"Added column: {column} ({coltype})")
-    except sqlite3.OperationalError as e:
-        if "duplicate column name" in str(e):
-            print(f"Column '{column}' already exists. Skipping.")
-        else:
-            raise
-
-
 from openpartslibrary.db import PartsLibrary
 
 # Initialize the parts library
@@ -32,6 +7,7 @@ pl.display()
 # Clear library and load new parts from spreadsheet
 import os
 import pandas as pd
+import uuid
 
 pl.delete_all()
 sample_path = os.path.join(os.path.dirname(__file__), 'openpartslibrary', 'sample', 'parts_data_sample.xlsx') 
@@ -63,7 +39,81 @@ new_part = Part(
             unit_price=0.45,
             currency='EUR'
         )
+#Add 3 more parts
+new_part2 = Part(
+            uuid=str(uuid.uuid4()),
+            number='BOLT-2002',
+            name='Hex Bolt',
+            description='A standard hex bolt',
+            revision="1",
+            lifecycle_state="In Work",
+            owner="Portland Bolt",
+            material='Stainless Steel',
+            mass=0.05,
+            dimension_x=0.03,
+            dimension_y=0.01,
+            dimension_z=0.01,
+            quantity=150,
+            cad_reference='CAD REFERENCE BOLT',
+            attached_documents_reference='DOCUMENTS REFERENCE BOLT',
+            lead_time=7,    
+            make_or_buy='buy',
+            supplier='Portland Bolt',
+            manufacturer_number='PB-2002',
+            unit_price=0.75,    
+            currency='EUR'
+        )
+new_part3 = Part(
+            uuid=str(uuid.uuid4()),
+            number='BOLT-2003',
+            name='Carriage Bolt',
+            description='A standard carriage bolt',
+            revision="1",
+            lifecycle_state="In Work",
+            owner="Fastenal",
+            material='Carbon Steel',
+            mass=0.04,
+            dimension_x=0.025,
+            dimension_y=0.008,
+            dimension_z=0.008,
+            quantity=200,
+            cad_reference='CAD REFERENCE CARRIAGE BOLT',
+            attached_documents_reference='DOCUMENTS REFERENCE CARRIAGE BOLT',
+            lead_time=5,
+            make_or_buy='buy',
+            supplier='Fastenal',
+            manufacturer_number='FB-3003',
+            unit_price=0.60,
+            currency='EUR'
+)
+new_part4 = Part(
+            uuid=str(uuid.uuid4()),
+            number='NUT-2004',
+            name='Hex Nut',     
+            description='A standard hex nut',
+            revision="1",
+            lifecycle_state="In Work",
+            owner="Grainger",
+            material='Brass',
+            mass=0.02,
+            dimension_x=0.015,
+            dimension_y=0.007,
+            dimension_z=0.007,
+            quantity=300,
+            cad_reference='CAD REFERENCE HEX NUT',
+            attached_documents_reference='DOCUMENTS REFERENCE HEX NUT',
+            lead_time=4,
+            make_or_buy='buy',
+            supplier='Grainger',
+            manufacturer_number='GN-4004',
+            unit_price=0.30,
+            currency='EUR'
+)
+
 pl.session.add(new_part)
+pl.session.add(new_part2)
+pl.session.add(new_part3)
+pl.session.add(new_part4)
 pl.session.commit()
 pl.display_reduced()
 
@@ -94,8 +144,6 @@ for part in highest_price_parts:
 
 
 # Displaying Supplier table contents
-supplier_sample_path = os.path.join(os.path.dirname(__file__), 'openpartslibrary', 'sample', 'suppliers_sample_data.xlsx')
-pl.create_suppliers_from_spreadsheet(supplier_sample_path)
 pl.add_sample_suppliers()
 pl.display_suppliers()
 

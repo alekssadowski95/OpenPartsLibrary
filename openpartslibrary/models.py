@@ -41,17 +41,6 @@ class Part(Base):
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
-
-class Supplier(Base):
-    __tablename__ = 'suppliers'
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(String(1000))
-    date_created = Column(DateTime, default=datetime.utcnow)
-    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
 class File(Base):
     __tablename__ = 'files'
 
@@ -69,3 +58,26 @@ class NumberRange(Base):
     name = Column(String(200), nullable=False)
     description = Column(String(1000))
     date_created = Column(DateTime, default=datetime.utcnow)
+
+#Supplier model
+class Supplier(Base):
+    __tablename__ = 'suppliers'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False, default=str(uuid.uuid4()))
+    name = Column(String(200), nullable=False)
+    description = Column(String(1000), default="No description")                        
+    street = Column(String(200))
+    house_number = Column(String(20))
+    postal_code = Column(String(20))
+    city = Column(String(100))
+    country = Column(String(100))
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Supplier(id={self.id}, name={self.name}, city={self.city})>"
+    
+    def to_dict(self):
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+    

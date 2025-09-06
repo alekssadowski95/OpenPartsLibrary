@@ -146,7 +146,6 @@ class Material(Base):
     hardness_scale = Column(String) # e.g., HB, HV, HRC
     toughness = Column(Float) # Charpy impact energy, J
     fatigue_strength = Column(Float) # Endurance limit, MPa
-    creep_resistance = Column(Float) # Qualitative/quantitative measure
 
     # Physical properties
     thermal_conductivity = Column(Float) # W/mK

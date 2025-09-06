@@ -16,8 +16,8 @@ pl.delete_all()
 part_1 = Part(
             uuid = str(uuid.uuid4()),
             number='SCRW-2001',
-            name='Screw Type Z (Special) M5x14',
-            description='A special kind of screw for safety switches',
+            name='Screw ISO 4762 M6x12',
+            description='A hexagon socket head cap screw for fastening metal parts',
             revision="1",
             lifecycle_state="In Work",
             owner='Max Mustermann',
@@ -27,22 +27,21 @@ part_1 = Part(
             dimension_y=0.005,
             dimension_z=0.005,
             quantity=100,
-            cad_reference='CAD REFERENCE',
             attached_documents_reference='DOCUMENTS REFERENCE',
             lead_time=10,
             make_or_buy='make',
             supplier='In-House Manufacturing',
             manufacturer_number='MFN-100001',
-            unit_price=0.45,
+            unit_price=0.10,
             currency='EUR'
 )
 
 # Create a new part
 part_2 = Part(
             uuid = str(uuid.uuid4()),
-            number='BOLT-2002',
-            name='Hex Bolt',
-            description='A standard hex bolt',
+            number='SCRW-2002',
+            name='Screw ISO 4762 M6x20',
+            description='A hexagon socket head cap screw for fastening metal parts',
             revision="1",
             lifecycle_state="In Work",
             owner="Portland Bolt",
@@ -52,22 +51,21 @@ part_2 = Part(
             dimension_y=0.01,
             dimension_z=0.01,
             quantity=150,
-            cad_reference='CAD REFERENCE BOLT',
             attached_documents_reference='DOCUMENTS REFERENCE BOLT',
             lead_time=7,    
             make_or_buy='buy',
             supplier='Portland Bolt',
             manufacturer_number='PB-2002',
-            unit_price=0.75,    
+            unit_price=0.15,    
             currency='EUR'
 )
 
 # Create a new part
 part_3 = Part(
             uuid = str(uuid.uuid4()),
-            number='NUT-2004',
-            name='Hex Nut',     
-            description='A standard hex nut',
+            number='SCRW-2003',
+            name='Screw ISO 4762 M6x35',
+            description='A hexagon socket head cap screw for fastening metal parts',
             revision="1",
             lifecycle_state="In Work",
             owner="Grainger",
@@ -77,15 +75,44 @@ part_3 = Part(
             dimension_y=0.007,
             dimension_z=0.007,
             quantity=300,
-            cad_reference='CAD REFERENCE HEX NUT',
             attached_documents_reference='DOCUMENTS REFERENCE HEX NUT',
             lead_time=4,
             make_or_buy='buy',
             supplier='Grainger',
             manufacturer_number='GN-4004',
-            unit_price=0.30,
+            unit_price=0.18,
             currency='EUR'
 )
+
+# Load file and original name, change name to uuid and save it in the data/files dir
+# ..
+file_1_path = ''
+file_1_uuid = str(uuid.uuid4())
+file_1_name = 'screw.FCStd'
+# Create a new file
+file_1 = File(uuid = file_1_uuid, name = file_1_name, description = 'This is a CAD file.')
+# Assign file to part cad reference
+part_1.cad_reference.append(file_1)
+
+# Load file and original name, change name to uuid and save it in the data/files dir
+# ..
+file_2_path = ''
+file_2_uuid = str(uuid.uuid4())
+file_2_name = 'screw.FCStd'
+# Create a new file
+file_2 = File(uuid = file_2_uuid, name = file_2_name, description = 'This is a CAD file.')
+# Assign file to part cad reference
+part_2.cad_reference.append(file_2)
+
+# Load file and original name, change name to uuid and save it in the data/files dir
+# ..
+file_3_path = ''
+file_3_uuid = str(uuid.uuid4())
+file_3_name = 'screw.FCStd'
+# Create a new file
+file_3 = File(uuid = file_3_uuid, name = file_3_name, description = 'This is a CAD file.')
+# Assign file to part cad reference
+part_3.cad_reference.append(file_3)
 
 # Add a all created parts to the parts library
 pl.session.add(part_1)
@@ -120,22 +147,6 @@ supplier_2 = Supplier(
 # Add a all created parts to the parts library
 pl.session.add(supplier_1)
 pl.session.add(supplier_2)
-pl.session.commit()
-
-# Load file and original name, change name to uuid and save it in the data/files dir
-# ..
-file_1_uuid = str(uuid.uuid4())
-file_1_name = 'screw.FCStd'
-
-# Create a new file
-file_1 = File(
-                uuid = file_1_uuid,
-                name = file_1_name,
-                description = 'This is a CAD file.'
-)
-
-# Add a all created parts to the parts library
-pl.session.add(file_1)
 pl.session.commit()
 
 # Prints the parts and suppliers tables in the terminal

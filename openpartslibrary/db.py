@@ -31,27 +31,27 @@ class PartsLibrary:
         print(part_table)
 
     def display_reduced(self):
-        pd.set_option('display.max_columns', 7)
-        pd.set_option('display.width', 200)
-
         # Print the parts table to the terminal
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
-        reduced_part_table = part_table[["id", "uuid", "number", "name", "quantity", "supplier", "unit_price", "currency"]]
+        print('')
         print('Parts:')
         print('======')
-        print(reduced_part_table)
+        print(part_table)
+        print('\n')
 
         # Print the suppliers table to the terminal
         supplier_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
         print('Suppliers:')
         print('==========')
         print(supplier_table)
+        print('')
 
         # Print the suppliers table to the terminal
         files_table = pd.read_sql_table(table_name="files", con=self.engine)
         print('Files:')
         print('==========')
         print(files_table)
+        print('')
         
         print('\nNot all rows and columns are shown.\n')
 

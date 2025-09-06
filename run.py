@@ -1,23 +1,19 @@
-from openpartslibrary.db import PartsLibrary
-
-# Initialize the parts library
-pl = PartsLibrary()
-pl.display()
-
-# Clear library and load new parts from spreadsheet
 import os
 import pandas as pd
 import uuid
 
-pl.delete_all()
-sample_path = os.path.join(os.path.dirname(__file__), 'openpartslibrary', 'sample', 'parts_data_sample.xlsx') 
-pl.create_parts_from_spreadsheet(sample_path)
-pl.display()
-
-# Create a new single part and add it to the database
+from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier
 
-new_part = Part(
+
+# Initialize the parts library
+pl = PartsLibrary()
+
+# Clear the parts library
+pl.delete_all()
+
+# Create a new part
+part_1 = Part(
             number='SCRW-2001',
             name='Screw Type Z (Special) M5x14',
             description='A special kind of screw for safety switches',
@@ -38,9 +34,10 @@ new_part = Part(
             manufacturer_number='MFN-100001',
             unit_price=0.45,
             currency='EUR'
-        )
-#Add 3 more parts
-new_part2 = Part(
+)
+
+# Create a new part
+part_2 = Part(
             uuid=str(uuid.uuid4()),
             number='BOLT-2002',
             name='Hex Bolt',
@@ -62,31 +59,10 @@ new_part2 = Part(
             manufacturer_number='PB-2002',
             unit_price=0.75,    
             currency='EUR'
-        )
-new_part3 = Part(
-            uuid=str(uuid.uuid4()),
-            number='BOLT-2003',
-            name='Carriage Bolt',
-            description='A standard carriage bolt',
-            revision="1",
-            lifecycle_state="In Work",
-            owner="Fastenal",
-            material='Carbon Steel',
-            mass=0.04,
-            dimension_x=0.025,
-            dimension_y=0.008,
-            dimension_z=0.008,
-            quantity=200,
-            cad_reference='CAD REFERENCE CARRIAGE BOLT',
-            attached_documents_reference='DOCUMENTS REFERENCE CARRIAGE BOLT',
-            lead_time=5,
-            make_or_buy='buy',
-            supplier='Fastenal',
-            manufacturer_number='FB-3003',
-            unit_price=0.60,
-            currency='EUR'
 )
-new_part4 = Part(
+
+# Create a new part
+part_3 = Part(
             uuid=str(uuid.uuid4()),
             number='NUT-2004',
             name='Hex Nut',     
@@ -110,13 +86,22 @@ new_part4 = Part(
             currency='EUR'
 )
 
-pl.session.add(new_part)
-pl.session.add(new_part2)
-pl.session.add(new_part3)
-pl.session.add(new_part4)
+# Add a all created parts to the parts library
+pl.session.add(part_1)
+pl.session.add(part_2)
+pl.session.add(part_3)
 pl.session.commit()
+
+# Print the parts library in the terminal
 pl.display_reduced()
 
+supplier_1 = Supplier(
+
+)
+
+
+
+'''
 # Get the total value all parts in the library
 print('Total value of all parts in the library: ' + str(pl.total_value()) + ' EUR')
 
@@ -146,4 +131,4 @@ for part in highest_price_parts:
 # Displaying Supplier table contents
 pl.add_sample_suppliers()
 pl.display_suppliers()
-
+'''

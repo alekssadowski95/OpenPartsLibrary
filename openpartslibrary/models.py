@@ -6,6 +6,14 @@ from datetime import datetime
 class Base(DeclarativeBase):
   pass
 
+class Component(Base):
+    __tablename__ = 'components'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
+
+    part = relationship('Part', back_populates='component', uselist=False)
+
 class File(Base):
     __tablename__ = 'files'
 
@@ -51,6 +59,9 @@ class Part(Base):
     supplier_id = Column(ForeignKey('suppliers.id'))
     supplier = relationship('Supplier', back_populates='parts')
 
+    component_id = Column(ForeignKey('components.id'))
+    component = relationship('Component', back_populates='part')
+
     def __repr__(self):
         return f"<Part(id={self.id}, number={self.number}, name={self.name})>"
 
@@ -73,7 +84,6 @@ class Supplier(Base):
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     parts = relationship(Part)
-
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
@@ -89,12 +99,6 @@ class Adress(Base):
     city = Column(String(100))
     country = Column(String(100))
     
-class Component(Base):
-    __tablename__ = 'components'
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
-
 
 '''
 Relationship tables
@@ -103,6 +107,9 @@ class ComponentComponent(Base):
     __tablename__ = 'component_component'
 
     id = Column(Integer, primary_key=True)
+
+    parent_component = ''
+    child_component = ''
 
 class PartSupplier(Base):
     __tablename__ = 'part_supplier'

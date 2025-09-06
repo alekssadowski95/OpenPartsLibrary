@@ -3,7 +3,7 @@ import pandas as pd
 import uuid
 
 from openpartslibrary.db import PartsLibrary
-from openpartslibrary.models import Part, Supplier, File
+from openpartslibrary.models import Part, Supplier, File, Component
 
 
 # Initialize the parts library
@@ -171,6 +171,14 @@ supplier_1.parts.append(part_2)
 supplier_2.parts.append(part_3)
 pl.session.commit()
 
+# Create a new component and add it to the library
+component_1 = Component(uuid = str(uuid.uuid4()), part = part_1)
+component_2 = Component(uuid = str(uuid.uuid4()), part = part_2)
+component_3 = Component(uuid = str(uuid.uuid4()), part = part_3)
+pl.session.add(component_1)
+pl.session.add(component_2)
+pl.session.add(component_3)
+pl.session.commit()
 
 print('************************************************************') 
 print('*  OpenPartsLibrary                                        *')

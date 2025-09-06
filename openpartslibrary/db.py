@@ -25,6 +25,13 @@ class PartsLibrary:
         self.session = self.session_factory()
 
     def display(self):
+        # Print the components table to the terminal
+        components_table = pd.read_sql_table(table_name="components", con=self.engine)
+        print('Components:')
+        print('==========')
+        print(components_table)
+        print('')
+
         # Print the parts table to the terminal
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
         print('Parts:')

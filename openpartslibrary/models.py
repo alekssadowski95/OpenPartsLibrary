@@ -39,13 +39,14 @@ class Part(Base):
     dimension_y = Column(Float)
     dimension_z = Column(Float)
     quantity = Column(Integer, default=0)
-    cad_reference = relationship(File)
     attached_documents_reference = Column(String(200))
     lead_time = Column(Integer)
     make_or_buy = Column(Enum('make', 'buy', name='make_or_buy_enum'))
     manufacturer_number = Column(String(100))
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
+
+    cad_reference = relationship('File', back_populates='part', uselist=False)
 
     supplier_id = Column(ForeignKey('suppliers.id'))
     supplier = relationship('Supplier', back_populates='parts')

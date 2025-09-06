@@ -6,7 +6,6 @@ import json
 from datetime import datetime
 import zipfile
 
-
 import networkx as nx
 
 import matplotlib.pyplot as plt

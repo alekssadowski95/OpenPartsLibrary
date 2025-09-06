@@ -44,6 +44,7 @@ class File(Base):
     __tablename__ = 'files'
 
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(String(1000))
     date_created = Column(DateTime, default=datetime.utcnow)
@@ -53,6 +54,7 @@ class Supplier(Base):
     __tablename__ = 'suppliers'
 
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(200), nullable=False)
     description = Column(String(1000), default="No description")                        
     street = Column(String(200))
@@ -73,11 +75,18 @@ class Adress(Base):
     __tablename__ = 'adresses'
 
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
+    street = Column(String(200))
+    house_number = Column(String(20))
+    postal_code = Column(String(20))
+    city = Column(String(100))
+    country = Column(String(100))
     
 class Component(Base):
     __tablename__ = 'components'
 
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
 
 
 '''

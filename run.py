@@ -3,7 +3,7 @@ import pandas as pd
 import uuid
 
 from openpartslibrary.db import PartsLibrary
-from openpartslibrary.models import Part, Supplier
+from openpartslibrary.models import Part, Supplier, File
 
 
 # Initialize the parts library
@@ -93,12 +93,48 @@ pl.session.add(part_2)
 pl.session.add(part_3)
 pl.session.commit()
 
-# Print the parts library in the terminal
-pl.display_reduced()
-
+# Create a new supplier
 supplier_1 = Supplier(
-
+                uuid = str(uuid.uuid4()),
+                name = 'Adolf Würth GmbH & Co. KG',
+                description = 'The Würth Group is a leader in the development, manufacture, and distribution of assembly and fastening materials. The globally active family-owned company, headquartered in Künzelsau, Germany, comprises over 400 subsidiaries with over 2,800 branches in 80 countries.',
+                street = 'Reinhold-Würth-Straße',
+                house_number = '12',
+                postal_code = '74653',
+                city = 'Künzelsau-Gaisbach',
+                country = 'Deutschland'
 )
+
+# Create a new supplier
+supplier_2 = Supplier(
+                uuid = str(uuid.uuid4()),
+                name = 'Robert Bosch GmbH',
+                description = 'The Bosch Group is a leading international supplier of technology and services with approximately 418,000 associates worldwide (as of December 31, 2024).',                        
+                street = 'Robert-Bosch-Platz',
+                house_number = '1',
+                postal_code = '70839',
+                city = 'Gerlingen-Schillerhöhe',
+                country = 'Deutschland'
+)
+
+# Add a all created parts to the parts library
+pl.session.add(supplier_1)
+pl.session.add(supplier_2)
+pl.session.commit()
+
+# Create a new supplier
+file_1 = File(
+                uuid = str(uuid.uuid4()),
+                name = 'screw.FCStd',
+                description = 'This is a CAD file.'
+)
+
+# Add a all created parts to the parts library
+pl.session.add(file_1)
+pl.session.commit()
+
+# Prints the parts and suppliers tables in the terminal
+pl.display_reduced()
 
 
 

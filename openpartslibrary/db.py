@@ -23,8 +23,6 @@ class PartsLibrary:
         self.session = self.session_factory()
 
     def display(self):
-        print('- OpenPartsLibrary -')
-
         # Print the parts table to the terminal
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
         print('')
@@ -40,7 +38,7 @@ class PartsLibrary:
         print(supplier_table)
         print('')
 
-        # Print the suppliers table to the terminal
+        # Print the files table to the terminal
         files_table = pd.read_sql_table(table_name="files", con=self.engine)
         print('Files:')
         print('==========')
@@ -50,6 +48,30 @@ class PartsLibrary:
     def display_reduced(self):
         # Print the parts table to the terminal in reduced form
         pass
+
+    def display_parts(self):
+        # Print the parts table to the terminal
+        part_table = pd.read_sql_table(table_name="parts", con=self.engine)
+        print('Parts:')
+        print('======')
+        print(part_table)
+        print('')
+
+    def display_suppliers(self):
+        # Print the suppliers table to the terminal
+        supplier_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
+        print('Suppliers:')
+        print('==========')
+        print(supplier_table)
+        print('')
+
+    def display_files(self):
+        # Print the files table to the terminal
+        files_table = pd.read_sql_table(table_name="files", con=self.engine)
+        print('Files:')
+        print('==========')
+        print(files_table)
+        print('')
 
     def delete_all(self):
         self.session.query(Part).delete()

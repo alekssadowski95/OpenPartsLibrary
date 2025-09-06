@@ -170,5 +170,34 @@ supplier_1.parts.append(part_2)
 supplier_2.parts.append(part_3)
 pl.session.commit()
 
-# Prints the parts, suppliers and files tables in the terminal
-pl.display()
+command_history = []
+while True:    
+    os.system('cls')
+    print('**********************************************************') 
+    print('* OpenPartsLibrary                                       *')
+    print('* Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025 *')
+    print('**********************************************************') 
+
+    pl.display()
+    print('')
+    commands = 'add part', 'add supplier', 'modify part', 'modify supplier', 'remove part', 'remove supplier'
+    commands_str = ''
+    for command in commands:
+        commands_str = commands_str + '[' + str(command) + '] '
+    print('Commands: ' + commands_str)
+    print('Last commands:' + str([command for command in command_history][-5:]))
+    input_cmd = input('Enter command: ')
+    command_history.append(input_cmd)
+    if input_cmd in commands:
+        if input_cmd == 'add part':
+            pass
+        if input_cmd == 'add supplier':
+            pass
+        if input_cmd == 'modify part':
+            pass
+        if input_cmd == 'modify supplier':
+            pass
+        if input_cmd == 'remove part':
+            pass
+        if input_cmd == 'remove supplier':
+            pass

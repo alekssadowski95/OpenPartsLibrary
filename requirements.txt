@@ -2,3 +2,5 @@ sqlalchemy
 openpyxl
 pandas
 datetime
+networkx
+matplotlib

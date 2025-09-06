@@ -16,11 +16,15 @@ class ComponentComponent(Base):
 
     __table_args__ = (UniqueConstraint("parent_component_id", "child_component_id", name="uq_parent_child"),)
 
+    def __repr__(self):
+        return f"<ComponentComponent(id={self.id}, parent_component_id={self.parent_component_id}, child_component_id={self.child_component_id})>"
+
 class Component(Base):
     __tablename__ = 'components'
 
     id = Column(Integer, primary_key=True)
     uuid = Column(String(32), unique=True, nullable=False)
+    name = Column(String(200), nullable=False)
 
     part = relationship('Part', back_populates='component', uselist=False)
 

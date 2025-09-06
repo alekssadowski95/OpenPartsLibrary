@@ -3,7 +3,7 @@ import pandas as pd
 import uuid
 
 from openpartslibrary.db import PartsLibrary
-from openpartslibrary.models import Part, Supplier, File, Component
+from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
 
 
 # Initialize the parts library
@@ -172,10 +172,10 @@ supplier_2.parts.append(part_3)
 pl.session.commit()
 
 # Create a new component and add it to the library
-component_1 = Component(uuid = str(uuid.uuid4()), part = part_1)
-component_2 = Component(uuid = str(uuid.uuid4()), part = part_2)
-component_3 = Component(uuid = str(uuid.uuid4()), part = part_3)
-component_4 = Component(uuid = str(uuid.uuid4()))
+component_1 = Component(uuid = str(uuid.uuid4()), part = part_1, name = part_1.name)
+component_2 = Component(uuid = str(uuid.uuid4()), part = part_2, name = part_2.name)
+component_3 = Component(uuid = str(uuid.uuid4()), part = part_3, name = part_3.name)
+component_4 = Component(uuid = str(uuid.uuid4()), name = 'Screw assembly')
 pl.session.add(component_1)
 pl.session.add(component_2)
 pl.session.add(component_3)
@@ -192,6 +192,46 @@ print('*  OpenPartsLibrary                                        *')
 print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
 print('************************************************************') 
 pl.display()
+
+component_relationships = pl.session.query(ComponentComponent).all()
+for component_relationship in component_relationships:
+    print(component_relationship)
+
+import networkx as nx
+
+# Query all relationships
+relationships = pl.session.query(ComponentComponent).all()
+
+# Build directed graph
+G = nx.DiGraph()
+
+for rel in relationships:
+    parent = pl.session.query(Component).filter_by(id=rel.parent_component_id).first()
+    child = pl.session.query(Component).filter_by(id=rel.child_component_id).first()
+
+    if parent and child:
+        G.add_node(parent.id, name=parent.name)
+        G.add_node(child.id, name=child.name)
+        G.add_edge(child.id, parent.id)
+
+print(G)
+
+import matplotlib.pyplot as plt
+
+"""
+Visualizes the directed graph with node labels as UUIDs.
+"""
+plt.figure(figsize=(10, 8))
+
+pos = nx.spring_layout(G, seed=42)  # layout positions for nodes
+labels = nx.get_node_attributes(G, 'name')
+
+nx.draw(G, pos, with_labels=True, labels=labels, node_size=1500,
+        node_color="skyblue", font_size=10, font_weight="bold",
+        arrowsize=20, arrowstyle="->")
+
+plt.title("Component Hierarchy Graph (Parent → Child)")
+plt.show()
 
 ''' CLI to be moved to its own object OpenPartsLibraryCLI in cli.py
 '''

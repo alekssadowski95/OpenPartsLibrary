@@ -57,6 +57,16 @@ class PartsLibrary:
         self.session.query(File).delete()
         self.session.commit()
 
+    def total_value(self):
+        from decimal import Decimal
+        all_parts = self.session.query(Part).all()
+
+        total_value = Decimal(0.0)
+        for part in all_parts:
+            total_value = Decimal(total_value) + (Decimal(part.unit_price) * part.quantity)
+
+        return total_value
+
     def create_parts_from_spreadsheet(self, file_path):
         df = pd.read_excel(file_path)
 
@@ -91,16 +101,6 @@ class PartsLibrary:
         self.session.add_all(parts)
         self.session.commit()
         print(f"Imported {len(parts)} parts successfully from {file_path}")
-    
-    def total_value(self):
-        from decimal import Decimal
-        all_parts = self.session.query(Part).all()
-
-        total_value = Decimal(0.0)
-        for part in all_parts:
-            total_value = Decimal(total_value) + (Decimal(part.unit_price) * part.quantity)
-
-        return total_value
     
     def create_suppliers_from_spreadsheet(self, file_path):
         self.session.query(Supplier).delete()

@@ -4,5 +4,4 @@ pandas
 datetime
 networkx
 matplotlib
-pyviz
 pywebview

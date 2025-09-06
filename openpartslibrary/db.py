@@ -5,7 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 
-from .models import Base, Part, Supplier, File
+from .models import Base, Part, Supplier, File, Component, ComponentComponent
 
 import uuid
 
@@ -25,6 +25,13 @@ class PartsLibrary:
         self.session = self.session_factory()
 
     def display(self):
+        # Print the components table to the terminal
+        component_component_table = pd.read_sql_table(table_name="component_component", con=self.engine)
+        print('ComponentComponent:')
+        print('==========')
+        print(component_component_table)
+        print('')
+
         # Print the components table to the terminal
         components_table = pd.read_sql_table(table_name="components", con=self.engine)
         print('Components:')
@@ -83,6 +90,8 @@ class PartsLibrary:
 
     def delete_all(self):
         print('[ INFO ] Clearing the parts library.')
+        self.session.query(ComponentComponent).delete()
+        self.session.query(Component).delete()
         self.session.query(Part).delete()
         self.session.query(Supplier).delete()
         self.session.query(File).delete()

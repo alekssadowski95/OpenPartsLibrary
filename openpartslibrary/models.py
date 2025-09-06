@@ -1,10 +1,20 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, relationship
+from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase, relationship, backref
 from datetime import datetime
 
 
 class Base(DeclarativeBase):
   pass
+
+class ComponentComponent(Base):
+    __tablename__ = 'component_component'
+
+    id = Column(Integer, primary_key=True)
+
+    parent_component_id = Column(Integer, ForeignKey("components.id"), nullable=False)
+    child_component_id = Column(Integer, ForeignKey("components.id"), nullable=False)
+
+    __table_args__ = (UniqueConstraint("parent_component_id", "child_component_id", name="uq_parent_child"),)
 
 class Component(Base):
     __tablename__ = 'components'
@@ -13,6 +23,16 @@ class Component(Base):
     uuid = Column(String(32), unique=True, nullable=False)
 
     part = relationship('Part', back_populates='component', uselist=False)
+
+    # children: Components that this component is parent of
+    children = relationship(
+        "Component",
+        secondary="component_component",
+        primaryjoin=id == ComponentComponent.parent_component_id,
+        secondaryjoin=id == ComponentComponent.child_component_id,
+        backref=backref("parents", lazy="joined"),
+        lazy="joined",
+    )
 
 class File(Base):
     __tablename__ = 'files'
@@ -103,13 +123,6 @@ class Adress(Base):
 '''
 Relationship tables
 '''
-class ComponentComponent(Base):
-    __tablename__ = 'component_component'
-
-    id = Column(Integer, primary_key=True)
-
-    parent_component = ''
-    child_component = ''
 
 class PartSupplier(Base):
     __tablename__ = 'part_supplier'

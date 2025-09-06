@@ -170,16 +170,24 @@ supplier_1.parts.append(part_2)
 supplier_2.parts.append(part_3)
 pl.session.commit()
 
+
+print('************************************************************') 
+print('*  OpenPartsLibrary                                        *')
+print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
+print('************************************************************') 
+pl.display()
+
+''' CLI to be moved to its own object OpenPartsLibraryCLI in cli.py
+'''
+'''
 command_history = []
 while True:    
     os.system('cls')
-    print('**********************************************************') 
-    print('* OpenPartsLibrary                                       *')
-    print('* Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025 *')
-    print('**********************************************************') 
-
+    print('************************************************************') 
+    print('*  OpenPartsLibrary                                        *')
+    print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
+    print('************************************************************') 
     pl.display()
-    print('')
     commands = 'add part', 'add supplier', 'modify part', 'modify supplier', 'remove part', 'remove supplier'
     commands_str = ''
     for command in commands:
@@ -194,10 +202,26 @@ while True:
         if input_cmd == 'add supplier':
             pass
         if input_cmd == 'modify part':
+            os.system('cls')
+            print('************************************************************') 
+            print('*  OpenPartsLibrary                                        *')
+            print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
+            print('************************************************************')
+            pl.display_parts()
+            selected_part = int(input('Enter part id: '))
             pass
         if input_cmd == 'modify supplier':
+            os.system('cls')
+            print('************************************************************') 
+            print('*  OpenPartsLibrary                                        *')
+            print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
+            print('************************************************************')
+            print()
+            pl.display_suppliers()
+            selected_part = int(input('Enter supplier id: '))
             pass
         if input_cmd == 'remove part':
             pass
         if input_cmd == 'remove supplier':
             pass
+'''

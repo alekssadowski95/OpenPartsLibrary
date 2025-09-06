@@ -9,6 +9,8 @@ from .models import Base, Part, Supplier, File
 
 import uuid
 
+import os
+
 
 class PartsLibrary:
     def __init__(self):
@@ -25,7 +27,6 @@ class PartsLibrary:
     def display(self):
         # Print the parts table to the terminal
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
-        print('')
         print('Parts:')
         print('======')
         print(part_table)
@@ -78,6 +79,14 @@ class PartsLibrary:
         self.session.query(Supplier).delete()
         self.session.query(File).delete()
         self.session.commit()
+
+        directory_to_empty = os.path.join(os.path.dirname(__file__), 'data', 'files')
+        
+        for filename in os.listdir(directory_to_empty):
+            filepath = os.path.join(directory_to_empty, filename)
+            if os.path.isfile(filepath) and filename != "README.md":
+                os.remove(filepath)
+                print(f"Deleted: {filename}")
 
     def total_value(self):
         from decimal import Decimal
@@ -148,7 +157,7 @@ class PartsLibrary:
         self.session.commit()
         print(f"Imported {len(suppliers)} suppliers successfully from {file_path}")
     
-    def display_suppliers(self):
+    def display_suppliers_table(self):
         from tabulate import tabulate
         import textwrap
         query="SELECT * FROM suppliers"

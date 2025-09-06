@@ -3,6 +3,7 @@ import uuid
 import webbrowser
 import webview
 import json
+from datetime import datetime
 
 import networkx as nx
 
@@ -313,3 +314,52 @@ webbrowser.open(f"file://{path}")
 # Open HTML graph in PyWebView window
 webview.create_window("Component Hierarchy Graph Viewer", graph_html_filepath, width=800, height=600)
 webview.start()
+
+# Export NetworkX graph to CycloneDX HBOM
+cylonedx_hbom_json_filepath = os.path.join(LIBRARY_DATA_FILES_DIR, "cyclonedx-hbom-json-" + str(uuid.uuid4()) + ".json")
+
+bom = {
+    "bomFormat": "CycloneDX",
+    "specVersion": "1.5",
+    "serialNumber": f"urn:uuid:{uuid.uuid4()}",
+    "version": 1,
+    "metadata": {
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "tools": [
+            {
+                "vendor": "Custom",
+                "name": "NetworkX-to-CycloneDX Converter",
+                "version": "1.0"
+            }
+        ]
+    },
+    "components": [],
+    "dependencies": []
+}
+
+# Keep track of mapping from graph IDs to bom-ref
+node_to_ref = {}
+
+# Add components as devices
+for node_id, attrs in G.nodes(data=True):
+    comp_ref = f"device-{node_id}"
+    node_to_ref[node_id] = comp_ref
+
+    bom["components"].append({
+        "bom-ref": comp_ref,
+        "type": "device",   # <-- key change here
+        "name": attrs.get("name", str(node_id)),
+        "version": "1.0"
+    })
+
+# Add dependencies (parent -> child)
+for parent, child in G.edges():
+    bom["dependencies"].append({
+        "ref": node_to_ref[parent],
+        "dependsOn": [node_to_ref[child]]
+    })
+
+# --- Export to JSON ---
+with open(cylonedx_hbom_json_filepath, "w", encoding="utf-8") as f:
+    json.dump(bom, f, indent=2)
+

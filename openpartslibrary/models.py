@@ -122,7 +122,60 @@ class Adress(Base):
     postal_code = Column(String(20))
     city = Column(String(100))
     country = Column(String(100))
-    
+
+class Material(Base):
+    __tablename__ = "materials"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
+    # General information
+    name = Column(String, nullable=False) # e.g. Steel plate 12 mm
+    standard_number = Column(String) # Standardized number (e.g., 1.4301)
+    group = Column(String) # Material group (Steel, Aluminum, Polymer, etc.)
+    delivery_condition = Column(String) # Heat treated, annealed, quenched, etc.
+    density = Column(Float) # g/cm³
+
+    # Mechanical properties
+    elastic_modulus = Column(Float) # Young’s modulus (GPa)
+    shear_modulus = Column(Float) # Shear modulus (GPa)
+    poisson_ratio = Column(Float) # Dimensionless
+    tensile_strength = Column(Float) # Rm, MPa
+    yield_strength = Column(Float) # Re or Rp0.2, MPa
+    elongation = Column(Float) # Elongation at break, %
+    hardness = Column(Float) # hardness value, scale also has to specified
+    hardness_scale = Column(String) # e.g., HB, HV, HRC
+    toughness = Column(Float) # Charpy impact energy, J
+    fatigue_strength = Column(Float) # Endurance limit, MPa
+    creep_resistance = Column(Float) # Qualitative/quantitative measure
+
+    # Physical properties
+    thermal_conductivity = Column(Float) # W/mK
+    specific_heat_capacity = Column(Float) # J/kgK
+    thermal_expansion = Column(Float) # 1/K
+    electrical_conductivity = Column(Float) # S/m
+    magnetic_behavior = Column(String) # Ferromagnetic, paramagnetic, diamagnetic
+
+    # Chemical properties
+    oxidation_resistance_air = Column(String) # good, limited, poor
+
+    # Technological properties
+    weldability = Column(String) # good, limited, poor
+    castability = Column(String) # good, limited, poor
+    formability = Column(String) # good, limited, poor
+    machinability = Column(String) # good, limited, poor
+    hardenability = Column(String) # good, limited, poor
+
+    # Operational properties
+    temperature_min = Column(String) # Usable min temperature
+    temperature_max = Column(String) # Usable max temperature
+    wear_resistance = Column(String) # good, limited, poor
+    radiation_resistance = Column(String) # good, limited, poor
+
+    # Economic aspects
+    price = Column(Float) # Price per kg
+    availability = Column(String) # available/ not available
+    lead_time = Column(Integer) # lead time for delivery in days
+
 
 '''
 Relationship tables

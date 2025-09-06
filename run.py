@@ -30,7 +30,6 @@ part_1 = Part(
             attached_documents_reference='DOCUMENTS REFERENCE',
             lead_time=10,
             make_or_buy='make',
-            supplier='In-House Manufacturing',
             manufacturer_number='MFN-100001',
             unit_price=0.10,
             currency='EUR'
@@ -54,7 +53,6 @@ part_2 = Part(
             attached_documents_reference='DOCUMENTS REFERENCE BOLT',
             lead_time=7,    
             make_or_buy='buy',
-            supplier='Portland Bolt',
             manufacturer_number='PB-2002',
             unit_price=0.15,    
             currency='EUR'
@@ -78,7 +76,6 @@ part_3 = Part(
             attached_documents_reference='DOCUMENTS REFERENCE HEX NUT',
             lead_time=4,
             make_or_buy='buy',
-            supplier='Grainger',
             manufacturer_number='GN-4004',
             unit_price=0.18,
             currency='EUR'
@@ -147,12 +144,13 @@ supplier_2 = Supplier(
 # Add a all created parts to the parts library
 pl.session.add(supplier_1)
 pl.session.add(supplier_2)
+supplier_1.parts.append(part_1)
+supplier_1.parts.append(part_2)
+supplier_2.parts.append(part_3)
 pl.session.commit()
 
-# Prints the parts and suppliers tables in the terminal
-pl.display_reduced()
-
-
+# Prints the parts, suppliers and files tables in the terminal
+pl.display()
 
 '''
 # Get the total value all parts in the library

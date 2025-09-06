@@ -15,8 +15,10 @@ class File(Base):
     description = Column(String(1000))
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
     part_id = Column(ForeignKey('parts.id'))
     part = relationship('Part', back_populates='cad_reference')
+
 
 class Part(Base):
     __tablename__ = 'parts'
@@ -41,17 +43,19 @@ class Part(Base):
     attached_documents_reference = Column(String(200))
     lead_time = Column(Integer)
     make_or_buy = Column(Enum('make', 'buy', name='make_or_buy_enum'))
-    supplier = Column(String(100))
     manufacturer_number = Column(String(100))
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
+
+    supplier_id = Column(ForeignKey('suppliers.id'))
+    supplier = relationship('Supplier', back_populates='parts')
 
     def __repr__(self):
         return f"<Part(id={self.id}, number={self.number}, name={self.name})>"
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
-
+    
 class Supplier(Base):
     __tablename__ = 'suppliers'
 
@@ -67,12 +71,12 @@ class Supplier(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    def __repr__(self):
-        return f"<Supplier(id={self.id}, name={self.name}, city={self.city})>"
+    parts = relationship(Part)
+
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
-    
+
 class Adress(Base):
     __tablename__ = 'adresses'
 

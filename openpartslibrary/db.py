@@ -23,21 +23,15 @@ class PartsLibrary:
         self.session = self.session_factory()
 
     def display(self):
-        part_table = pd.read_sql_table(table_name="parts", con=self.engine)
+        print('- OpenPartsLibrary -')
 
-        pd.set_option('display.max_columns', 8)
-        pd.set_option('display.width', 240)
-
-        print(part_table)
-
-    def display_reduced(self):
         # Print the parts table to the terminal
         part_table = pd.read_sql_table(table_name="parts", con=self.engine)
         print('')
         print('Parts:')
         print('======')
         print(part_table)
-        print('\n')
+        print('')
 
         # Print the suppliers table to the terminal
         supplier_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
@@ -52,9 +46,10 @@ class PartsLibrary:
         print('==========')
         print(files_table)
         print('')
-        
-        print('\nNot all rows and columns are shown.\n')
 
+    def display_reduced(self):
+        # Print the parts table to the terminal in reduced form
+        pass
 
     def delete_all(self):
         self.session.query(Part).delete()
@@ -87,7 +82,6 @@ class PartsLibrary:
                 attached_documents_reference=row.get("attached_documents_reference"),
                 lead_time=row.get("lead_time"),
                 make_or_buy=row.get("make_or_buy"),
-                supplier=row.get("supplier"),
                 manufacturer_number=row.get("manufacturer_number"),
                 unit_price=row.get("unit_price"),
                 currency=row.get("currency")

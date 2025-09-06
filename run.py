@@ -199,10 +199,6 @@ print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
 print('************************************************************') 
 pl.display()
 
-component_relationships = pl.session.query(ComponentComponent).all()
-for component_relationship in component_relationships:
-    print(component_relationship)
-
 # Query all relationships
 relationships = pl.session.query(ComponentComponent).all()
 
@@ -220,8 +216,6 @@ for rel in relationships:
 
 
 # Show directed networkx graph in matpolotlib
-
-
 plt.figure(figsize=(10, 8))
 
 pos = nx.spring_layout(G, seed=42)  # layout positions for nodes
@@ -229,7 +223,7 @@ labels = nx.get_node_attributes(G, 'name')
 
 nx.draw(G, pos, with_labels=True, labels=labels, node_size=1500, node_color="skyblue", font_size=10, font_weight="bold", arrowsize=20, arrowstyle="->")
 
-plt.title("Component Hierarchy Graph (Parent → Child)")
+plt.title("Component Hierarchy Graph Viewer")
 plt.show()
 
 # Convert NetworkX graph to Cytoscape.js format
@@ -251,15 +245,13 @@ for source, target in G.edges():
         }
     })
 
-import json
-
 # Create a self-contained HTML string
 html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NetworkX Graph</title>
+<title>Component Hierarchy Graph Viewer</title>
 <script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
 </head>
 <body style="width: 100vw; height: 100vh; margin: 0; padding: 0;">
@@ -319,5 +311,5 @@ path = os.path.abspath(graph_html_filepath)
 webbrowser.open(f"file://{path}")
 
 # Open HTML graph in PyWebView window
-webview.create_window("Component Graph Viewer", graph_html_filepath, width=800, height=600)
+webview.create_window("Component Hierarchy Graph Viewer", graph_html_filepath, width=800, height=600)
 webview.start()

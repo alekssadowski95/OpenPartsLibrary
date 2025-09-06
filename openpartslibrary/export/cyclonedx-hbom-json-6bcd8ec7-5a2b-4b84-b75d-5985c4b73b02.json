@@ -1,0 +1,62 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.5",
+  "serialNumber": "urn:uuid:4b52090b-e8e8-4ee4-9159-68f44d7dd344",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2025-09-06T19:55:36.365595Z",
+    "tools": [
+      {
+        "vendor": "Custom",
+        "name": "NetworkX-to-CycloneDX Converter",
+        "version": "1.0"
+      }
+    ]
+  },
+  "components": [
+    {
+      "bom-ref": "device-4",
+      "type": "device",
+      "name": "Screw assembly",
+      "version": "1.0"
+    },
+    {
+      "bom-ref": "device-1",
+      "type": "device",
+      "name": "Screw ISO 4762 M6x12",
+      "version": "1.0"
+    },
+    {
+      "bom-ref": "device-2",
+      "type": "device",
+      "name": "Screw ISO 4762 M6x20",
+      "version": "1.0"
+    },
+    {
+      "bom-ref": "device-3",
+      "type": "device",
+      "name": "Screw ISO 4762 M6x35",
+      "version": "1.0"
+    }
+  ],
+  "dependencies": [
+    {
+      "ref": "device-1",
+      "dependsOn": [
+        "device-4"
+      ]
+    },
+    {
+      "ref": "device-2",
+      "dependsOn": [
+        "device-4"
+      ]
+    },
+    {
+      "ref": "device-3",
+      "dependsOn": [
+        "device-4"
+      ]
+    }
+  ]
+}

@@ -196,10 +196,23 @@ supplier_3 = Supplier(
                 country = 'Deutschland'
 )
 
+# Create a new supplier
+supplier_4 = Supplier(
+                uuid = str(uuid.uuid4()),
+                name = 'Xometry Europe GmbH ',
+                description = 'Xometry’s (NASDAQ: XMTR) AI-powered marketplace and suite of cloud-based services are rapidly digitising the manufacturing industry.',                        
+                street = 'Ada-Lovelace-Straße',
+                house_number = '9',
+                postal_code = '85521',
+                city = 'Ottobrunn',
+                country = 'Deutschland'
+)
+
 # Add a all created parts to the parts library
 pl.session.add(supplier_1)
 pl.session.add(supplier_2)
 pl.session.add(supplier_3)
+pl.session.add(supplier_4)
 supplier_1.parts.append(part_1)
 supplier_1.parts.append(part_2)
 supplier_2.parts.append(part_3)
@@ -343,7 +356,7 @@ webview.create_window("Component Hierarchy Graph Viewer", graph_html_filepath, w
 webview.start()
 
 # Export NetworkX graph to CycloneDX HBOM
-cylonedx_hbom_json_filepath = os.path.join(LIBRARY_DATA_FILES_DIR, "cyclonedx-hbom-json-" + str(uuid.uuid4()) + ".json")
+cylonedx_hbom_json_filepath = os.path.join(EXPORT_DIR, "cyclonedx-hbom-json-" + str(uuid.uuid4()) + ".json")
 
 bom = {
     "bomFormat": "CycloneDX",

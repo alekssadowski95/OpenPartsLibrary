@@ -21,6 +21,7 @@ OpenPartsLibrary - run.py (Overview)
 4. Creating a network graph of the component hierarchy using networkx
 5. Displaying the component hierarchy graph with matplotlib, the default webbrowser and a standalone web-viewer
 6. Generating a CycloneDX HBOM from the network graph
+7. Zipping the database and files into a portable file (*.oplp)
 
 '''
 
@@ -34,6 +35,7 @@ pl.delete_all()
 # Get the paths for this project
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 SAMPLE_DATA_DIR = os.path.join(PROJECT_DIR, "openpartslibrary", "sample")
+EXPORT_DIR = os.path.join(PROJECT_DIR, "openpartslibrary", "export")
 LIBRARY_DATA_DIR = os.path.join(PROJECT_DIR, "openpartslibrary", "data")
 LIBRARY_DATA_FILES_DIR = os.path.join(LIBRARY_DATA_DIR, "files")
 
@@ -383,7 +385,25 @@ for parent, child in G.edges():
         "dependsOn": [node_to_ref[child]]
     })
 
-# --- Export to JSON ---
+# Export to JSON
 with open(cylonedx_hbom_json_filepath, "w", encoding="utf-8") as f:
     json.dump(bom, f, indent=2)
 
+import os
+import zipfile
+from datetime import datetime
+
+# Create the output filename with current date and time
+output_filename = f"parts-{datetime.now().strftime('%Y%m%d-%H%M%S')}.oplp"
+output_path = os.path.join(EXPORT_DIR, output_filename)
+
+# Create the zip file
+with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+    for root, dirs, files in os.walk(LIBRARY_DATA_DIR):
+        for file in files:
+            file_path = os.path.join(root, file)
+            # Preserve folder structure inside zip
+            arcname = os.path.relpath(file_path, os.path.dirname(LIBRARY_DATA_DIR))
+            zipf.write(file_path, arcname)
+
+print(f"Created archive: {output_filename}")

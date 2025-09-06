@@ -14,6 +14,7 @@ pl.delete_all()
 
 # Create a new part
 part_1 = Part(
+            uuid = str(uuid.uuid4()),
             number='SCRW-2001',
             name='Screw Type Z (Special) M5x14',
             description='A special kind of screw for safety switches',
@@ -38,7 +39,7 @@ part_1 = Part(
 
 # Create a new part
 part_2 = Part(
-            uuid=str(uuid.uuid4()),
+            uuid = str(uuid.uuid4()),
             number='BOLT-2002',
             name='Hex Bolt',
             description='A standard hex bolt',
@@ -63,7 +64,7 @@ part_2 = Part(
 
 # Create a new part
 part_3 = Part(
-            uuid=str(uuid.uuid4()),
+            uuid = str(uuid.uuid4()),
             number='NUT-2004',
             name='Hex Nut',     
             description='A standard hex nut',

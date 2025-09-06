@@ -75,6 +75,7 @@ class PartsLibrary:
         print('')
 
     def delete_all(self):
+        print('[ INFO ] Clearing the parts library.')
         self.session.query(Part).delete()
         self.session.query(Supplier).delete()
         self.session.query(File).delete()
@@ -86,7 +87,7 @@ class PartsLibrary:
             filepath = os.path.join(directory_to_empty, filename)
             if os.path.isfile(filepath) and filename != "README.md":
                 os.remove(filepath)
-                print(f"Deleted: {filename}")
+                print(f"[ INFO ] Deleted: {filename}")
 
     def total_value(self):
         from decimal import Decimal

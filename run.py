@@ -10,6 +10,7 @@ from openpartslibrary.models import Part, Supplier, File
 pl = PartsLibrary()
 
 # Clear the parts library
+os.system('cls')
 pl.delete_all()
 
 # Get the paths for this project

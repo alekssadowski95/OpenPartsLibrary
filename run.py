@@ -12,6 +12,17 @@ import matplotlib.pyplot as plt
 from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
 
+'''
+OpenPartsLibrary - run.py (Overview)
+
+1. Initializing and clearing the database and attached files
+2. Adding sample data to the library
+3. Displaying the library in the terminal
+4. Creating a network graph of the component hierarchy using networkx
+5. Displaying the component hierarchy graph with matplotlib, the default webbrowser and a standalone web-viewer
+6. Generating a CycloneDX HBOM from the network graph
+
+'''
 
 # Initialize the parts library
 pl = PartsLibrary()

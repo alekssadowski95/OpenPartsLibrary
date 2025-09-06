@@ -122,10 +122,15 @@ pl.session.add(supplier_1)
 pl.session.add(supplier_2)
 pl.session.commit()
 
-# Create a new supplier
+# Load file and original name, change name to uuid and save it in the data/files dir
+# ..
+file_1_uuid = str(uuid.uuid4())
+file_1_name = 'screw.FCStd'
+
+# Create a new file
 file_1 = File(
-                uuid = str(uuid.uuid4()),
-                name = 'screw.FCStd',
+                uuid = file_1_uuid,
+                name = file_1_name,
                 description = 'This is a CAD file.'
 )
 

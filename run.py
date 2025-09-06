@@ -1,6 +1,12 @@
 import os
-import pandas as pd
 import uuid
+import webbrowser
+import webview
+import json
+
+import networkx as nx
+
+import matplotlib.pyplot as plt
 
 from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
@@ -197,8 +203,6 @@ component_relationships = pl.session.query(ComponentComponent).all()
 for component_relationship in component_relationships:
     print(component_relationship)
 
-import networkx as nx
-
 # Query all relationships
 relationships = pl.session.query(ComponentComponent).all()
 
@@ -214,21 +218,16 @@ for rel in relationships:
         G.add_node(child.id, name=child.name)
         G.add_edge(child.id, parent.id)
 
-print(G)
 
-import matplotlib.pyplot as plt
+# Show directed networkx graph in matpolotlib
 
-"""
-Visualizes the directed graph with node labels as UUIDs.
-"""
+
 plt.figure(figsize=(10, 8))
 
 pos = nx.spring_layout(G, seed=42)  # layout positions for nodes
 labels = nx.get_node_attributes(G, 'name')
 
-nx.draw(G, pos, with_labels=True, labels=labels, node_size=1500,
-        node_color="skyblue", font_size=10, font_weight="bold",
-        arrowsize=20, arrowstyle="->")
+nx.draw(G, pos, with_labels=True, labels=labels, node_size=1500, node_color="skyblue", font_size=10, font_weight="bold", arrowsize=20, arrowstyle="->")
 
 plt.title("Component Hierarchy Graph (Parent → Child)")
 plt.show()
@@ -313,70 +312,12 @@ graph_html_filepath = os.path.join(LIBRARY_DATA_FILES_DIR, "graph-" + str(uuid.u
 with open(graph_html_filepath, "w") as f:
     f.write(html_content)
 
-
-import webbrowser
-import os
-
 # Convert to absolute path
 path = os.path.abspath(graph_html_filepath)
 
-# Open in default browser
-webbrowser.open(f"file://{path}", new=1)
+# Open HTML graph in default browser tab
+webbrowser.open(f"file://{path}")
 
-import webview
-import json
-import os
-
-# --- Open in PyWebView window ---
+# Open HTML graph in PyWebView window
 webview.create_window("Component Graph Viewer", graph_html_filepath, width=800, height=600)
 webview.start()
-
-
-''' CLI to be moved to its own object OpenPartsLibraryCLI in cli.py
-'''
-'''
-command_history = []
-while True:    
-    os.system('cls')
-    print('************************************************************') 
-    print('*  OpenPartsLibrary                                        *')
-    print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
-    print('************************************************************') 
-    pl.display()
-    commands = 'add part', 'add supplier', 'modify part', 'modify supplier', 'remove part', 'remove supplier'
-    commands_str = ''
-    for command in commands:
-        commands_str = commands_str + '[' + str(command) + '] '
-    print('Commands: ' + commands_str)
-    print('Last commands:' + str([command for command in command_history][-5:]))
-    input_cmd = input('Enter command: ')
-    command_history.append(input_cmd)
-    if input_cmd in commands:
-        if input_cmd == 'add part':
-            pass
-        if input_cmd == 'add supplier':
-            pass
-        if input_cmd == 'modify part':
-            os.system('cls')
-            print('************************************************************') 
-            print('*  OpenPartsLibrary                                        *')
-            print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
-            print('************************************************************')
-            pl.display_parts()
-            selected_part = int(input('Enter part id: '))
-            pass
-        if input_cmd == 'modify supplier':
-            os.system('cls')
-            print('************************************************************') 
-            print('*  OpenPartsLibrary                                        *')
-            print('*  Aleksander Sadowski,  Nandana Gopala Krishnan (C) 2025  *')
-            print('************************************************************')
-            print()
-            pl.display_suppliers()
-            selected_part = int(input('Enter supplier id: '))
-            pass
-        if input_cmd == 'remove part':
-            pass
-        if input_cmd == 'remove supplier':
-            pass
-'''

@@ -4,6 +4,8 @@ import webbrowser
 import webview
 import json
 from datetime import datetime
+import zipfile
+
 
 import networkx as nx
 
@@ -388,10 +390,6 @@ for parent, child in G.edges():
 # Export to JSON
 with open(cylonedx_hbom_json_filepath, "w", encoding="utf-8") as f:
     json.dump(bom, f, indent=2)
-
-import os
-import zipfile
-from datetime import datetime
 
 # Create the output filename with current date and time
 output_filename = f"parts-{datetime.now().strftime('%Y%m%d-%H%M%S')}.oplp"

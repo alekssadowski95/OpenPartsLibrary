@@ -28,14 +28,14 @@ class PartsLibrary:
         # Print the components table to the terminal
         component_component_table = pd.read_sql_table(table_name="component_component", con=self.engine)
         print('ComponentComponent:')
-        print('==========')
+        print('===================')
         print(component_component_table)
         print('')
 
         # Print the components table to the terminal
         components_table = pd.read_sql_table(table_name="components", con=self.engine)
         print('Components:')
-        print('==========')
+        print('===========')
         print(components_table)
         print('')
 

@@ -181,9 +181,22 @@ supplier_2 = Supplier(
                 country = 'Deutschland'
 )
 
+# Create a new supplier
+supplier_3 = Supplier(
+                uuid = str(uuid.uuid4()),
+                name = 'ALSADO Inh. Aleksander Sadowski',
+                description = 'ALSADO is a small company in Sankt Augustin in Germany, which specializes in CAD and PDM/PLM software development. Recetnly ALSADO is also entering the hardward manufacturing market with its innovative fastening solution for safery applications.',                        
+                street = 'Liebfrauenstraße',
+                house_number = '31',
+                postal_code = '53757',
+                city = 'Sankt Augustin',
+                country = 'Deutschland'
+)
+
 # Add a all created parts to the parts library
 pl.session.add(supplier_1)
 pl.session.add(supplier_2)
+pl.session.add(supplier_3)
 supplier_1.parts.append(part_1)
 supplier_1.parts.append(part_2)
 supplier_2.parts.append(part_3)

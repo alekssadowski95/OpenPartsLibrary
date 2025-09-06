@@ -4,6 +4,7 @@ from datetime import datetime
 
 import uuid
 
+
 class Base(DeclarativeBase):
   pass
 
@@ -51,15 +52,6 @@ class File(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-class NumberRange(Base):
-    __tablename__ = 'number_ranges'
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(200), nullable=False)
-    description = Column(String(1000))
-    date_created = Column(DateTime, default=datetime.utcnow)
-
-#Supplier model
 class Supplier(Base):
     __tablename__ = 'suppliers'
 
@@ -80,4 +72,29 @@ class Supplier(Base):
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+    
+class Adress(Base):
+    __tablename__ = 'adresses'
+    
+class Component(Base):
+    __tablename__ = 'components'
+
+
+'''
+Relationship tables
+'''
+class ComponentComponent(Base):
+    __tablename__ = 'component_component'
+
+class PartSupplier(Base):
+    __tablename__ = 'part_supplier'
+
+class PartFile(Base):
+    __tablename__ = 'part_file'
+
+class SupplierAdress(Base):
+    __tablename__ = 'supplier_adress'
+
+class SupplierFile(Base):
+    __tablename__ = 'supplier_file'
     

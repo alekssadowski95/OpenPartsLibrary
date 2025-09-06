@@ -20,25 +20,43 @@ LIBRARY_DATA_FILES_DIR = os.path.join(LIBRARY_DATA_DIR, "files")
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_1_path = ''
+file_1_path = os.path.join(SAMPLE_DATA_DIR, 'M6x12-Screw.FCStd')
 file_1_uuid = str(uuid.uuid4())
-file_1_name = 'screw.FCStd'
+file_1_name = os.path.basename(file_1_path)
+file_1_ext = os.path.splitext(file_1_path)[1]  # includes the dot
+with open(file_1_path, "rb") as src_file:   # read in binary mode
+    data = src_file.read()
+    dst_path = os.path.join(LIBRARY_DATA_FILES_DIR, file_1_uuid + file_1_ext)
+    with open(dst_path, "wb") as dst_file:   # write in binary mode
+        dst_file.write(data)
 # Create a new file
 file_1 = File(uuid = file_1_uuid, name = file_1_name, description = 'This is a CAD file.')
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_2_path = ''
+file_2_path = os.path.join(SAMPLE_DATA_DIR, 'M6x20-Screw.FCStd')
 file_2_uuid = str(uuid.uuid4())
-file_2_name = 'screw.FCStd'
+file_2_name = os.path.basename(file_2_path)
+file_2_ext = os.path.splitext(file_2_path)[1]  # includes the dot
+with open(file_2_path, "rb") as src_file:   # read in binary mode
+    data = src_file.read()
+    dst_path = os.path.join(LIBRARY_DATA_FILES_DIR, file_2_uuid + file_2_ext)
+    with open(dst_path, "wb") as dst_file:   # write in binary mode
+        dst_file.write(data)
 # Create a new file
 file_2 = File(uuid = file_2_uuid, name = file_2_name, description = 'This is a CAD file.')
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_3_path = ''
+file_3_path = os.path.join(SAMPLE_DATA_DIR, 'M6x35-Screw.FCStd')
 file_3_uuid = str(uuid.uuid4())
-file_3_name = 'screw.FCStd'
+file_3_name = os.path.basename(file_3_path)
+file_3_ext = os.path.splitext(file_3_path)[1]  # includes the dot
+with open(file_3_path, "rb") as src_file:   # read in binary mode
+    data = src_file.read()
+    dst_path = os.path.join(LIBRARY_DATA_FILES_DIR, file_3_uuid + file_3_ext)
+    with open(dst_path, "wb") as dst_file:   # write in binary mode
+        dst_file.write(data)
 # Create a new file
 file_3 = File(uuid = file_3_uuid, name = file_3_name, description = 'This is a CAD file.')
 

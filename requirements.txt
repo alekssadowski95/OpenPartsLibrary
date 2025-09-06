@@ -5,3 +5,4 @@ datetime
 networkx
 matplotlib
 pyviz
+pywebview

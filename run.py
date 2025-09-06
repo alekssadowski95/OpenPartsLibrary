@@ -282,7 +282,7 @@ html_content = f"""
                     'text-halign': 'center',       // horizontal alignment
                     'text-margin-y': -10,          // offset above the node
                     'text-margin-x': 0,
-                    'font-size': '12px',
+                    'font-size': 'max(0.1vh, 0.1vh)',
                 }}
             }},
             {{ 
@@ -307,9 +307,29 @@ html_content = f"""
 </html>
 """
 
+graph_html_filepath = os.path.join(LIBRARY_DATA_FILES_DIR, "graph-" + str(uuid.uuid4()) + ".html")
+
 # Save HTML to file
-with open(os.path.join(LIBRARY_DATA_FILES_DIR, "graph-" + str(uuid.uuid4()) + ".html"), "w") as f:
+with open(graph_html_filepath, "w") as f:
     f.write(html_content)
+
+
+import webbrowser
+import os
+
+# Convert to absolute path
+path = os.path.abspath(graph_html_filepath)
+
+# Open in default browser
+webbrowser.open(f"file://{path}", new=1)
+
+import webview
+import json
+import os
+
+# --- Open in PyWebView window ---
+webview.create_window("Component Graph Viewer", graph_html_filepath, width=800, height=600)
+webview.start()
 
 
 ''' CLI to be moved to its own object OpenPartsLibraryCLI in cli.py

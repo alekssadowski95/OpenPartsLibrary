@@ -233,6 +233,85 @@ nx.draw(G, pos, with_labels=True, labels=labels, node_size=1500,
 plt.title("Component Hierarchy Graph (Parent → Child)")
 plt.show()
 
+# Convert NetworkX graph to Cytoscape.js format
+cy_data = {"nodes": [], "edges": []}
+
+for node_id, attrs in G.nodes(data=True):
+    cy_data["nodes"].append({
+        "data": {
+            "id": str(node_id), 
+            "label": attrs.get("name", str(node_id))
+        }
+    })
+
+for source, target in G.edges():
+    cy_data["edges"].append({
+        "data": {
+            "source": str(source), 
+            "target": str(target)
+        }
+    })
+
+import json
+
+# Create a self-contained HTML string
+html_content = f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>NetworkX Graph</title>
+<script src="https://unpkg.com/cytoscape/dist/cytoscape.min.js"></script>
+</head>
+<body style="width: 100vw; height: 100vh; margin: 0; padding: 0;">
+    <div id="cy" style="width: 100%; height: 100%; margin: 0; padding: 0;"></div>
+    <script>
+    var cyData = {json.dumps(cy_data)};
+    
+    var cy = cytoscape({{
+        container: document.getElementById('cy'),
+        elements: cyData.nodes.concat(cyData.edges),
+        style: [
+            {{ 
+                selector: 'node', 
+                style: {{
+                    'label': 'data(label)',
+                    'background-color': '#1f78b4',
+                    'color': '#000',               // label text color
+                    'text-valign': 'top',          // vertical alignment outside the node
+                    'text-halign': 'center',       // horizontal alignment
+                    'text-margin-y': -10,          // offset above the node
+                    'text-margin-x': 0,
+                    'font-size': '12px',
+                }}
+            }},
+            {{ 
+                selector: 'edge', 
+                style: {{
+                    'width': 2,
+                    'line-color': '#555',
+                    'target-arrow-color': '#555',
+                    'target-arrow-shape': 'triangle',
+                    'curve-style': 'bezier'
+                }}
+            }}
+        ],
+        layout: {{
+            name: 'breadthfirst',
+            directed: true,
+            padding: 10
+        }}
+    }});
+    </script>
+</body>
+</html>
+"""
+
+# Save HTML to file
+with open(os.path.join(LIBRARY_DATA_FILES_DIR, "graph-" + str(uuid.uuid4()) + ".html"), "w") as f:
+    f.write(html_content)
+
+
 ''' CLI to be moved to its own object OpenPartsLibraryCLI in cli.py
 '''
 '''

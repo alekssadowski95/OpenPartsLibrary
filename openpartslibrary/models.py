@@ -131,8 +131,6 @@ class Material(Base):
     # General information
     name = Column(String, nullable=False) # e.g. Steel plate 12 mm
     standard_number = Column(String) # Standardized number (e.g., 1.4301)
-    group = Column(String) # Material group (Steel, Aluminum, Polymer, etc.)
-    delivery_condition = Column(String) # Heat treated, annealed, quenched, etc.
     density = Column(Float) # g/cm³
 
     # Mechanical properties
@@ -141,11 +139,11 @@ class Material(Base):
     poisson_ratio = Column(Float) # Dimensionless
     tensile_strength = Column(Float) # Rm, MPa
     yield_strength = Column(Float) # Re or Rp0.2, MPa
+    fatigue_strength = Column(Float) # Endurance limit, MPa
     elongation = Column(Float) # Elongation at break, %
     hardness = Column(Float) # hardness value, scale also has to specified
     hardness_scale = Column(String) # e.g., HB, HV, HRC
     toughness = Column(Float) # Charpy impact energy, J
-    fatigue_strength = Column(Float) # Endurance limit, MPa
 
     # Physical properties
     thermal_conductivity = Column(Float) # W/mK
@@ -168,10 +166,10 @@ class Material(Base):
     temperature_min = Column(String) # Usable min temperature
     temperature_max = Column(String) # Usable max temperature
     wear_resistance = Column(String) # good, limited, poor
-    radiation_resistance = Column(String) # good, limited, poor
 
     # Economic aspects
-    price = Column(Float) # Price per kg
+    price = Column(Float) # Price per kg, currency also has to be specified separately
+    currency = Column(String) # Currency for the price per kg
     availability = Column(String) # available/ not available
     lead_time = Column(Integer) # lead time for delivery in days
 

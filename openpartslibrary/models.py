@@ -112,16 +112,6 @@ class Supplier(Base):
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
-class Adress(Base):
-    __tablename__ = 'adresses'
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
-    street = Column(String(200))
-    house_number = Column(String(20))
-    postal_code = Column(String(20))
-    city = Column(String(100))
-    country = Column(String(100))
 
 class Material(Base):
     __tablename__ = "materials"

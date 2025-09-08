@@ -51,7 +51,6 @@ class File(Base):
     part_id = Column(ForeignKey('parts.id'))
     part = relationship('Part', back_populates='cad_reference')
 
-
 class Part(Base):
     __tablename__ = 'parts'
 
@@ -111,7 +110,6 @@ class Supplier(Base):
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
-
 
 class Material(Base):
     __tablename__ = "materials"

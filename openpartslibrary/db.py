@@ -10,9 +10,12 @@ from .models import Base, Part, Supplier
 import uuid
 
 class PartsLibrary:
-    def __init__(self):
+    def __init__(self, db_path=None):
         import os
-        sqlite_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
+        if db_path is not None:
+            sqlite_path = db_path
+        else:
+            sqlite_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
         print(sqlite_path)
         self.engine = create_engine('sqlite:///' + sqlite_path)
 

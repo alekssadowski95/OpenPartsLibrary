@@ -14,7 +14,6 @@ import os
 
 class PartsLibrary:
     def __init__(self, db_path=None):
-        import os
         if db_path is not None:
             sqlite_path = db_path
         else:

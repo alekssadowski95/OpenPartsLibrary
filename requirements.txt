@@ -5,3 +5,5 @@ datetime
 networkx
 matplotlib
 pywebview
+tabulate
+flask-cors

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+</head>
+<body style="margin: 0; padding: 0; min-height: 100vh;">
+    <div class="row" style="margin: 0; padding: 0; min-height: 100vh;">
+        <!-- List -->
+        <div class="col-6 p-2 m-0" style="overflow-y: auto; overflow-x: hidden; min-height: 100vh; background-color: #ffffff; border: none; padding: 0; border-right: 1px solid lightgray;">
+            <h1 style="font-size: x-large;">Parts</h1>
+            <ul>
+            {% for part in parts %}
+                <li>{{ part }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        <!-- 3D View -->
+        <div class="col-6 p-0 m-0" style="min-height: 100vh; background-color: #f8f9fa;">
+            <iframe id="main-view-iframe" src="{{ url_for('viewer', filename='test.FCStd') }}" frameborder="0" style="min-width: 100%; min-height: 100vh; max-height: 100vh; margin: 0; display: block;"></iframe>
+        </div>
+    </div>
+
+</body>
+</html>

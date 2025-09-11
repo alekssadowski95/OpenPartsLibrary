@@ -239,7 +239,7 @@ class PartsLibrary:
         # Create a new part
         part_1 = Part(
                     uuid = str(uuid.uuid4()),
-                    number='SCRW-2001',
+                    number='SUP-200001',
                     name='Screw ISO 4762 M6x12',
                     description='A hexagon socket head cap screw for fastening metal parts',
                     revision="1",
@@ -263,7 +263,7 @@ class PartsLibrary:
         # Create a new part
         part_2 = Part(
                     uuid = str(uuid.uuid4()),
-                    number='SCRW-2002',
+                    number='SUP-200002',
                     name='Screw ISO 4762 M6x20',
                     description='A hexagon socket head cap screw for fastening metal parts',
                     revision="1",
@@ -287,7 +287,7 @@ class PartsLibrary:
         # Create a new part
         part_3 = Part(
                     uuid = str(uuid.uuid4()),
-                    number='SCRW-2003',
+                    number='SUP-200003',
                     name='Screw ISO 4762 M6x35',
                     description='A hexagon socket head cap screw for fastening metal parts',
                     revision="1",

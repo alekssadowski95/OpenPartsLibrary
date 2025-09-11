@@ -42,7 +42,7 @@ def all_parts():
 
 @app.route('/viewer/<filename>')
 def viewer(filename):
-    filename = 'M6x12-Screw.FCStd'
+    filename = 'base-machine-vise.FCStd'
     return render_template('viewer.html', filepath = url_for('static', filename='sample/' + filename))
 
 @app.route('/database')

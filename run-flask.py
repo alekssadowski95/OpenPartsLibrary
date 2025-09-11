@@ -32,7 +32,7 @@ pl = PartsLibrary(db_path = db_path)
 ''' Routes
 '''
 @app.route('/')
-def index():
+def home():
     # Clear the parts library
     pl.delete_all()
 
@@ -238,6 +238,22 @@ def index():
     
     return render_template('home.html', components_components = components_components, components = components, parts = parts, suppliers = suppliers, files = files)
 
+@app.route('/dash')
+def dash():
+    return render_template('base.html')
+
+@app.route('/all-parts')
+def all_parts():
+    components_components = pl.session.query(ComponentComponent).all()
+    components = pl.session.query(Component).all()
+    parts = pl.session.query(Part).all()
+    suppliers = pl.session.query(Supplier).all()
+    files = pl.session.query(File).all()
+    return render_template('all-parts.html', components_components = components_components, components = components, parts = parts, suppliers = suppliers, files = files)
+
+@app.route('/cad-view')
+def cad_view():
+    return render_template('cad-view.html')
 
 if __name__ == '__main__':
     app.run(host="localhost", port=5000, debug=True)

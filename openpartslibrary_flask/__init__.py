@@ -38,7 +38,7 @@ def home():
 @app.route('/all-parts')
 def all_parts():
     parts = pl.session.query(Part).all()
-    return render_template('all-parts.html', parts = parts)
+    return render_template('all-parts.html', parts = parts, len = len)
 
 @app.route('/viewer/<filename>')
 def viewer(filename):

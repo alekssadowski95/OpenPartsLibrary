@@ -11,12 +11,34 @@
     <div class="row" style="margin: 0; padding: 0; min-height: 100vh;">
         <!-- List -->
         <div class="col-6 p-2 m-0" style="overflow-y: auto; overflow-x: hidden; min-height: 100vh; background-color: #ffffff; border: none; padding: 0; border-right: 1px solid lightgray;">
-            <h1 style="font-size: x-large;">Parts</h1>
-            <ul>
-            {% for part in parts %}
-                <li>{{ part }}</li>
-            {% endfor %}
-            </ul>
+            <h1 class="mb-3" style="font-size: x-large;">Parts</h1>
+            <p class="mb-2">{{ len(parts) }} parts were found.</p>
+            <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Part number</th>
+                        <th>Creation date</th>
+                        <th>Material</th>
+                        <th>Unit price</th>
+                        <th>Currency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for part in parts %}
+                    <tr>
+                        <td>{{ part.name }}</td>
+                        <td>{{ part.description }}</td>
+                        <td>{{ part.number }}</td>
+                        <td>{{ part.date_created }}</td>
+                        <td>{{ part.material }}</td>
+                        <td>{{ part.unit_price }}</td>
+                        <td>{{ part.currency }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         <!-- 3D View -->
         <div class="col-6 p-0 m-0" style="min-height: 100vh; background-color: #f8f9fa;">

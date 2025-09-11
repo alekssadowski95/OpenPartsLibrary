@@ -10,10 +10,10 @@
 <body style="margin: 0; padding: 0; min-height: 100vh;">
     <div class="row" style="margin: 0; padding: 0; min-height: 100vh;">
         <!-- List -->
-        <div class="col-6 p-2 m-0" style="overflow-y: auto; overflow-x: hidden; min-height: 100vh; background-color: #ffffff; border: none; padding: 0; border-right: 1px solid lightgray;">
+        <div class="col-6 p-2 m-0" style="overflow-y: auto; overflow-x: scroll; min-height: 100vh; background-color: #ffffff; border: none; padding: 0; border-right: 1px solid lightgray;">
             <h1 class="mb-3" style="font-size: x-large;">Parts</h1>
             <p class="mb-2">{{ len(parts) }} parts were found.</p>
-            <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+            <table class="table table-striped table-responsive" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
                 <thead>
                     <tr>
                         <th>Name</th>
@@ -21,6 +21,7 @@
                         <th>Part number</th>
                         <th>Creation date</th>
                         <th>Material</th>
+                        <th>Supplier</th>
                         <th>Unit price</th>
                         <th>Currency</th>
                     </tr>
@@ -28,13 +29,14 @@
                 <tbody>
                     {% for part in parts %}
                     <tr>
-                        <td>{{ part.name }}</td>
-                        <td>{{ part.description }}</td>
-                        <td>{{ part.number }}</td>
-                        <td>{{ part.date_created }}</td>
-                        <td>{{ part.material }}</td>
-                        <td>{{ part.unit_price }}</td>
-                        <td>{{ part.currency }}</td>
+                        <td style="min-width: 120px;">{{ part.name }}</td>
+                        <td style="min-width: 300px;">{{ part.description }}</td>
+                        <td style="min-width: 120px;">{{ part.number }}</td>
+                        <td style="min-width: 120px;">{{ part.date_created }}</td>
+                        <td style="min-width: 120px;">{{ part.material }}</td>
+                        <td style="min-width: 180px;">{{ part.supplier.name }}</td>
+                        <td style="min-width: 100px;">{{ part.unit_price }}</td>
+                        <td style="min-width: 80px;">{{ part.currency }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

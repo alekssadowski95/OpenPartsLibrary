@@ -8,7 +8,7 @@ if __name__ == '__main__':
     window = webview.create_window('OpenPartsLibrary', app)
 
     try:
-        import pyi_splash
+        import pyi_splash # type: ignore
 
         # Close the splash screen. It does not matter when the call
         # to this function is made, the splash screen remains open until

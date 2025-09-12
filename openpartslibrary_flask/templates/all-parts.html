@@ -34,7 +34,7 @@
                 </thead>
                 <tbody>
                     {% for part in parts %}
-                    <tr>
+                    <tr class="part-row" data-model="{{ part.cad_reference.name }}">
                         <td style="min-width: 180px;">{{ part.name }}</td>
                         <td style="min-width: 340px;">{{ part.description }}</td>
                         <td style="min-width: 120px;">{{ part.number }}</td>
@@ -50,9 +50,27 @@
         </div>
         <!-- 3D View -->
         <div class="col-6 p-0 m-0" style="min-height: 100vh; background-color: rgb(61, 61, 61);">
-            <iframe id="main-view-iframe" src="{{ url_for('viewer', filename='test.FCStd') }}" frameborder="0" style="min-width: 100%; min-height: 100vh; max-height: 100vh; margin: 0; display: block;"></iframe>
+            <iframe id="main-view-iframe" src="{% if parts and parts[0].model_filename %}{{url_for('viewer', filename=parts[0].model_filename)}} {% endif %}" frameborder="0" style="min-width: 100%; min-height: 100vh; max-height: 100vh; margin: 0; display: block;"></iframe>
         </div>
     </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.part-row').forEach(function(row) {
+            row.addEventListener('click', function() {
+                var modelFile = this.getAttribute('data-model');
+                console.log("Clicked row, model filename: ", modelFile);
+                if (modelFile) {
+                    var iframe = document.getElementById('main-view-iframe');
+                    iframe.src = '/viewer/' + encodeURIComponent(modelFile);
+                    console.log("Set iframe src to: " , iframe.src);
+                }
+            });
+    
+    
+                
+        });
+    });
+    </script>
 
 </body>
 </html>

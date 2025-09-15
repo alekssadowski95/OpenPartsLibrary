@@ -4,6 +4,8 @@
 # OpenPartsLibrary
 **OpenPartsLibrary** is a Python library designed to serve as a centralized parts database for Bill of Materials (BOM), Product Data Management (PDM), and Product Lifecycle Management (PLM) systems. It provides structured data models and APIs for managing components, part metadata, sourcing, and lifecycle states. OpenPartsLibrary streamlines integration with engineering workflows, enabling consistent part usage and traceability across design and manufacturing processes.
 
+<img src="./openpartslibrary/images/openpartslibrary-screws-example.png" alt="OpenPartsLibrary Example with the graphical user inerface and the webapp"></img>
+
 ## Quickstart
 
 Install the openpartslibrary via pip

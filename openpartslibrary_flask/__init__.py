@@ -16,8 +16,11 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 #Function to copy sample files to data directory
 import shutil
 def copy_sample_files():
-    sample_dir = os.path.join(app.static_folder, "sample")
+    sample_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'openpartslibrary', 'sample'))
     print(f"Looking for model files in : {sample_dir}" )
+    if not os.path.isdir(sample_dir):
+        print(f"Sample directory does not exist: {sample_dir}")
+        return
     for fname in os.listdir(sample_dir):
         print(f"Found sample file: {fname}")
         if fname.endswith('.FCStd'):

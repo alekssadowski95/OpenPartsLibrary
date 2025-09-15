@@ -67,7 +67,9 @@ def all_parts():
 
 @app.route('/viewer/<filename>')
 def viewer(filename):
-    return render_template('viewer.html', filepath = url_for('serve_model_file', filename=filename))
+    filepath = url_for('serve_model_file', filename=filename)
+    print(filepath)
+    return render_template('viewer.html', filepath = filepath)
 
 #Add route to serve model files
 @app.route('/data/models/<filename>')

@@ -249,6 +249,7 @@ class PartsLibrary:
         self.session.commit()
 
         fcstd_file_names = [
+            'M6x8-Screw.FCStd',
             'M6x12-Screw.FCStd',
             'M6x14-Screw.FCStd',
             'M6x16-Screw.FCStd',
@@ -256,8 +257,12 @@ class PartsLibrary:
             'M6x25-Screw.FCStd',
             'M6x30-Screw.FCStd',
             'M6x35-Screw.FCStd',
+            'M6x40-Screw.FCStd',
+            'M6x45-Screw.FCStd',
+            'M6x50-Screw.FCStd',
+            'M6x55-Screw.FCStd'
         ]
-
+        part_number = 200001
         for fcstd_file_name in fcstd_file_names:
             # Load file and original name, change name to uuid and save it in the data/files dir
             # ..
@@ -275,8 +280,8 @@ class PartsLibrary:
 
             part = Part(
                     uuid = str(uuid.uuid4()),
-                    number='SUP-200001',
-                    name='Screw ISO 4762 ' + fcstd_file_name,
+                    number='SUP-' + str(part_number),
+                    name='Screw ISO 4762 ' + os.path.splitext(file_name)[0],
                     description='A hexagon socket head cap screw for fastening metal parts',
                     revision="1",
                     lifecycle_state="In Work",
@@ -304,6 +309,8 @@ class PartsLibrary:
             component = Component(uuid = str(uuid.uuid4()), part = part, name = part.name)
             self.session.add(component)
             self.session.commit()
+
+            part_number = part_number + 1
       
 
         component_5 = Component(uuid = str(uuid.uuid4()), name = 'Screw assembly')

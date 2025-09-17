@@ -13,6 +13,10 @@
         background-color: #d3d3d3;
         cursor: pointer;
     }
+    /* Highlight for selected row */
+    .table-hover tbody tr.selected-row > td{
+        background-color: #a9a9a9 !important;
+    }
     </style>
     <div class="row" style="margin: 0; padding: 0; min-height: 100vh; max-height: 100vh;">
         <!-- List -->
@@ -57,6 +61,12 @@
     document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('.part-row').forEach(function(row) {
             row.addEventListener('click', function() {
+                // Remove 'selected-row' class from all rows
+                document.querySelectorAll('.part-row').forEach(function(r) {
+                    r.classList.remove('selected-row');
+                });
+                // Add 'selected-row' class to the clicked row
+                row.classList.add('selected-row');
                 var modelFile = this.getAttribute('data-model');
                 console.log("Clicked row, model filename: ", modelFile);
                 if (modelFile) {
@@ -65,8 +75,6 @@
                     console.log("Set iframe src to: " , iframe.src);
                 }
             });
-    
-    
                 
         });
     });

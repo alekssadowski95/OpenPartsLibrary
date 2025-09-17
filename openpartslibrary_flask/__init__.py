@@ -10,8 +10,8 @@ from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
 
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-MODELS_DIR = os.path.join(STATIC_DIR, 'cad')
-os.makedirs(MODELS_DIR, exist_ok=True)
+CAD_DIR = os.path.join(STATIC_DIR, 'data','cad')
+os.makedirs(CAD_DIR, exist_ok=True)
 
 #Function to copy sample files to data directory
 # import shutil
@@ -67,14 +67,14 @@ def all_parts():
 
 @app.route('/viewer/<filename>')
 def viewer(filename):
-    filepath = url_for('static', filename=f'cad/{filename}')
+    filepath = url_for('static', filename=f'data/cad/{filename}')
     print(f"Serving file to viewer : {filepath}")
     return render_template('viewer.html', filepath = filepath)
 
 #Add route to serve model files
 @app.route('/static/cad/<filename>')
 def serve_model_file(filename):
-    return send_from_directory(MODELS_DIR, filename)
+    return send_from_directory(CAD_DIR, filename)
 
 @app.route('/database')
 def database():

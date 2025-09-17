@@ -54,7 +54,7 @@
         </div>
         <!-- 3D View -->
         <div class="col-6 p-0 m-0" style="min-height: 100vh; max-height: 100vh; background-color: rgb(60, 60, 60);">
-            <iframe id="main-view-iframe" src="{% if parts and parts[0].model_filename %}{{url_for('viewer', filename=parts[0].model_filename)}} {% endif %}" frameborder="0" style="min-width: 100%; min-height: 100vh; max-height: 100vh; margin: 0; display: block;"></iframe>
+            <iframe id="main-view-iframe" src="{% if parts and parts[0].model_filename %}/viewer/{{ parts[0].model_filename}} {% endif %}" frameborder="0" style="min-width: 100%; min-height: 100vh; max-height: 100vh; margin: 0; display: block;"></iframe>
         </div>
     </div>
     <script>

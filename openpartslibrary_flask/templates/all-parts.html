@@ -17,8 +17,13 @@
     .table-hover tbody tr.selected-row > td{
         background-color: #cfe2ff !important;
     }
+    .prevent-select {
+        -webkit-user-select: none; /* Safari */
+        -ms-user-select: none; /* IE 10 and IE 11 */
+        user-select: none; /* Standard syntax */
+    }
     </style>
-    <div class="row" style="margin: 0; padding: 0; min-height: 100vh; max-height: 100vh;">
+    <div class="row prevent-select" style="margin: 0; padding: 0; min-height: 100vh; max-height: 100vh;">
         <!-- List -->
         <div class="col-6 m-0" style="overflow-y: scroll; overflow-x: scroll; min-height: 100vh; max-height: 100vh; background-color: #f5f5f5; border: none; padding: 0; border-right: 1px solid lightgray;">
             <h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Parts</h1>
@@ -27,7 +32,6 @@
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Description</th>
                         <th>Part number</th>
                         <th>Material</th>
                         <th>Quantity</th>
@@ -40,7 +44,6 @@
                     {% for part in parts %}
                     <tr class="part-row" data-model="{{ part.cad_reference.name }}">
                         <td style="min-width: 180px;">{{ part.name }}</td>
-                        <td style="min-width: 300px;">{{ part.description }}</td>
                         <td style="min-width: 120px;">{{ part.number }}</td>
                         <td style="min-width: 120px;">{{ part.material }}</td>
                         <td style="min-width: 80px;">{{ part.quantity }}</td>

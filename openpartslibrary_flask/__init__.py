@@ -30,7 +30,7 @@ app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 
 # Initialize the parts library
 db_path = os.path.join(app.static_folder, 'data', 'parts.db')
-pl = PartsLibrary(db_path = db_path)
+pl = PartsLibrary(db_path = db_path, data_dir_path = DATA_DIR)
 
 # Function to copy sample files to data directory
 import shutil

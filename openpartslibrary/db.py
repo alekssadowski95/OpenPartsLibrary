@@ -13,18 +13,30 @@ import os
 
 
 class PartsLibrary:
-    def __init__(self, db_path=None):
+    def __init__(self, db_path = None, data_dir_path = None):
+        # Set database path
         if db_path is not None:
-            sqlite_path = db_path
+            self.db_path = db_path
         else:
-            sqlite_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
-        print(sqlite_path)
-        self.engine = create_engine('sqlite:///' + sqlite_path)
-
+            self.db_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
+        
+        # Initialize the database and its connection 
+        self.engine = create_engine('sqlite:///' + self.db_path)
         Base.metadata.create_all(self.engine)
-
         self.session_factory = sessionmaker(bind=self.engine)
         self.session = self.session_factory()
+
+        # Set reference files directory path
+        if data_dir_path is not None:
+            self.data_dir_path = data_dir_path
+        else:
+            self.data_dir_path = os.path.join(os.path.dirname(__file__), 'data') 
+        
+        self.data_cad_dir_path = os.path.join(self.data_dir_path, "cad")
+        self.data_files_dir_path = os.path.join(self.data_dir_path, "files")
+
+        self.sample_data_dir_path = os.path.join(os.path.dirname(__file__), 'sample') 
+
 
     def display(self):
         # Print the components table to the terminal
@@ -98,11 +110,9 @@ class PartsLibrary:
         self.session.query(Supplier).delete()
         self.session.query(File).delete()
         self.session.commit()
-
-        directory_to_empty = os.path.join(os.path.dirname(__file__), 'data', 'files')
         
-        for filename in os.listdir(directory_to_empty):
-            filepath = os.path.join(directory_to_empty, filename)
+        for filename in os.listdir(self.data_cad_dir_path):
+            filepath = os.path.join(self.data_cad_dir_path, filename)
             if os.path.isfile(filepath) and filename != "README.md":
                 os.remove(filepath)
                 print(f"[ INFO ] Deleted: {filename}")
@@ -188,12 +198,6 @@ class PartsLibrary:
         print(tabulate(suppliers_table, headers='keys', tablefmt='github'))
 
     def add_sample_data(self):
-        # Get the paths for this project
-        PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
-        SAMPLE_DATA_DIR = os.path.join(PROJECT_DIR, "sample")
-        LIBRARY_DATA_DIR = os.path.join(PROJECT_DIR, "data")
-        LIBRARY_DATA_FILES_DIR = os.path.join(LIBRARY_DATA_DIR, "files")
-
         # Create a new supplier
         supplier_1 = Supplier(
                         uuid = str(uuid.uuid4()),
@@ -249,32 +253,34 @@ class PartsLibrary:
         self.session.commit()
 
         fcstd_file_names = [
-            'M6x8-Screw.FCStd',
-            'M6x12-Screw.FCStd',
-            'M6x14-Screw.FCStd',
-            'M6x16-Screw.FCStd',
-            'M6x20-Screw.FCStd',
-            'M6x25-Screw.FCStd',
-            'M6x30-Screw.FCStd',
-            'M6x35-Screw.FCStd',
-            'M6x40-Screw.FCStd',
-            'M6x45-Screw.FCStd',
-            'M6x50-Screw.FCStd',
-            'M6x55-Screw.FCStd'
+            ('M6x8-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x12-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x14-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x16-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x20-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x25-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x30-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x35-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x40-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x45-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x50-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x55-Screw.FCStd', str(uuid.uuid4()))
         ]
+        
         part_number = 200001
         for fcstd_file_name in fcstd_file_names:
             # Load file and original name, change name to uuid and save it in the data/files dir
             # ..
-            file_path = os.path.join(SAMPLE_DATA_DIR, fcstd_file_name)
-            file_uuid = str(uuid.uuid4())
+            file_path = os.path.join(self.sample_data_dir_path, fcstd_file_name[0])
+            file_uuid = fcstd_file_name[1]
             file_name = os.path.basename(file_path)
             file_ext = os.path.splitext(file_path)[1]  # includes the dot
             with open(file_path, "rb") as src_file:   # read in binary mode
                 data = src_file.read()
-                dst_path = os.path.join(LIBRARY_DATA_FILES_DIR, file_uuid + file_ext)
+                dst_path = os.path.join(self.data_cad_dir_path, file_uuid + file_ext)
                 with open(dst_path, "wb") as dst_file:   # write in binary mode
                     dst_file.write(data)
+            
             # Create a new file
             file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
 

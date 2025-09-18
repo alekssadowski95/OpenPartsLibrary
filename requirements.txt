@@ -7,3 +7,4 @@ matplotlib
 pywebview
 tabulate
 flask-cors
+sphinx

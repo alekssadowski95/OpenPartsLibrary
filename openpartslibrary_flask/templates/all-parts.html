@@ -24,8 +24,27 @@
         }
     </style>
     <div class="container-fluid px-1 py-1" style="margin: 0; padding: 0; min-height: 40px; max-height: 40px; background-color: #f5f5f5; border-bottom: 1px solid lightgray;">
-        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('create_part') }}" style="font-size: smaller;">
-            <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New part</a>
+        <div class="row p-0 m-0">
+            <div class="col-md-3 p-0 m-0">
+                <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('create_part') }}" style="font-size: smaller;">
+                    <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New part
+                </a>
+            </div>
+            <div class="col-md-6 col-md-auto mb-2 justify-content-center p-0 m-0">
+            </div>
+            <div class="col-md-3 text-end p-0 m-0" >
+                <a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
+                </a>
+                <a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-sidebar-reverse.svg') }}" width="16" height="16">
+                </a>
+                <a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/share.svg') }}" width="16" height="16">
+                </a>
+            </div>
+        </div>
+        
     </div>
     <div class="row prevent-select" style="margin: 0; padding: 0; min-height: calc(100vh - 41px); max-height: calc(100vh - 41px);">
         <!-- List -->

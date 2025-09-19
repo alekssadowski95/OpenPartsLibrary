@@ -8,3 +8,5 @@ pywebview
 tabulate
 flask-cors
 sphinx
+Flask-WTF
+WTForms

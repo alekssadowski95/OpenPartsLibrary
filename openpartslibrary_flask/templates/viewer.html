@@ -21,9 +21,10 @@ window.addEventListener ('load', () => {
     let viewer = new OV.EmbeddedViewer (parentDiv, {
         projectionMode: OV.ProjectionMode.Orthographic,
         backgroundColor : new OV.RGBAColor (60, 60, 60, 255),
-        defaultColor : new OV.RGBColor (200, 200, 205),
+
         edgeSettings : new OV.EdgeSettings (false, new OV.RGBColor (58, 58, 58), 1)
     });
+    // Add to viewer:       defaultColor : new OV.RGBColor (200, 200, 205),
 
     // load a model providing model urls
     viewer.LoadModelFromUrlList ([

@@ -44,7 +44,7 @@
         }
 
         .input-search-header::placeholder {
-            color: rgb(49, 102, 171);
+            color: rgb(31, 82, 148);
             opacity: 1; /* Firefox */
         }
 
@@ -57,8 +57,8 @@
 </head>
 <body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0;">
     <!-- Header -->
-    <div class="row mx-0" style="height: 52px; background-color: #094492; ">
-        <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid rgb(9, 58, 122);" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
+    <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
+        <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
             <div class="col-md-3 mb-2 mb-md-0">
                 <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
                     <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px;"><use xlink:href="#bootstrap"></use></img>
@@ -67,7 +67,7 @@
             </div>
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <form role="search">
-                    <input type="search" style="width: 380px; height: 36px; background-color:rgb(8, 59, 125); border-color: rgb(34, 85, 152);" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
+                    <input type="search" style="width: 380px; height: 36px; background-color: #01234e; border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
                 </form>
             </ul>
             <div class="col-md-3 text-end">
@@ -83,7 +83,7 @@
                 <ul style="list-style: none; padding-left: 8px; padding-right: 8px; margin: 0; margin-top: 16px;">
                     <li>
                         <button class="btn btn-light text-muted p-0 m-0" style="height: 40px; width: 40px; background-color: #042c61; border-color: #042c61;" onclick="showAllParts()">
-                            <img src="{{ url_for('static', filename='menu-white.png') }}" style="height: 20px; width: 20px;" alt=""></img>
+                            <img src="{{ url_for('static', filename='menu-white.png') }}" style="height: 18px; width: 18px;" alt=""></img>
                             <span style="color: white; font-size: smaller;">Parts</span>
                         </button>
                     </li>
@@ -96,10 +96,10 @@
         </div>
     </div>
     <!-- Bottom bar -->
-    <div style="min-height: 27px; max-height: 27px; margin: 0px;background-color:rgb(255, 255, 255); color: rgb(0, 0, 0); border-top: 1px solid lightgray;">
+    <div style="min-height: 27px; max-height: 27px; margin: 0px; background-color:#042c61; color: white; ">
         <span style="font-size: 11px; margin: 0px; padding-left: 8px;">
             <span>Copyright (C) 2024 - 2025. OpenPartsLibrary by </span>
-            <a style="color: rgb(0, 0, 0);" href="https://www.alsado.de">www.alsado.de</a>
+            <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
         </span>
     </div>
     <script>

@@ -44,12 +44,12 @@
         }
 
         .input-search-header::placeholder {
-            color: rgb(31, 82, 148);
+            color: rgb(15, 62, 124);
             opacity: 1; /* Firefox */
         }
 
         .input-search-header::-ms-input-placeholder { /* Edge 12 -18 */
-            color: rgb(49, 102, 171);
+            color: rgb(15, 62, 124);
         }
     </style>
 
@@ -61,13 +61,13 @@
         <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
             <div class="col-md-3 mb-2 mb-md-0">
                 <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
-                    <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px;"><use xlink:href="#bootstrap"></use></img>
+                    <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
                     <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
                 </a>
             </div>
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <form role="search">
-                    <input type="search" style="width: 380px; height: 36px; background-color: #01234e; border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
+                    <input type="search" style="width: 380px; height: 36px; background-color: #011d41; border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
                 </form>
             </ul>
             <div class="col-md-3 text-end">

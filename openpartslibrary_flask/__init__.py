@@ -32,7 +32,7 @@ app.config['APP_PATH'] = os.path.dirname(os.path.abspath(__file__))
 app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 
 # Application paths
-app.config['APPLICATION_PATH_FREECAD'] = os.path.abspath('C:/Program Files/FreeCAD 1.0.1/bin/freecad.exe')
+app.config['APPLICATION_PATH_FREECAD'] = 'C:/Users/Work/Documents/Github/OpenPartsLibrary/apps/FreeCAD_1.0.2-conda-Windows-x86_64-py311/bin/freecad.exe'
 print(app.config['APPLICATION_PATH_FREECAD'])
 
 # Initialize the parts library
@@ -139,7 +139,7 @@ def create_part():
 @app.route('/part_view/<uuid>')
 def part_view(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR + part.cad_reference.uuid + '.FCStd'))
+    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_reference.uuid + '.FCStd'))
     print(part_cad_filepath)
     return render_template('part.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
 
@@ -168,8 +168,8 @@ def serve_model_file(filename):
 
 @app.route('/run-freecad-gui/<filepath>')
 def run_freecad_gui(filepath):
-    os.system('start "" ' + filepath)
-    return redirect(url_for('parts'))
+    os.system('start ' + app.config['APPLICATION_PATH_FREECAD'] + ' ' + filepath)
+    return ('', 204)
 
 @app.route('/database')
 def database():

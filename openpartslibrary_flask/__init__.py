@@ -5,6 +5,8 @@ from flask import Flask
 from flask import render_template, url_for, send_from_directory, redirect, request
 from werkzeug.utils import secure_filename
 
+from sqlalchemy import or_
+
 from flask_cors import CORS
 
 from openpartslibrary.db import PartsLibrary
@@ -33,7 +35,9 @@ app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 
 # Application paths
 app.config['APPLICATION_PATH_FREECAD'] = 'C:/Users/Work/Documents/Github/OpenPartsLibrary/apps/FreeCAD_1.0.2-conda-Windows-x86_64-py311/bin/freecad.exe'
-print(app.config['APPLICATION_PATH_FREECAD'])
+app.config['APPLICATION_PATH_LIBREOFFICE'] = None
+app.config['APPLICATION_PATH_PREPOMAX'] = None
+app.config['APPLICATION_PATH_KICAD'] = None
 
 # Initialize the parts library
 db_path = os.path.join(app.static_folder, 'data', 'parts.db')
@@ -76,7 +80,7 @@ def home():
 
 @app.route('/parts')
 def parts():
-    parts = pl.session.query(Part).all()
+    parts = pl.session.query(Part).limit(1000).all()
     return render_template('parts.html', parts = parts, len = len)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
@@ -148,7 +152,9 @@ def update_part(uuid):
     return redirect(url_for('parts'))
 
 @app.route('/delete-part/<uuid>', methods = ['GET', 'POST'])
-def delete_part(uuid):
+def archive_part(uuid):
+    part = pl.session.query(Part).filter_by(uuid = uuid).first()
+    part.is_archived = True
     return redirect(url_for('parts'))
 
 @app.route('/create-file', methods = ['GET', 'POST'])
@@ -169,6 +175,18 @@ def serve_model_file(filename):
 @app.route('/run-freecad-gui/<filepath>')
 def run_freecad_gui(filepath):
     os.system('start ' + app.config['APPLICATION_PATH_FREECAD'] + ' ' + filepath)
+    return ('', 204)
+
+@app.route('/run-libreoffice-gui/<filepath>')
+def run_libreoffice_gui(filepath):
+    return ('', 204)
+
+@app.route('/run-prepomax-gui/<filepath>')
+def run_prepomax_gui(filepath):
+    return ('', 204)
+
+@app.route('/run-kicad-gui/<filepath>')
+def run_kicad_gui(filepath):
     return ('', 204)
 
 @app.route('/database')

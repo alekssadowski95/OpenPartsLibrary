@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint, Boolean
 from sqlalchemy.orm import DeclarativeBase, relationship, backref
 from datetime import datetime
 
@@ -76,6 +76,7 @@ class Part(Base):
     manufacturer_number = Column(String(100))
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
+    is_archived = Column(Boolean, default=False)
 
     cad_reference = relationship('File', back_populates='part', uselist=False)
 

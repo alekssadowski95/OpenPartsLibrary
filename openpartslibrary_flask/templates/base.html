@@ -30,12 +30,17 @@
             outline: 1px;
         }
 
+        .input-search-header {
+            color: rgb(15, 62, 124) !important;
+        }
+
         .input-search-header:focus {
             background-color: white !important;
+            color: rgb(0, 0, 0) !important;
         }
 
         .input-search-header:focus::placeholder {
-            color: rgb(189, 189, 189) !important;
+            color: rgb(15, 62, 124) !important;
             opacity: 1; /* Firefox */
         }
 
@@ -66,8 +71,8 @@
                 </a>
             </div>
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
-                <form role="search">
-                    <input type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
+                <form id="search-form" role="search">
+                    <input name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
                 </form>
             </ul>
             <div class="col-md-3 text-end">
@@ -103,10 +108,26 @@
         </span>
     </div>
     <script>
-
         function showAllParts(){
             document.getElementById("main-view-iframe").src = "{{ url_for('parts') }}";
         }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("search-form");
+            const iframe = document.getElementById("main-view-iframe");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // stop page reload
+
+                // Find the input by its name attribute
+                const queryInput = form.querySelector('[name="search_query"]');
+                const value = queryInput.value.trim();
+
+                if (value) {
+                    iframe.src = "{{ url_for('parts') }}?search_query=" + value; // change the iframe src
+                }
+            });
+        });
     </script>
     {% block scripts %}{% endblock scripts %}
 </body>

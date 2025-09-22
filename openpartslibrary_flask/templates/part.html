@@ -51,7 +51,7 @@
                     <a type="button" class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('archive_part', uuid = part.uuid) }}"><i class="bi-x-lg" style="padding-right: 6px;"></i>Archive</a>
                 </nobr>
             </div>
-            <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+            <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
                 <tbody>
                     <tr>
                         <td>UUID</td>
@@ -80,6 +80,10 @@
                     <tr>
                         <td>Supplier</td>
                         <td>{{ part.supplier.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Unit price</td>
+                        <td>{{ part.unit_price }} {{ part.currency }}</td>
                     </tr>
                 </tbody>
             </table>  

@@ -264,7 +264,14 @@ class PartsLibrary:
             ('M6x40-Screw.FCStd', str(uuid.uuid4())),
             ('M6x45-Screw.FCStd', str(uuid.uuid4())),
             ('M6x50-Screw.FCStd', str(uuid.uuid4())),
-            ('M6x55-Screw.FCStd', str(uuid.uuid4()))
+            ('M6x55-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x60-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x65-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x70-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x75-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x80-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x85-Screw.FCStd', str(uuid.uuid4())),
+            ('M6x90-Screw.FCStd', str(uuid.uuid4()))
         ]
         
         part_number = 200001

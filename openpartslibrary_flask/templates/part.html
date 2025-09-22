@@ -44,7 +44,7 @@
             <h1 class="mb-3">{{ part.name }}</h1>
             <div class="mb-2">
                 <nobr>
-                    <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="#"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit CAD</a>
+                    <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="{{ url_for('run_freecad_gui', filepath = part_cad_filepath) }}"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit CAD</a>
                     <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="#"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit Info</a>
                     <a class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('delete_part', uuid = part.uuid) }}"><i class="bi-x-lg" style="padding-right: 6px;"></i>Delete</a>
                 </nobr>

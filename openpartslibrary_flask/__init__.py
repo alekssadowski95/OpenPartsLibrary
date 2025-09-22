@@ -31,6 +31,10 @@ app.config['APP_PATH'] = os.path.dirname(os.path.abspath(__file__))
 # Add secret key
 app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 
+# Application paths
+app.config['APPLICATION_PATH_FREECAD'] = os.path.abspath('C:/Program Files/FreeCAD 1.0.1/bin/freecad.exe')
+print(app.config['APPLICATION_PATH_FREECAD'])
+
 # Initialize the parts library
 db_path = os.path.join(app.static_folder, 'data', 'parts.db')
 pl = PartsLibrary(db_path = db_path, data_dir_path = DATA_DIR)
@@ -135,7 +139,9 @@ def create_part():
 @app.route('/part_view/<uuid>')
 def part_view(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    return render_template('part.html', part = part, len = len) 
+    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR + part.cad_reference.uuid + '.FCStd'))
+    print(part_cad_filepath)
+    return render_template('part.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
 
 @app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
 def update_part(uuid):
@@ -159,6 +165,11 @@ def viewer(filename):
 @app.route('/static/cad/<filename>')
 def serve_model_file(filename):
     return send_from_directory(CAD_DIR, filename)
+
+@app.route('/run-freecad-gui/<filepath>')
+def run_freecad_gui(filepath):
+    os.system('start "" ' + filepath)
+    return redirect(url_for('parts'))
 
 @app.route('/database')
 def database():

@@ -1,6 +1,8 @@
 openpartslibrary_flask/static/data/*
 openpartslibrary/data/*
 
+apps/*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

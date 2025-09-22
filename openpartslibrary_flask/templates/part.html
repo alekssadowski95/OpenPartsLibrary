@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='nut-bolt.png') }}">
+</head>
+<body class="p-0 m-0">
+<!-- Function bar -->
+<div class="container-fluid px-1 py-1" style="margin: 0; padding: 0; min-height: 40px; max-height: 40px; background-color: #f5f5f5; border-bottom: 1px solid lightgray;">
+    <div class="row p-0 m-0">
+        <div class="col-md-3 p-0 m-0">
+            <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('parts') }}" style="font-size: smaller;">
+                <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/arrow-left-short.svg') }}" width="20" height="20">All parts
+            </a>
+        </div>
+        <div class="col-md-6 col-md-auto mb-2 justify-content-center p-0 m-0">
+            <!-- empty -->
+        </div>
+        <div class="col-md-3 text-end p-0 m-0" >
+            <a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+                <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
+            </a>
+            <a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+                <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
+            </a>
+        </div>
+    </div>
+</div>
+<div class="container-fluid p-3">
+    <div class="row mt-3">
+        <div class="col-4">
+            <iframe style="min-width: 100%; min-height: max(100%, 400px);" src="{{ url_for('viewer', filename = part.uuid + '.FCStd') }}" frameborder="1"></iframe>
+        </div>
+        <div class="col-8">
+            <p>Part</p>
+            <h1 class="mb-3">{{ part.name }}</h1>
+            <div class="mb-2">
+                <nobr>
+                    <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="#"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit CAD</a>
+                    <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="#"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit Info</a>
+                    <a class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('delete_part', uuid = part.uuid) }}"><i class="bi-x-lg" style="padding-right: 6px;"></i>Delete</a>
+                </nobr>
+            </div>
+            <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+                <tbody>
+                    <tr>
+                        <td>UUID</td>
+                        <td>{{ part.uuid }}</td>
+                    </tr>
+                    <tr>
+                        <td>Name</td>
+                        <td>{{ part.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Beschreibung</td>
+                        <td>{{ part.description }}</td>
+                    </tr>
+                    <tr>
+                        <td>Nummer</td>
+                        <td>{{ part.number }}</td>
+                    </tr>
+                    <tr>
+                        <td>Status</td>
+                        <td>{{ part.lifecycle_state }}</td>
+                    </tr>
+                    <tr>
+                        <td>Date created</td>
+                        <td>{{ part.date_created }}</td>
+                    </tr>
+                </tbody>
+            </table>  
+        </div>
+    </div>
+    <h2 class="pt-4">Files</h2>
+    <div class="pt-3 mb-2">
+        <nobr>
+            <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('create_file') }}"><i class="bi-plus-lg" style="padding-right: 6px;"></i>Add file</a>
+        </nobr>
+    </div>
+    <p class="mb-2">{{ len(files) }} files found.</p>
+    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last modified</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>{{ file.name }}</td>
+                <td>{{ file.date_created }}</td>
+                <td>
+                    <nobr>
+                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('read_file', file_uuid = file.uuid) }}"><i class="bi-eye"></i></a>
+                        <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('update_file', file_uuid = file.uuid) }}"><i class="bi-pencil"></i></a>
+                        <a class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('delete_file', file_uuid = file.uuid) }}"><i class="bi-x-lg"></i></a>
+                    </nobr>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+    
+</body>
+</html>
+

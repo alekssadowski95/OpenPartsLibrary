@@ -70,10 +70,10 @@ pl.add_sample_data()
 def home():
     return render_template('base.html')
 
-@app.route('/all-parts')
-def all_parts():
+@app.route('/parts')
+def parts():
     parts = pl.session.query(Part).all()
-    return render_template('all-parts.html', parts = parts, len = len)
+    return render_template('parts.html', parts = parts, len = len)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():
@@ -132,9 +132,22 @@ def create_part():
         return redirect(url_for('all_parts'))
     return render_template('create-part.html', form = form) 
 
-@app.route('/search-parts/<search_query>')
-def search_parts(search_query):
-    return render_template('search-parts.html') 
+@app.route('/part_view/<uuid>')
+def part_view(uuid):
+    part = pl.session.query(Part).filter_by(uuid = uuid).first()
+    return render_template('part.html', part = part, len = len) 
+
+@app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
+def update_part(uuid):
+    return redirect(url_for('parts'))
+
+@app.route('/delete-part/<uuid>', methods = ['GET', 'POST'])
+def delete_part(uuid):
+    return redirect(url_for('parts'))
+
+@app.route('/create-file', methods = ['GET', 'POST'])
+def create_file():
+    return redirect(url_for('parts'))
 
 @app.route('/viewer/<filename>')
 def viewer(filename):

@@ -92,7 +92,7 @@
         </div>
         <!-- Main view -->
         <div class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); background-color: #f8f9fa;">
-            <iframe id="main-view-iframe" src="{{ url_for('all_parts') }}" frameborder="0" style="min-width: 100%; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); margin: 0; display: block;"></iframe>
+            <iframe id="main-view-iframe" src="{{ url_for('parts') }}" frameborder="0" style="min-width: 100%; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); margin: 0; display: block;"></iframe>
         </div>
     </div>
     <!-- Bottom bar -->
@@ -105,7 +105,7 @@
     <script>
 
         function showAllParts(){
-            document.getElementById("main-view-iframe").src = "{{ url_for('all_parts') }}";
+            document.getElementById("main-view-iframe").src = "{{ url_for('parts') }}";
         }
     </script>
     {% block scripts %}{% endblock scripts %}

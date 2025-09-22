@@ -35,9 +35,9 @@
     </div>
 </div>
 <div class="container-fluid p-3">
-    <div class="row mt-3">
+    <div class="row">
         <div class="col-4">
-            <iframe style="min-width: 100%; min-height: max(100%, 400px);" src="{{ url_for('viewer', filename = part.uuid + '.FCStd') }}" frameborder="1"></iframe>
+            <iframe style="min-width: 100%; min-height: max(100%, 400px);" src="{{ url_for('viewer', filename = part.cad_reference.uuid + '.FCStd') }}" frameborder="1"></iframe>
         </div>
         <div class="col-8">
             <p>Part</p>

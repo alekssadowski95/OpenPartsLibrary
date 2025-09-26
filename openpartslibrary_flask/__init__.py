@@ -2,7 +2,7 @@ import os
 import uuid
 
 from flask import Flask
-from flask import render_template, url_for, send_from_directory, redirect, request
+from flask import render_template, url_for, send_from_directory, redirect, request, flash
 from werkzeug.utils import secure_filename
 
 from sqlalchemy import or_
@@ -11,7 +11,7 @@ from flask_cors import CORS
 
 from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
-from openpartslibrary_flask.forms import CreatePartForm
+from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm
 
 
 # Setup directories
@@ -82,6 +82,31 @@ def home():
 def parts():
     parts = pl.session.query(Part).limit(1000).all()
     return render_template('parts.html', parts = parts, len = len)
+
+@app. route('/suppliers')
+def suppliers():
+    suppliers = pl.session.query(Supplier).all()
+    return render_template('suppliers.html', suppliers = suppliers, len = len)
+
+@app.route('/create-supplier', methods = ['GET', 'POST'])
+def create_supplier():
+    form = CreateSupplierForm()
+    if form.validate_on_submit():
+        supplier = Supplier(
+                uuid = str(uuid.uuid4()),
+                name = form.name.data,
+                description = form.description.data,
+                street = form.street.data,
+                house_number = form.house_number.data,
+                city = str(form.city.data),
+                country = str(form.country.data),
+                postal_code = str(form.postal_code.data)
+        )
+        pl.session.add(supplier)
+        pl.session.commit()
+        flash('Supplier created successfully!', 'success')
+        return redirect(url_for('suppliers'))
+    return render_template('create-supplier.html', form = form)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():

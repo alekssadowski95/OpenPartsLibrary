@@ -108,6 +108,31 @@ def create_supplier():
         return redirect(url_for('suppliers'))
     return render_template('create-supplier.html', form = form)
 
+@app.route('/update-supplier/<uuid>', methods = ['GET', 'POST'])
+def update_supplier(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    form = CreateSupplierForm(obj=supplier)
+    if form.validate_on_submit():
+        form.populate_obj(supplier)
+        pl.session.commit()
+        flash('Supplier updated successfully!', 'success')  
+        return redirect(url_for('suppliers'))
+    return render_template('update-supplier.html', form = form, supplier = supplier)
+
+@app.route('/delete-supplier/<uuid>', methods = ['GET', 'POST'])
+def delete_supplier(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    pl.session.delete(supplier)
+    pl.session.commit()
+    flash('Supplier deleted successfully!', 'success')  
+    return redirect(url_for('suppliers'))
+
+@app.route('/supplier/<uuid>')
+def supplier_view(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    return render_template('supplier.html', supplier = supplier, len = len)
+
+
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():
     form = CreatePartForm()

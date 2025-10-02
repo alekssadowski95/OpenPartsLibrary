@@ -171,7 +171,6 @@ def update_part(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
     form = CreatePartForm()
     if form.validate_on_submit():
-        part.number = str(form.number.data)
         part.name = str(form.name.data)
         part.description = str(form.description.data)
         part.owner = str(form.owner.data)

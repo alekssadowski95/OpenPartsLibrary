@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title> {{ supplier.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+</head>
+<body>
+    <div class="container py-4">
+        <a href="{{ url_for('suppliers') }}" class="btn btn-outline-secondary mb-3">&larr; All suppliers</a>
+        <h2>{{ supplier.name }}</h2>
+        <table class="table table-bordered w-auto">
+            <tr>
+                <th>Description</th>
+                <td>{{ supplier.description }}</td>
+            </tr>
+            <tr>
+                <th>Address</th>
+                <td>
+                    {{ supplier.street }} {{ supplier.house_number }}<br>
+                    {{ supplier.postal_code }} {{ supplier.city }}<br>
+                    {{ supplier.country }}
+                </td>
+            </tr>
+            <tr>
+                <th>Country</th>
+                <td>{{ supplier.country }}</td>
+            </tr>
+            <tr>
+                <th>UUID</th>
+                <td>{{ supplier.uuid }}</td>
+            </tr>
+        </table>
+        </div>
+</body>
+</html>

@@ -22,28 +22,32 @@
         <form method="POST" >
             {{ form.hidden_tag() }}
             <div class="mb-3">
-                {{ form.name.label(class="form-label") }}
+                {{ form.name.label(class="form-label", text="Company name") }}
                 {{ form.name(class="form-control") }}
             </div>
             <div class="mb-3">
-                {{ form.description.label(class="form-label") }}
+                {{ form.description.label(class="form-label", text="Company business description") }}
                 {{ form.description(class="form-control") }}
             </div>
-            <div class="mb-3">
+            <div class="row g-3 mb-3">
+                <div class="col-9">
                 {{ form.street.label(class="form-label") }}
                 {{ form.street(class="form-control") }}
-            </div>
-            <div class="mb-3">
+                </div>
+                <div class="col-3">
                 {{ form.house_number.label(class="form-label") }}
                 {{ form.house_number(class="form-control") }}
+                </div>
             </div>
-            <div class="mb-3">
+            <div class="row g-3 mb-3">
+                <div class="col-4">
                 {{ form.postal_code.label(class="form-label") }}
                 {{ form.postal_code(class="form-control") }}
-            </div>
-            <div class="mb-3">
+                </div>
+                <div class="col-8">
                 {{ form.city.label(class="form-label") }}
-                {{ form.city(class="form-control") }}   
+                {{ form.city(class="form-control") }}
+                </div>
             </div>
             <div class="mb-3">
                 {{ form.country.label(class="form-label") }}

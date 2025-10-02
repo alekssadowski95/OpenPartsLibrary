@@ -87,10 +87,20 @@ def home():
 Part routes
 ***********
 '''
-@app.route('/parts')
-def parts():
-    parts = pl.session.query(Part).limit(1000).all()
-    return render_template('part/part-list.html', parts = parts, len = len)
+@app.route('/parts', defaults={'search_query': None})
+def parts(search_query):
+    search_query = request.args.get("search_query", "")
+
+    like_pattern = f"%{search_query}%"
+
+    parts = pl.session.query(Part).filter(
+            or_(
+                Part.name.ilike(like_pattern),
+                Part.description.ilike(like_pattern)
+            )
+        ).limit(1000).all()
+    
+    return render_template('part/part-list.html', parts = parts, len = len, search_query = search_query)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():
@@ -158,7 +168,18 @@ def part_view(uuid):
 
 @app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
 def update_part(uuid):
-    return redirect(url_for('parts'))
+    part = pl.session.query(Part).filter_by(uuid = uuid).first()
+    form = CreatePartForm()
+    if form.validate_on_submit():
+        part.number = str(form.number.data)
+        part.name = str(form.name.data)
+        part.description = str(form.description.data)
+        part.owner = str(form.owner.data)
+        part.material = str(form.material.data)
+        part.unit_price = str(form.unit_price.data)
+        pl.session.commit()
+        return redirect(url_for('part_view', uuid = uuid))
+    return render_template('part/part-update.html', form = form, part = part) 
 
 @app.route('/delete-part/<uuid>', methods = ['GET', 'POST'])
 def archive_part(uuid):

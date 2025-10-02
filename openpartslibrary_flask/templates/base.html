@@ -56,6 +56,20 @@
     .input-search-header::-ms-input-placeholder { /* Edge 12 -18 */
         color: rgb(15, 62, 124);
     }
+
+    .sidebar-nav ul li {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    .sidebar-nav ul li a span{
+        font-size: 0.70rem;
+    }
+
+    .sidebar-nav ul li:hover {
+        background-color: rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+    }
     </style>
     {% block style %}{% endblock style %}
 </head>
@@ -73,7 +87,7 @@
             <!-- Search form -->
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <form id="search-form" role="search">
-                    <input name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
+                    <input name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." value="{{ search_query }}" id="site-search" aria-label="Search">
                 </form>
             </ul>
             <!-- Right side alighed elements -->
@@ -85,28 +99,28 @@
     <!-- Main view and sidebars -->
     <div class="row p-0 m-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px);">
         <!-- Sidebar left-->
-        <div class="col sidebar-left" style="overflow-y: auto; overflow-x: hidden; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); min-width: 60px; max-width: 60px; background-color: #042c61; border: none; padding: 0; border-right: 1px solid lightgray;">
-            <nav>
-                <ul style="list-style: none; padding-left: 8px; padding-right: 8px; margin: 0; margin-top: 16px;">
+        <div class="col" style="overflow-y: auto; overflow-x: hidden; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); min-width: 60px; max-width: 60px; width: 60px; background-color: #042c61; border: none; padding: 0; border-right: 1px solid lightgray;">
+            <nav class="sidebar-nav" style="width: 100%;">
+                <ul class="px-0" style="list-style: none; margin: 0; margin-top: 16px; margin-bottom: 16px; width: 100%;">
                     <!-- Parts button -->
                     <li>
-                        <a href="{{ url_for('parts') }}" class="btn btn-light text-muted p-0 m-0" style="height: 40px; width: 40px; background-color: #042c61; border-color: #042c61;">
+                        <a href="{{ url_for('parts') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
                             <img src="{{ url_for('static', filename='menu-white.png') }}" style="height: 18px; width: 18px;" alt=""></img>
-                            <span style="color: white; font-size: smaller;">Parts</span>
+                            <span style="color: white;">Parts</span>
                         </a>
                     </li>
                     <!-- Suppliers button -->
-                    <li style="margin-top: 20px;">
-                        <a href="{{ url_for('suppliers') }}" class="btn btn-light text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center" style="height: 40px; width: 90px; background-color: #042c61; border-color: #042c61;">
+                    <li>
+                        <a href="{{ url_for('suppliers') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
                             <img src="{{ url_for('static', filename='supplier.png') }}" style="height: 26px; width: 26px;" alt=""></img>
-                            <span style="color: white; font-size: smaller;">Suppliers</span>
+                            <span style="color: white;">Suppliers</span>
                         </a>
                     </li>
                 </ul> 
             </nav>
         </div>
         <!-- Main view -->
-        <main class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); background-color: #f8f9fa;">
+        <main class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); width: calc(100vw - 79px); background-color: #f8f9fa;">
         {% block main_view %}{% endblock main_view %}
         </main>
     </div>

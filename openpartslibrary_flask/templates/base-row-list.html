@@ -8,9 +8,9 @@
 {% block view_buttons %}{% endblock view_buttons %}
 
 {% block main_view_content %}
-<div class="row prevent-select flex-grow-1 p-0 m-0 d-flex align-items-stretch" style="flex: 1; height: 100%; background-color: aqua;">
+<div class="row prevent-select flex-grow-1 p-0 m-0 d-flex align-items-stretch" style="flex: 1; height: 100%; width: 100%; background-color: aqua;">
     <!-- List column -->
-    <div id="main-view-list-col" class="col-12 p-0 m-0" style="height: 100%; background: #f5f5f5; border-right: 1px solid lightgray; overflow: auto;">
+    <div id="main-view-list-col" class="col-12 p-0 m-0" style="height: 100%; background: #f5f5f5; border-right: 1px solid lightgray; overflow: scroll;">
     {% block main_view_content_list %}{% endblock main_view_content_list %}
     </div>
     <!-- Preview list item column -->

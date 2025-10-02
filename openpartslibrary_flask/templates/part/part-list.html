@@ -96,6 +96,7 @@ function setListView(){
     main_view_preview_col.classList.remove('col-12');
     main_view_list_col.classList.add('col-12');
     main_view_preview_col.style.display = "none";
+    main_view_list_col.style.overflow = "scroll";
 
     // Remove 'selected-row' class from all rows
     document.querySelectorAll('.part-row').forEach(function(r) {

@@ -70,10 +70,22 @@
         background-color: rgba(0, 0, 0, 0.4);
         cursor: pointer;
     }
+
+    .overlay {
+        position: absolute;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100%;
+        background-color: rgb(1, 29, 65);
+        z-index: 20; 
+        display: block;
+        transition: display 4s allow-discrete;
+    }
     </style>
     {% block style %}{% endblock style %}
 </head>
-<body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0;">
+<body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0; overflow: hidden;">
     <!-- Header -->
     <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
         <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
@@ -92,6 +104,9 @@
             </ul>
             <!-- Right side alighed elements -->
             <div class="col-md-3 text-end">
+                <button class="btn btn-link p-1 btn-link-transparent">
+                    <img src="{{ url_for('static', filename='delivery-service.png') }}" alt="" style="padding: 0;" height="32px" width="32px" onclick="showPartsBucket()" style="filter: invert(50%);">
+                </button>
             </div>
         </header>
       </div>
@@ -120,8 +135,17 @@
             </nav>
         </div>
         <!-- Main view -->
-        <main class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); width: calc(100vw - 79px); background-color: #f8f9fa;">
-        {% block main_view %}{% endblock main_view %}
+        <main class="col p-0" style="position: relative; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); width: calc(100vw - 79px); background-color: #f8f9fa;">
+            {% block main_view %}{% endblock main_view %}
+            <!-- Overlay div -->
+            <div id="parts-bucket-div" class="overlay" style="color: white;">
+                <div class="container-fluid" style="height: 40px; border-bottom: 1px solid #042c61;">
+                    <span>Parts bucket</span>
+                </div>
+                
+                <ul id="parts-bucket-list">
+                </ul>
+            </div>
         </main>
     </div>
     <!-- Bottom bar -->
@@ -134,7 +158,22 @@
     <!-- Scripts -->
     <script>
         var partsBucket = [];
-        
+
+        const partsBucketDiv = document.getElementById("parts-bucket-div");
+        const partsBucketList = document.getElementById("parts-bucket-list");
+
+        function showPartsBucket() {
+            console.log('bucket opened')
+            var partsBucketListHtml = "";
+            partsBucket.forEach(part => partsBucketListHtml = partsBucketListHtml + "<li>" + part + "</li>");
+            partsBucketList.innerHTML = partsBucketListHtml;
+            if (partsBucketDiv.style.right == "0px") {
+                partsBucketDiv.style.right = "-400px"
+            } else {
+                partsBucketDiv.style.right = "0px"
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.getElementById("search-form");
 
@@ -150,6 +189,8 @@
                 }
             });
         });
+
+
     </script>
     <script src="{{ url_for('static', filename='bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js') }}"></script>
     {% block script %}{% endblock script %}

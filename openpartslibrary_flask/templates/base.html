@@ -18,63 +18,65 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='nut-bolt.png') }}">
 
+    <!-- Custom styles -->
     <style>
+    .btn-link-transparent:hover {
+        background-color: rgba(0, 0, 0, 0.136);
+        outline: 1px;
+    }
+    
+    .btn-link-transparent:hover:active {
+        background-color: rgba(0, 0, 0, 0.421);
+        outline: 1px;
+    }
 
-        .btn-link-transparent:hover {
-            background-color: rgba(0, 0, 0, 0.136);
-            outline: 1px;
-        }
-        
-        .btn-link-transparent:hover:active {
-            background-color: rgba(0, 0, 0, 0.421);
-            outline: 1px;
-        }
+    .input-search-header {
+        color: rgb(15, 62, 124) !important;
+    }
 
-        .input-search-header {
-            color: rgb(15, 62, 124) !important;
-        }
+    .input-search-header:focus {
+        background-color: white !important;
+        color: rgb(0, 0, 0) !important;
+    }
 
-        .input-search-header:focus {
-            background-color: white !important;
-            color: rgb(0, 0, 0) !important;
-        }
+    .input-search-header:focus::placeholder {
+        color: rgb(15, 62, 124) !important;
+        opacity: 1; /* Firefox */
+    }
 
-        .input-search-header:focus::placeholder {
-            color: rgb(15, 62, 124) !important;
-            opacity: 1; /* Firefox */
-        }
+    .input-search-header:focus::-ms-input-placeholder { /* Edge 12 -18 */
+        color: rgb(189, 189, 189) !important;
+    }
 
-        .input-search-header:focus::-ms-input-placeholder { /* Edge 12 -18 */
-            color: rgb(189, 189, 189) !important;
-        }
+    .input-search-header::placeholder {
+        color: rgb(15, 62, 124);
+        opacity: 1; /* Firefox */
+    }
 
-        .input-search-header::placeholder {
-            color: rgb(15, 62, 124);
-            opacity: 1; /* Firefox */
-        }
-
-        .input-search-header::-ms-input-placeholder { /* Edge 12 -18 */
-            color: rgb(15, 62, 124);
-        }
+    .input-search-header::-ms-input-placeholder { /* Edge 12 -18 */
+        color: rgb(15, 62, 124);
+    }
     </style>
-
     {% block style %}{% endblock style %}
 </head>
 <body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0;">
     <!-- Header -->
     <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
         <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
+            <!-- Application logo and name -->
             <div class="col-md-3 mb-2 mb-md-0">
                 <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
                     <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
                     <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
                 </a>
             </div>
+            <!-- Search form -->
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <form id="search-form" role="search">
                     <input name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." id="site-search" aria-label="Search">
                 </form>
             </ul>
+            <!-- Right side alighed elements -->
             <div class="col-md-3 text-end">
             </div>
         </header>
@@ -86,26 +88,27 @@
         <div class="col sidebar-left" style="overflow-y: auto; overflow-x: hidden; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); min-width: 60px; max-width: 60px; background-color: #042c61; border: none; padding: 0; border-right: 1px solid lightgray;">
             <nav>
                 <ul style="list-style: none; padding-left: 8px; padding-right: 8px; margin: 0; margin-top: 16px;">
+                    <!-- Parts button -->
                     <li>
-                        <button class="btn btn-light text-muted p-0 m-0" style="height: 40px; width: 40px; background-color: #042c61; border-color: #042c61;" onclick="showAllParts()">
+                        <a href="{{ url_for('parts') }}" class="btn btn-light text-muted p-0 m-0" style="height: 40px; width: 40px; background-color: #042c61; border-color: #042c61;">
                             <img src="{{ url_for('static', filename='menu-white.png') }}" style="height: 18px; width: 18px;" alt=""></img>
                             <span style="color: white; font-size: smaller;">Parts</span>
-                        </button>
+                        </a>
                     </li>
                     <!-- Suppliers button -->
                     <li style="margin-top: 20px;">
-                        <button class="btn btn-light text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center" style="height: 40px; width: 90px; background-color: #042c61; border-color: #042c61;" onclick="showAllSuppliers() ">
+                        <a href="{{ url_for('suppliers') }}" class="btn btn-light text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center" style="height: 40px; width: 90px; background-color: #042c61; border-color: #042c61;">
                             <img src="{{ url_for('static', filename='supplier.png') }}" style="height: 26px; width: 26px;" alt=""></img>
                             <span style="color: white; font-size: smaller;">Suppliers</span>
-                        </button>
+                        </a>
                     </li>
                 </ul> 
             </nav>
         </div>
         <!-- Main view -->
-        <div class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); background-color: #f8f9fa;">
-            <iframe id="main-view-iframe" src="{{ url_for('parts') }}" frameborder="0" style="min-width: 100%; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); margin: 0; display: block;"></iframe>
-        </div>
+        <main class="col p-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); background-color: #f8f9fa;">
+        {% block main_view %}{% endblock main_view %}
+        </main>
     </div>
     <!-- Bottom bar -->
     <div style="min-height: 27px; max-height: 27px; margin: 0px; background-color:#042c61; color: white; ">
@@ -114,17 +117,10 @@
             <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
         </span>
     </div>
+    <!-- Scripts -->
     <script>
-        function showAllParts(){
-            document.getElementById("main-view-iframe").src = "{{ url_for('parts') }}";
-        }
-        function showAllSuppliers(){
-            document.getElementById("main-view-iframe").src = "{{ url_for('suppliers') }}";
-        }
-
         document.addEventListener("DOMContentLoaded", function () {
             const form = document.getElementById("search-form");
-            const iframe = document.getElementById("main-view-iframe");
 
             form.addEventListener("submit", function (event) {
                 event.preventDefault(); // stop page reload
@@ -134,11 +130,12 @@
                 const value = queryInput.value.trim();
 
                 if (value) {
-                    iframe.src = "{{ url_for('parts') }}?search_query=" + value; // change the iframe src
+                    window.location.href = "{{ url_for('parts') }}?search_query=" + value;
                 }
             });
         });
     </script>
-    {% block scripts %}{% endblock scripts %}
+    <script src="{{ url_for('static', filename='bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js') }}"></script>
+    {% block script %}{% endblock script %}
 </body>
 </html>

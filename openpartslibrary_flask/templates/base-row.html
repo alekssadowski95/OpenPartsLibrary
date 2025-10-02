@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+
+{% block style %}{% endblock style %}
+
+{% block main_view %}
+<div class="container p-0 m-0 d-flex flex-column" style="background-color: aquamarine; height: 100%; min-width: 100%; max-width: 100%; min-height: 100%; max-height: 100%;">
+    <!-- Action row -->
+    <div class="container-fluid m-0 p-0" style="height: 40px; min-height: 40px; max-height: 40px; background-color: #f5f5f5; border-bottom: 1px solid lightgray;">
+        <div class="row p-1 m-0">
+            <!-- Function buttons -->
+            <div class="col-md-3 p-0 m-0">
+            {% block function_buttons %}{% endblock function_buttons %}
+            </div>
+            <!-- empty center -->
+            <div class="col-md-6 col-md-auto mb-2 justify-content-center p-0 m-0">
+            </div>
+            <!-- View buttons -->
+            <div class="col-md-3 text-end p-0 m-0" >
+            {% block view_buttons %}{% endblock view_buttons %}
+            </div>
+        </div>
+    </div>
+    <!-- Main view content -->
+    <div class="container flex-grow-1 m-0 p-0 d-flex" style="height: calc(100% - 40px); min-width: 100%; max-width: 100%; min-width: 100%; max-width: 100%; background-color: bisque;">
+    {% block main_view_content %}{% endblock main_view_content %}
+    </div>
+</div>
+{% endblock main_view %}
+
+{% block script %}{% endblock script %}

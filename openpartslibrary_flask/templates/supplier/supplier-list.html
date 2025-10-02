@@ -1,0 +1,89 @@
+{% extends "base-row-list.html" %}
+
+
+{% block style %}
+<style>
+.table-hover tbody tr:hover {
+    background-color: #d3d3d3;
+    cursor: pointer;
+}
+
+/* Highlight for selected row */
+.table-hover tbody tr.selected-row > td{
+    background-color: #cfe2ff !important;
+}
+.prevent-select {
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+tbody tr td {
+    white-space: nowrap;   /* keep text on one line */
+    overflow: hidden;      /* hide the extra text */
+    text-overflow: ellipsis; /* show ... at the end */
+}
+</style>
+{% endblock style %}
+
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('create_supplier') }}" style="font-size: smaller;">
+    <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New supplier
+</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
+</a>
+<a type="button" class="btn btn-outline-secondary btn-sm " href="#">
+    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
+</a>
+{% endblock view_buttons %}
+
+{% block main_view_content_list %}
+<h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Suppliers</h1>
+<p class="mb-3 px-3 py-0">{{ suppliers|length }} suppliers were found</p>
+<table class="table table-hover table-boarded align-middle" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+    <thead>
+        <tr>
+            <th style="width: 46px;"></th>
+            <th scope="col" style="min-width: 300px;">Name</th>
+            <th scope="col" style="min-width: 300px;">Description</th>
+            <th scope="col" style="min-width: 300px;">Address</th>
+            <th scope="col" style="min-width: 100px;">Country</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for supplier in suppliers %}
+        <tr>  
+            <td style="width: 46px;">
+                <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('supplier_view', uuid=supplier.uuid) }}">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="16" height="16">
+                </a>
+            </td>
+            <td style="min-width: 220px;max-width: 220px;">{{ supplier.name }}</td>
+            <td style="min-width: 260px;max-width: 260px;">
+                <span class="truncate" title="{{ supplier.description }}">{{ supplier.description }}</span>
+            </td>
+            <td style="white-space: normal; word-break: break-word; overflow-wrap: break-word;">
+                {{ supplier.street}} {{supplier.house_number}}, {{supplier.city}} {{supplier.postal_code}}
+            </td>
+            <td style="white-space: nowrap;">
+                {{ supplier.country}}
+            </td>
+        </tr>
+        {% endfor %}  
+    </tbody>
+</table>
+{% endblock main_view_content_list %}
+
+{% block main_view_content_preview %}
+<!-- Add your main view content here -->
+<!-- ... -->
+{% endblock main_view_content_preview %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+{% endblock script %}

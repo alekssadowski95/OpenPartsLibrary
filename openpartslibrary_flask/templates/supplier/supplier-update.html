@@ -1,0 +1,65 @@
+{% extends "base-row.html" %}
+
+
+{% block style %}
+<!-- Extent the styles here -->
+<!-- ... -->
+{% endblock style %}
+
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('suppliers') }}" style="font-size: smaller;">&larr; All suppliers</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+<!-- Add your view buttons here -->
+<!-- ... -->
+{% endblock view_buttons %}
+
+{% block main_view_content %}
+<div class="container" style="background-color: #f5f5f5; height: 100%; min-width: 100%; overflow-y: auto;">
+    <div class="container col-xl-4 py-5" style="height: 100%;">
+        <h4 class="mb-3">Update Supplier</h4>
+        <form method="POST" >
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.street.label(class="form-label") }}
+                {{ form.street(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.house_number.label(class="form-label") }}
+                {{ form.house_number(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.postal_code.label(class="form-label") }}
+                {{ form.postal_code(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.city.label(class="form-label") }}
+                {{ form.city(class="form-control") }}   
+            </div>
+            <div class="mb-3">
+                {{ form.country.label(class="form-label") }}
+                {{ form.country(class="form-control") }}    
+            </div>
+            <hr class="my-4">
+            <button type="submit" class="btn btn-primary">Update supplier</button>
+        </form>
+    </div>
+</div>
+{% endblock main_view_content %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+{% endblock script %}
+
+
+                    

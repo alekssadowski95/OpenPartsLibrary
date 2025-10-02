@@ -1,0 +1,68 @@
+{% extends "base-row.html" %}
+
+
+{% block style %}
+<!-- Extent the styles here -->
+<!-- ... -->
+{% endblock style %}
+
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('parts') }}" style="font-size: smaller;">&larr; All parts</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+<!-- Add your view buttons here -->
+<!-- ... -->
+{% endblock view_buttons %}
+
+{% block main_view_content %}
+<div class="container" style="background-color: white; height: 100%; min-width: 100%; overflow-y: auto;">
+    <div class="container col-xl-4 py-5" style="height: 100%;">
+        <h4 class="mb-3">New part</h4>
+        <form action="{{ url_for('create_part')}}" method="POST" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+                {{ form.file.label(class="form-label") }}
+                {{ form.file(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.description.label(class="form-label") }}
+                {{ form.description(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.number.label(class="form-label") }}
+                {{ form.number(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.owner.label(class="form-label") }}
+                {{ form.owner(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.material.label(class="form-label") }}
+                {{ form.material(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.unit_price.label(class="form-label") }}
+                <div class="input-group mb-3">
+                    <span class="input-group-text">€</span>
+                    {{ form.unit_price(class="form-control") }}
+                </div>
+                
+            </div>
+            <hr class="my-4">
+            <button type="submit" class="btn btn-primary">Create part</button>
+        </form>
+    </div>
+</div>
+{% endblock main_view_content %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+{% endblock script %}
+
+

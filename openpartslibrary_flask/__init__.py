@@ -72,66 +72,25 @@ pl.delete_all()
 pl.add_sample_data()
 
 
-''' Routes
+'''
+**************
+General routes
+**************
 '''
 @app.route('/')
 def home():
-    return render_template('base.html')
+    return redirect(url_for('parts'))
 
+
+''' 
+***********
+Part routes
+***********
+'''
 @app.route('/parts')
 def parts():
     parts = pl.session.query(Part).limit(1000).all()
-    return render_template('parts.html', parts = parts, len = len)
-
-@app. route('/suppliers')
-def suppliers():
-    suppliers = pl.session.query(Supplier).all()
-    return render_template('suppliers.html', suppliers = suppliers, len = len)
-
-@app.route('/create-supplier', methods = ['GET', 'POST'])
-def create_supplier():
-    form = CreateSupplierForm()
-    if form.validate_on_submit():
-        supplier = Supplier(
-                uuid = str(uuid.uuid4()),
-                name = form.name.data,
-                description = form.description.data,
-                street = form.street.data,
-                house_number = form.house_number.data,
-                city = str(form.city.data),
-                country = str(form.country.data),
-                postal_code = str(form.postal_code.data)
-        )
-        pl.session.add(supplier)
-        pl.session.commit()
-        flash('Supplier created successfully!', 'success')
-        return redirect(url_for('suppliers'))
-    return render_template('create-supplier.html', form = form)
-
-@app.route('/update-supplier/<uuid>', methods = ['GET', 'POST'])
-def update_supplier(uuid):
-    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
-    form = CreateSupplierForm(obj=supplier)
-    if form.validate_on_submit():
-        form.populate_obj(supplier)
-        pl.session.commit()
-        flash('Supplier updated successfully!', 'success')  
-        return redirect(url_for('suppliers'))
-    return render_template('update-supplier.html', form = form, supplier = supplier)
-
-@app.route('/delete-supplier/<uuid>', methods = ['GET', 'POST'])
-def delete_supplier(uuid):
-    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
-    pl.session.delete(supplier)
-    pl.session.commit()
-    flash('Supplier deleted successfully!', 'success')  
-    return redirect(url_for('suppliers'))
-
-@app.route('/supplier/<uuid>')
-def supplier_view(uuid):
-    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
-    return render_template('supplier.html', supplier = supplier, len = len)
-
+    return render_template('part/part-list.html', parts = parts, len = len)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():
@@ -188,14 +147,14 @@ def create_part():
         pl.session.add(component)
         pl.session.commit()
         return redirect(url_for('all_parts'))
-    return render_template('create-part.html', form = form) 
+    return render_template('part/part-create.html', form = form) 
 
 @app.route('/part_view/<uuid>')
 def part_view(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
     part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_reference.uuid + '.FCStd'))
     print(part_cad_filepath)
-    return render_template('part.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
+    return render_template('part/part-read.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
 
 @app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
 def update_part(uuid):
@@ -207,21 +166,94 @@ def archive_part(uuid):
     part.is_archived = True
     return redirect(url_for('parts'))
 
+
+''' 
+***************
+Supplier routes
+***************
+'''
+@app. route('/suppliers')
+def suppliers():
+    suppliers = pl.session.query(Supplier).all()
+    return render_template('supplier/supplier-list.html', suppliers = suppliers, len = len)
+
+@app.route('/create-supplier', methods = ['GET', 'POST'])
+def create_supplier():
+    form = CreateSupplierForm()
+    if form.validate_on_submit():
+        supplier = Supplier(
+                uuid = str(uuid.uuid4()),
+                name = form.name.data,
+                description = form.description.data,
+                street = form.street.data,
+                house_number = form.house_number.data,
+                city = str(form.city.data),
+                country = str(form.country.data),
+                postal_code = str(form.postal_code.data)
+        )
+        pl.session.add(supplier)
+        pl.session.commit()
+        flash('Supplier created successfully!', 'success')
+        return redirect(url_for('suppliers'))
+    return render_template('supplier/supplier-create.html', form = form)
+
+@app.route('/update-supplier/<uuid>', methods = ['GET', 'POST'])
+def update_supplier(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    form = CreateSupplierForm(obj=supplier)
+    if form.validate_on_submit():
+        form.populate_obj(supplier)
+        pl.session.commit()
+        flash('Supplier updated successfully!', 'success')  
+        return redirect(url_for('suppliers'))
+    return render_template('supplier/supplier-update.html', form = form, supplier = supplier)
+
+@app.route('/delete-supplier/<uuid>', methods = ['GET', 'POST'])
+def delete_supplier(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    pl.session.delete(supplier)
+    pl.session.commit()
+    flash('Supplier deleted successfully!', 'success')  
+    return redirect(url_for('suppliers'))
+
+@app.route('/supplier/<uuid>')
+def supplier_view(uuid):
+    supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
+    return render_template('supplier/supplier-read.html', supplier = supplier, len = len)
+
+
+
+''' 
+***********
+File routes
+***********
+'''
 @app.route('/create-file', methods = ['GET', 'POST'])
 def create_file():
     return redirect(url_for('parts'))
 
+
+''' 
+***********
+Viewer routes
+***********
+'''
 @app.route('/viewer/<filename>')
 def viewer(filename):
     filepath = url_for('static', filename=f'data/cad/{filename}')
     print(f"Serving file to viewer : {filepath}")
     return render_template('viewer.html', filepath = filepath)
 
-#Add route to serve model files
 @app.route('/static/cad/<filename>')
 def serve_model_file(filename):
     return send_from_directory(CAD_DIR, filename)
 
+
+''' 
+**********************************
+Desktop application startup routes
+**********************************
+'''
 @app.route('/run-freecad-gui/<filepath>')
 def run_freecad_gui(filepath):
     os.system('start ' + app.config['APPLICATION_PATH_FREECAD'] + ' ' + filepath)
@@ -239,12 +271,30 @@ def run_prepomax_gui(filepath):
 def run_kicad_gui(filepath):
     return ('', 204)
 
+
+''' 
+***********
+Test routes
+***********
+'''
+@app.route('/test-main-view')
+def test_main_view():
+    return render_template('template-main-view.html')
+
+@app.route('/test-main-view-row')
+def test_main_view_row():
+    return render_template('template-main-view-row.html')
+
+@app.route('/test-main-view-row-list')
+def test_main_view_row_list():
+    return render_template('template-main-view-row-list.html', len = len)
+
 @app.route('/database')
-def database():
+def print_database():
     # Get all the items from the database
     components_components = pl.session.query(ComponentComponent).all()
     components = pl.session.query(Component).all()
     parts = pl.session.query(Part).all()
     suppliers = pl.session.query(Supplier).all()
     files = pl.session.query(File).all()
-    return render_template('home.html', components_components = components_components, components = components, parts = parts, suppliers = suppliers, files = files)
+    return render_template('print-database.html', components_components = components_components, components = components, parts = parts, suppliers = suppliers, files = files)

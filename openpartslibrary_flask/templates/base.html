@@ -141,13 +141,17 @@
             <div id="parts-bucket-div" class="overlay" style="color: white;">
                 <div class="container-fluid" style="height: 40px; border-bottom: 1px solid #042c61; padding-top: 6px;">
                     <span>Parts bucket</span>
-                    <a id="clear-parts-bucket-button" type="button" class="btn btn-outline-secondary btn-sm" style="font-size: smaller;" onclick="clearSessionList('partsBucketList')">
-                        <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/cross.svg') }}" width="20" height="20">Clear
+                    <a id="clear-parts-bucket-button" type="button" class="btn btn-outline-light btn-sm" style="font-size: smaller;" onclick="clearSessionList('partsBucketList')">
+                        <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/trash.svg') }}" width="20" height="20" style="color: white;">Clear
                     </a>
                 </div>
-                
-                <ul id="parts-bucket-list">
+                <ul id="parts-bucket-list" class="p-3 pb-0 m-0" style="height: calc(100% - 102px); overflow-y: scroll;">
                 </ul>
+                <div class="container-fluid" style="height: 60px; border-top: 1px solid #042c61; padding-top: 12px;">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" type="button">Create assembly</button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>
@@ -197,7 +201,7 @@
             // Loop through each item and build a Bootstrap card
             list.forEach(item => {
                 html += `
-                <div class="card mb-3" style="width: 18rem;">
+                <div class="card mb-3" style="">
                     <div class="card-body">
                     <p class="card-text">${item}</p>
                     </div>

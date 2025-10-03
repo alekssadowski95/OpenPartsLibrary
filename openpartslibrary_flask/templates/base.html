@@ -90,7 +90,7 @@
     <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
         <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
             <!-- Application logo and name -->
-            <div class="col-md-3 mb-2 mb-md-0">
+            <div class="col-md-3 mb-2 mb-md-0" title="Go to home">
                 <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
                     <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
                     <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
@@ -99,12 +99,12 @@
             <!-- Search form -->
             <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
                 <form id="search-form" role="search">
-                    <input name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Suche..." value="{{ search_query }}" id="site-search" aria-label="Search">
+                    <input title="Search for a part by its name or description" name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Search..." value="{{ search_query }}" id="site-search" aria-label="Search">
                 </form>
             </ul>
             <!-- Right side alighed elements -->
             <div class="col-md-3 text-end">
-                <button class="btn btn-link p-1 btn-link-transparent">
+                <button title="Open and close the parts bucket" class="btn btn-link p-1 btn-link-transparent">
                     <img src="{{ url_for('static', filename='delivery-service.png') }}" alt="" style="padding: 0;" height="32px" width="32px" onclick="showPartsBucket()" style="filter: invert(50%);">
                 </button>
             </div>
@@ -119,14 +119,14 @@
                 <ul class="px-0" style="list-style: none; margin: 0; margin-top: 16px; margin-bottom: 16px; width: 100%;">
                     <!-- Parts button -->
                     <li>
-                        <a href="{{ url_for('parts') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
+                        <a title="Browse all parts" href="{{ url_for('parts') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
                             <img src="{{ url_for('static', filename='menu-white.png') }}" style="height: 18px; width: 18px;" alt=""></img>
                             <span style="color: white;">Parts</span>
                         </a>
                     </li>
                     <!-- Suppliers button -->
                     <li>
-                        <a href="{{ url_for('suppliers') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
+                        <a title="Browse all suppliers" href="{{ url_for('suppliers') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
                             <img src="{{ url_for('static', filename='supplier.png') }}" style="height: 26px; width: 26px;" alt=""></img>
                             <span style="color: white;">Suppliers</span>
                         </a>

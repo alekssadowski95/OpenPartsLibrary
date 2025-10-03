@@ -27,16 +27,16 @@ tbody tr td {
 {% endblock style %}
 
 {% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('create_part') }}" style="font-size: smaller;">
+<a title="Add a new part" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('create_part') }}" style="font-size: smaller;">
     <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New part
 </a>
 {% endblock function_buttons %}
 
 {% block view_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
+<a title="Show parts results as list" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
 </a>
-<a type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
+<a title="Show parts results in splitscreen with preview" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
 </a>
 {% endblock view_buttons %}
@@ -68,10 +68,10 @@ function addPartToBucket(uuid){
         {% for part in parts %}
         <tr class="part-row" data-model="{{ part.cad_reference.uuid }}.FCStd">
             <td style="min-width: 100px; max-width: 100px;">
-                <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = part.uuid ) }}">
+                <a title="Open part details" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = part.uuid ) }}">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18">
                 </a>
-                <a type="button" data-uuid="{{ part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
+                <a title="Add part to bucket" type="button" data-uuid="{{ part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
                 </a>
             </td>

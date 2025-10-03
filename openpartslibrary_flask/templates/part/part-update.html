@@ -7,7 +7,7 @@
 {% endblock style %}
 
 {% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('parts') }}" style="font-size: smaller;">&larr; All parts</a>
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = part.uuid) }}" style="font-size: smaller;">&larr; Back to part</a>
 {% endblock function_buttons %}
 
 {% block view_buttons %}

@@ -7,7 +7,7 @@
 {% endblock style %}
 
 {% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('suppliers') }}" style="font-size: smaller;">&larr; All suppliers</a>
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('supplier_view', uuid = supplier.uuid) }}" style="font-size: smaller;">&larr; All suppliers</a>
 {% endblock function_buttons %}
 
 {% block view_buttons %}
@@ -21,7 +21,7 @@
         <h4 class="mb-3">Update Supplier</h4>
         <form method="POST" >
             {{ form.hidden_tag() }}
-<div class="mb-3">
+            <div class="mb-3">
                 {{ form.name.label(class="form-label", text="Company name") }}
                 {{ form.name(class="form-control") }}
             </div>

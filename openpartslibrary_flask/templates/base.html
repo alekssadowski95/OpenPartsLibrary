@@ -139,8 +139,11 @@
             {% block main_view %}{% endblock main_view %}
             <!-- Overlay div -->
             <div id="parts-bucket-div" class="overlay" style="color: white;">
-                <div class="container-fluid" style="height: 40px; border-bottom: 1px solid #042c61;">
+                <div class="container-fluid" style="height: 40px; border-bottom: 1px solid #042c61; padding-top: 6px;">
                     <span>Parts bucket</span>
+                    <a id="clear-parts-bucket-button" type="button" class="btn btn-outline-secondary btn-sm" style="font-size: smaller;" onclick="clearSessionList('partsBucketList')">
+                        <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/cross.svg') }}" width="20" height="20">Clear
+                    </a>
                 </div>
                 
                 <ul id="parts-bucket-list">
@@ -157,21 +160,52 @@
     </div>
     <!-- Scripts -->
     <script>
-        var partsBucket = [];
-
         const partsBucketDiv = document.getElementById("parts-bucket-div");
         const partsBucketList = document.getElementById("parts-bucket-list");
 
+        function updatePartsBucketContent() {
+            let cardsHTML = buildCardsFromSession("partsBucketList");
+
+            // Insert into a container element on the page
+            document.getElementById("parts-bucket-list").innerHTML = cardsHTML;
+        }
+
         function showPartsBucket() {
-            console.log('bucket opened')
-            var partsBucketListHtml = "";
-            partsBucket.forEach(part => partsBucketListHtml = partsBucketListHtml + "<li>" + part + "</li>");
-            partsBucketList.innerHTML = partsBucketListHtml;
+            updatePartsBucketContent();
+
             if (partsBucketDiv.style.right == "0px") {
-                partsBucketDiv.style.right = "-400px"
+                partsBucketDiv.style.right = "-400px";
             } else {
-                partsBucketDiv.style.right = "0px"
+                partsBucketDiv.style.right = "0px";
             }
+        }
+
+        // Function to clear the list in sessionStorage
+        function clearSessionList(key) {
+            sessionStorage.removeItem(key);
+            updatePartsBucketContent();
+        }
+
+        // Function to build Bootstrap card HTML from list in sessionStorage
+        function buildCardsFromSession(key) {
+            // Get list from sessionStorage
+            let list = JSON.parse(sessionStorage.getItem(key)) || [];
+
+            // Start with empty HTML string
+            let html = "";
+
+            // Loop through each item and build a Bootstrap card
+            list.forEach(item => {
+                html += `
+                <div class="card mb-3" style="width: 18rem;">
+                    <div class="card-body">
+                    <p class="card-text">${item}</p>
+                    </div>
+                </div>
+                `;
+            });
+
+            return html;
         }
 
         document.addEventListener("DOMContentLoaded", function () {

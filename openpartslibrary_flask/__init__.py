@@ -2,7 +2,7 @@ import os
 import uuid
 
 from flask import Flask
-from flask import render_template, url_for, send_from_directory, redirect, request, flash
+from flask import render_template, url_for, send_from_directory, redirect, request, flash, session
 from werkzeug.utils import secure_filename
 
 from sqlalchemy import or_
@@ -213,7 +213,6 @@ def create_supplier():
         )
         pl.session.add(supplier)
         pl.session.commit()
-        flash('Supplier created successfully!', 'success')
         return redirect(url_for('suppliers'))
     return render_template('supplier/supplier-create.html', form = form)
 
@@ -223,8 +222,7 @@ def update_supplier(uuid):
     form = CreateSupplierForm(obj=supplier)
     if form.validate_on_submit():
         form.populate_obj(supplier)
-        pl.session.commit()
-        flash('Supplier updated successfully!', 'success')  
+        pl.session.commit() 
         return redirect(url_for('suppliers'))
     return render_template('supplier/supplier-update.html', form = form, supplier = supplier)
 
@@ -233,7 +231,6 @@ def delete_supplier(uuid):
     supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
     pl.session.delete(supplier)
     pl.session.commit()
-    flash('Supplier deleted successfully!', 'success')  
     return redirect(url_for('suppliers'))
 
 @app.route('/supplier/<uuid>')

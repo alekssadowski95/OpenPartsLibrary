@@ -71,9 +71,9 @@ function addPartToBucket(uuid){
                 <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = part.uuid ) }}">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18">
                 </a>
-                <button type="button" data-uuid="{{ part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
+                <a type="button" data-uuid="{{ part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
-                </button>
+                </a>
             </td>
             <td style="min-width: 260px; max-width: 260px;">{{ part.name }}</td>
             <td style="min-width: 120px; max-width: 120px;">{{ part.number }}</td>
@@ -95,12 +95,6 @@ function addPartToBucket(uuid){
 
 {% block script %}
 <script>
-function addPartToBucket(uuid){
-    partsBucket.push(uuid);
-    console.log('Added part to bucket.')
-    console.log(partsBucket)
-}
-
 var main_view_list_col = document.getElementById('main-view-list-col');
 var main_view_preview_col = document.getElementById('main-view-preview-col');
 
@@ -122,6 +116,18 @@ function setPreviewView(){
     main_view_list_col.classList.add('col-6');
     main_view_preview_col.classList.add('col-6');
     main_view_preview_col.style.display = "block";
+}
+
+// Function to append a string to a list in sessionStorage
+function appendToSessionList(key, value) {
+  // Get existing list from sessionStorage (or empty array if none exists)
+  let list = JSON.parse(sessionStorage.getItem(key)) || [];
+
+  // Append new value
+  list.push(value);
+
+  // Save updated list back to sessionStorage
+  sessionStorage.setItem(key, JSON.stringify(list));
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -156,8 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
             event.stopPropagation(); // prevent the row click from firing
             var partUUID = this.getAttribute('data-uuid');
             if (partUUID) {
-                addPartToBucket(partUUID)
+                appendToSessionList("partsBucketList", partUUID);
             }
+            // Retrieve and log the updated list
+            console.log(JSON.parse(sessionStorage.getItem("partsBucketList"))); 
+
+            updatePartsBucketContent();
         });
     });
 });

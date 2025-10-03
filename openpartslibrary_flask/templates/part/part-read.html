@@ -7,9 +7,7 @@
 {% endblock style %}
 
 {% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('parts') }}" style="font-size: smaller;">
-    <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/arrow-left-short.svg') }}" width="20" height="20">All parts
-</a>
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('parts') }}" style="font-size: smaller;">&larr; All parts</a>
 {% endblock function_buttons %}
 
 {% block view_buttons %}

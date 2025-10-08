@@ -27,64 +27,149 @@ tbody tr td {
 {% endblock style %}
 
 {% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_create') }}" style="font-size: smaller;">
+<a title="Add a new component" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_create') }}" style="font-size: smaller;">
     <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New component
 </a>
 {% endblock function_buttons %}
 
 {% block view_buttons %}
-
+<a title="Show component results as list" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
+    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
+</a>
+<a title="Show component results in splitscreen with preview" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
+    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
+</a>
 {% endblock view_buttons %}
 
 {% block main_view_content_list %}
+<script>
+function addPartToBucket(uuid){
+    partsBucket.push(uuid);
+    console.log('Added part to bucket.')
+}
+</script>
 <h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Components</h1>
-<p class="mb-3 px-3 py-0">{{ components|length }} components were found</p>
-<table class="table table-hover table-boarded align-middle" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+<p class="mb-3 px-3 py-0">{{ len(components) }} components were found.</p>
+<table class="table table-hover" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
     <thead>
         <tr>
-            <th style="width: 46px;"></th>
-            <th scope="col" style="min-width: 100px;">Name</th>
-            <th scope="col" style="min-width: 100px;">Category</th>
-            <th scope="col" style="min-width: 100px;">Density</th>
-            <th scope="col" style="min-width: 100px;">Youngs modulus</th>
-            <th scope="col" style="min-width: 100px;">Yield strength</th>
-            <th scope="col" style="min-width: 100px;">Poisson ratio</th>
-            <th scope="col" style="min-width: 100px;">Ultimate strength</th>
-            <th scope="col" style="min-width: 100px;">Thermal conductivity</th>
-            <th scope="col" style="min-width: 100px;">Specific heat</th>
-            <th scope="col" style="min-width: 100px;">Thermal expansion</th>
+            <th></th>
+            <th>Name</th>
+            <th>Part number</th>
+            <th>Material</th>
+            <th>Supplier</th>
+            <th>Unit price</th>
+            <th>Description</th>
+            <th>Lifecycle state</th>
+            <th>Revision</th>
         </tr>
     </thead>
     <tbody>
-        {% for material in materials %}
-        <tr>  
-            <td style="width: 46px;">
-                <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('material_read', uuid=material.uuid) }}">
-                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="16" height="16">
+        {% for component in components %}
+        <tr class="part-row" data-model="{{ component.part.cad_reference.uuid }}.FCStd">
+            <td style="min-width: 100px; max-width: 100px;">
+                <a title="Open part details" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = component.part.uuid ) }}">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18">
+                </a>
+                <a title="Add part to bucket" type="button" data-uuid="{{ component.part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
                 </a>
             </td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.name }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.category }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.density }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.youngs_modulus }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.yield_strength }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.poisson_ratio }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.ultimate_strength }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.thermal_conductivity }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.specific_heat }}</td>
-            <td style="min-width: 220px;max-width: 220px;">{{ material.thermal_expansion }}</td>
+            <td style="min-width: 260px; max-width: 260px;">{{ component.part.name }}</td>
+            <td style="min-width: 120px; max-width: 120px;">{{ component.part.number }}</td>
+            <td style="min-width: 120px; max-width: 120px;">{{ component.part.material }}</td>
+            <td style="min-width: 220px; max-width: 220px;">{{ component.part.supplier.name }}</td>
+            <td style="min-width: 100px; max-width: 100px;">{{ component.part.unit_price }} {{ component.part.currency }}</td>
+            <td style="min-width: 300px; max-width: 300px;">{{ component.part.description }}</td>
+            <td style="min-width: 140px; max-width: 140px;">{{ component.part.lifecycle_state }}</td>
+            <td style="min-width: 80px; max-width: 80px;">{{ component.part.revision }}</td>
         </tr>
-        {% endfor %}  
+        {% endfor %}
     </tbody>
 </table>
 {% endblock main_view_content_list %}
 
 {% block main_view_content_preview %}
-<!-- Add your main view content here -->
-<!-- ... -->
+<iframe id="main-view-iframe" src="" frameborder="0" style="min-width: 100%; min-height: 100%; max-height: 100%; margin: 0; display: block;"></iframe>
 {% endblock main_view_content_preview %}
 
 {% block script %}
-<!-- Extent the scripts here -->
-<!-- ... -->
+<script>
+var main_view_list_col = document.getElementById('main-view-list-col');
+var main_view_preview_col = document.getElementById('main-view-preview-col');
+
+function setListView(){
+    main_view_list_col.classList.remove('col-6');
+    main_view_list_col.classList.remove('col-12');
+    main_view_preview_col.classList.remove('col-6');
+    main_view_preview_col.classList.remove('col-12');
+    main_view_list_col.classList.add('col-12');
+    main_view_preview_col.style.display = "none";
+    main_view_list_col.style.overflow = "scroll";
+}
+
+function setPreviewView(){
+    main_view_list_col.classList.remove('col-6');
+    main_view_list_col.classList.remove('col-12');
+    main_view_preview_col.classList.remove('col-6');
+    main_view_preview_col.classList.remove('col-12');
+    main_view_list_col.classList.add('col-6');
+    main_view_preview_col.classList.add('col-6');
+    main_view_preview_col.style.display = "block";
+}
+
+// Function to append a string to a list in sessionStorage
+function appendToSessionList(key, value) {
+  // Get existing list from sessionStorage (or empty array if none exists)
+  let list = JSON.parse(sessionStorage.getItem(key)) || [];
+
+  // Append new value
+  list.push(value);
+
+  // Save updated list back to sessionStorage
+  sessionStorage.setItem(key, JSON.stringify(list));
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    var iframe = document.getElementById('main-view-iframe');
+    document.querySelectorAll('.part-row').forEach(function(row, event) {
+        row.addEventListener('click', function(event) {
+            event.stopPropagation(); // prevent the row click from firing
+            setPreviewView();
+
+            // Remove 'selected-row' class from all rows
+            document.querySelectorAll('.part-row').forEach(function(r) {
+                r.classList.remove('selected-row');
+            });
+
+            // Add 'selected-row' class to the clicked row
+            row.classList.add('selected-row');
+
+            // Load CAD file name from data-model attribute and load it in the iframe
+            var modelFile = this.getAttribute('data-model');
+            console.log("Clicked row, model filename: ", modelFile);
+            if (modelFile) {
+                iframe.src = '/viewer/' + encodeURIComponent(modelFile);
+                console.log("Set iframe src to: " , iframe.src);
+            }
+        }); 
+    });
+    const addButtons = document.querySelectorAll(".add-part-to-bucket-button");
+    
+    // Add click listener to each button
+    addButtons.forEach(button => {
+        button.addEventListener("click", function(event) {
+            event.stopPropagation(); // prevent the row click from firing
+            var partUUID = this.getAttribute('data-uuid');
+            if (partUUID) {
+                appendToSessionList("partsBucketList", partUUID);
+            }
+            // Retrieve and log the updated list
+            console.log(JSON.parse(sessionStorage.getItem("partsBucketList"))); 
+
+            updatePartsBucketContent();
+        });
+    });
+});
+</script>
 {% endblock script %}

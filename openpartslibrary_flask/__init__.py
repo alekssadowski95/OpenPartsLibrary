@@ -325,7 +325,7 @@ Component routes
 @app.route('/components')
 def components():
     components = pl.session.query(Component).all()
-    return render_template('component/component-list.html', components = components) 
+    return render_template('component/component-list.html', components = components, len = len) 
 
 
 @app.route('/component/create', methods = ['GET', 'POST'])

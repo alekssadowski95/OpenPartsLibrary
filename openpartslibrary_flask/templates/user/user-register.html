@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+
+{% block style %}
+<!-- Extent the styles here -->
+<!-- ... -->
+
+{% endblock style %}
+
+
+{% block main_view %}
+<div class="container p-0 m-0" style="background-color: rgb(255, 255, 255); min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%;">
+    <!-- Put your content in here -->
+    <!-- ... -->
+     <h2>Register</h2>
+    <form method="POST">
+    {{ form.hidden_tag() }}
+    {{ form.username.label }} {{ form.username() }}<br>
+    {{ form.email.label }} {{ form.email() }}<br>
+    {{ form.password.label }} {{ form.password() }}<br>
+    {{ form.confirm_password.label }} {{ form.confirm_password() }}<br>
+    {{ form.submit() }}
+    </form>
+
+</div>
+{% endblock main_view %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+
+{% endblock script %}

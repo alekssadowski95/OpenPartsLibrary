@@ -15,6 +15,7 @@
     <!-- ... -->
     <h2>Welcome, {{ user.username }}!</h2>
     <p>Email: {{ user.email }}</p>
+    <a class="btn btn-outline-secondary" type="button" href="{{ url_for('logout') }}">Logout</a>
 </div>
 {% endblock main_view %}
 

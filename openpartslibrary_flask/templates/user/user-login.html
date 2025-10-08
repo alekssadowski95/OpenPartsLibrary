@@ -19,6 +19,8 @@
     {{ form.password.label }} {{ form.password() }}<br>
     {{ form.submit() }}
     </form>
+    <span>No account yet?</span>
+    <a class="btn btn-outline-secondary" type="button" href="{{ url_for('register') }}">Register</a>
 </div>
 {% endblock main_view %}
 

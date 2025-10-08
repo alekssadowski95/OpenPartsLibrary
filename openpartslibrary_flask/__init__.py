@@ -99,7 +99,7 @@ def register():
         pl.session.add(user)
         pl.session.commit()
         return redirect(url_for('login'))
-    return render_template('user/user-register.html', form=form)
+    return render_template('user/user-register.html', form = form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -109,12 +109,12 @@ def login():
         if user and check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('profile'))
-    return render_template('user/user-login.html', form=form)
+    return render_template('user/user-login.html', form = form)
 
 @app.route('/profile')
 @login_required
 def profile():
-    return render_template('user/user-profile.html', user=current_user)
+    return render_template('user/user-profile.html', user = current_user)
 
 @app.route('/logout')
 @login_required
@@ -150,7 +150,7 @@ def parts(search_query):
             )
         ).limit(1000).all()
     
-    return render_template('part/part-list.html', parts = parts, len = len, search_query = search_query)
+    return render_template('part/part-list.html', parts = parts, len = len, search_query = search_query, user = current_user)
 
 @app.route('/create-part', methods = ['GET', 'POST'])
 def create_part():

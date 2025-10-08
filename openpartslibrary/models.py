@@ -119,28 +119,28 @@ class Material(Base):
     uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(128), unique=True, nullable=False)
     description = Column(Text)
-    category = Column(String(64))  # e.g., 'Metal', 'Polymer', 'Composite'
+    category = Column(String(64))               # e.g., 'Metal', 'Polymer', 'Composite'
     
     # --- Basic mechanical properties ---
-    density = Column(Float)                    # kg/m³
-    youngs_modulus = Column(Float)             # Pa
+    density = Column(Float)                     # kg/m³
+    youngs_modulus = Column(Float)              # Pa
     poisson_ratio = Column(Float)
-    shear_modulus = Column(Float)              # Pa
-    bulk_modulus = Column(Float)               # Pa
+    shear_modulus = Column(Float)               # Pa
+    bulk_modulus = Column(Float)                # Pa
 
     # --- Plasticity properties ---
-    yield_strength = Column(Float)             # Pa
-    ultimate_strength = Column(Float)          # Pa
-    hardening_modulus = Column(Float)          # Pa (for isotropic hardening)
+    yield_strength = Column(Float)              # Pa
+    ultimate_strength = Column(Float)           # Pa
+    hardening_modulus = Column(Float)           # Pa (for isotropic hardening)
     
     # --- Thermal properties ---
-    thermal_conductivity = Column(Float)       # W/m·K
-    specific_heat = Column(Float)              # J/kg·K
-    thermal_expansion = Column(Float)          # 1/K (coefficient of linear expansion)
+    thermal_conductivity = Column(Float)        # W/m·K
+    specific_heat = Column(Float)               # J/kg·K
+    thermal_expansion = Column(Float)           # 1/K (coefficient of linear expansion)
     
     # --- Damage or failure properties ---
-    fracture_toughness = Column(Float)         # MPa·m^0.5
-    fatigue_strength = Column(Float)           # Pa
+    fracture_toughness = Column(Float)          # MPa·m^0.5
+    fatigue_strength = Column(Float)            # Pa
     
     # --- Metadata ---
     supplier = Column(String(256))               

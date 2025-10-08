@@ -1,34 +1,90 @@
-{% extends 'base.html' %}
+{% extends "base-row-list.html" %}
 
-{% block content %}
-<h2>Materials</h2>
-<a href="{{ url_for('material_create') }}" class="btn btn-primary">Add New Material</a>
-<table class="table">
+
+{% block style %}
+<style>
+.table-hover tbody tr:hover {
+    background-color: #d3d3d3;
+    cursor: pointer;
+}
+
+/* Highlight for selected row */
+.table-hover tbody tr.selected-row > td{
+    background-color: #cfe2ff !important;
+}
+.prevent-select {
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+tbody tr td {
+    white-space: nowrap;   /* keep text on one line */
+    overflow: hidden;      /* hide the extra text */
+    text-overflow: ellipsis; /* show ... at the end */
+}
+</style>
+{% endblock style %}
+
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('material_create') }}" style="font-size: smaller;">
+    <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">New material
+</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+
+{% endblock view_buttons %}
+
+{% block main_view_content_list %}
+<h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Materials</h1>
+<p class="mb-3 px-3 py-0">{{ materials|length }} suppliers were found</p>
+<table class="table table-hover table-boarded align-middle" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
     <thead>
         <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Archived</th>
-            <th>Actions</th>
+            <th style="width: 46px;"></th>
+            <th scope="col" style="min-width: 300px;">Name</th>
+            <th scope="col" style="min-width: 300px;">Category</th>
+            <th scope="col" style="min-width: 300px;">Density</th>
+            <th scope="col" style="min-width: 100px;">Youngs modulus</th>
+            <th scope="col" style="min-width: 100px;">Yield strength</th>
+            <th scope="col" style="min-width: 100px;">Poisson ratio</th>
+            <th scope="col" style="min-width: 100px;">Ultimate strength</th>
+            <th scope="col" style="min-width: 100px;">Thermal conductivity</th>
+            <th scope="col" style="min-width: 100px;">Specific heat</th>
+            <th scope="col" style="min-width: 100px;">Thermal expansion</th>
         </tr>
     </thead>
     <tbody>
         {% for material in materials %}
-        <tr>
-            <td>{{ material.name }}</td>
-            <td>{{ material.description }}</td>
-            <td>{{ 'Yes' if material.archived else 'No' }}</td>
-            <td>
-                <a href="{{ url_for('material_read', material_id=material.id) }}">View</a>
-                <a href="{{ url_for('material_update', material_id=material.id) }}">Edit</a>
-                <a href="{{ url_for('material_delete', material_id=material.id) }}">Delete</a>
-                {% if not material.is_archived %}
-                <a href="{{ url_for('material_archivate', material_id=material.id) }}">Archive</a>
-                {% endif %}
+        <tr>  
+            <td style="width: 46px;">
+                <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('material_read', uuid=material.uuid) }}">
+                    <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="16" height="16">
+                </a>
             </td>
-            </tr>
-        {% endfor %}
+            <td style="min-width: 220px;max-width: 220px;">{{ material.name }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.category }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.density }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.youngs_modulus }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.yield_strength }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.poisson_ratio }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.ultimate_strength }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.thermal_conductivity }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.specific_heat }}</td>
+            <td style="min-width: 220px;max-width: 220px;">{{ material.thermal_expansion }}</td>
+        </tr>
+        {% endfor %}  
     </tbody>
 </table>
+{% endblock main_view_content_list %}
 
-{% endblock %}
+{% block main_view_content_preview %}
+<!-- Add your main view content here -->
+<!-- ... -->
+{% endblock main_view_content_preview %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+{% endblock script %}

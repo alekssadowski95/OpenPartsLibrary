@@ -1,21 +1,78 @@
-{% extends 'base.html' %}
+{% extends "base-row.html" %}
 
-{% block content %}
-<h2>Add New Material</h2> 
-<form method="post">
-    {{ form.hidden_tag() }}
-    <div class="form-group">
-        {{ form.name.label }}
-        {{ form.name(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.description.label }}
-        {{ form.description(class="form-control") }}
-    </div>
-    <div class="form-group">
-        {{ form.submit(class="btn btn-primary") }}  
-    </div>
-</form>
+{% block style %}
+<!-- Extent the styles here -->
+<!-- ... -->
+{% endblock style %}
 
-{% endblock %}
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('materials') }}" style="font-size: smaller;">&larr; All materials</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+<!-- Add your view buttons here -->
+<!-- ... -->
+{% endblock view_buttons %}
+
+{% block main_view_content %}
+<div class="container" style="background-color: #f5f5f5; height: 100%; min-width: 100%; overflow-y: auto;">
+    <div class="container col-xl-4 py-5" style="height: 100%;">
+        <h4 class="mb-3">New material</h4>
+        <form action="{{ url_for('material_create')}}" method="POST" enctype="multipart/form-data">
+            {{ form.csrf_token }}
+            <div class="mb-3">
+                {{ form.name.label(class="form-label") }}
+                {{ form.name(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.category.label(class="form-label") }}
+                {{ form.category(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.density.label(class="form-label") }}
+                {{ form.density(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.youngs_modulus.label(class="form-label") }}
+                {{ form.youngs_modulus(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.yield_strength.label(class="form-label") }}
+                {{ form.yield_strength(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.poisson_ratio.label(class="form-label") }}
+                {{ form.poisson_ratio(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.ultimate_strength.label(class="form-label") }}
+                {{ form.ultimate_strength(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.thermal_conductivity.label(class="form-label") }}
+                {{ form.thermal_conductivity(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.specific_heat.label(class="form-label") }}
+                {{ form.specific_heat(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.thermal_expansion.label(class="form-label") }}
+                {{ form.thermal_expansion(class="form-control") }}
+            </div>
+            <div class="mb-3">
+                {{ form.poisson_ratio.label(class="form-label") }}
+                {{ form.poisson_ratio(class="form-control") }}
+            </div>
+            <hr class="my-4">
+            <button type="submit" class="btn btn-primary">Create material</button>
+        </form>
+    </div>
+</div>
+{% endblock main_view_content %}
+
+{% block script %}
+<!-- Extent the scripts here -->
+<!-- ... -->
+{% endblock script %}
 

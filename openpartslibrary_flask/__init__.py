@@ -10,8 +10,8 @@ from sqlalchemy import or_
 from flask_cors import CORS
 
 from openpartslibrary.db import PartsLibrary
-from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent
-from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm
+from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent, Material
+from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm, CreateMaterialForm
 
 
 # Setup directories
@@ -239,7 +239,111 @@ def supplier_view(uuid):
     return render_template('supplier/supplier-read.html', supplier = supplier, len = len)
 
 
+'''
+************
+Material routes
+************
+'''
+@app.route('/materials')
+def materials():
+    materials = pl.session.query(Material).all()
+    return render_template('material/material-list.html', materials = materials) 
 
+@app.route('/materials/create', methods = ['GET', 'POST'])
+def material_create():
+    form = CreateMaterialForm()
+    if form.validate_on_submit():
+        material = Material(
+                uuid = str(uuid.uuid4()),
+                name = form.name.data,
+                category = form.category.data,
+                density = form.density.data,
+                youngs_modulus = form.youngs_modulus.data,
+                yield_strength = form.yield_strength.data,
+                poisson_ratio = form.poisson_ratio.data,
+                ultimate_strength = form.ultimate_strength.data,
+                thermal_conductivity = form.thermal_conductivity.data,
+                specific_heat = form.specific_heat.data,
+                thermal_expansion = form.thermal_expansion.data
+        )
+        pl.session.add(material)
+        pl.session.commit()
+        return redirect(url_for('materials'))
+    return render_template('material/material-create.html', form = form)
+
+@app.route('/materials/<int:material_id>')
+def material_read(material_id):
+    material = pl.session.query(Material).get(material_id)
+    if not material:
+        flash('Material not found.')
+        return redirect(url_for('materials'))
+    return render_template('material/material-read.html', material = material)
+
+@app.route('/materials/<int:material_id>/update', methods=['GET', 'POST'])
+def material_update(material_id):
+    material = pl.session.query(Material).get(material_id)
+    if not material:
+        flash('Material not found.')
+        return redirect(url_for('materials'))
+    form = CreateMaterialForm(obj=material)
+    if form.validate_on_submit():
+        material.name = form.name.data
+        material.category = form.category.data
+        material.density = form.density.data
+        material.youngs_modulus = form.youngs_modulus.data
+        material.poisson_ratio = form.poisson_ratio.data
+        material.yield_strength = form.yield_strength.data
+        material.ultimate_strength = form.ultimate_strength.data
+        material.thermal_conductivity = form.thermal_conductivity.data
+        material.specific_heat = form.specific_heat.data
+        material.thermal_expansion = form.thermal_expansion.data
+        pl.session.commit()
+        flash('Material updated successfully.')
+        return redirect(url_for('materials'))
+    return render_template('material/material-update.html', form = form)
+
+@app.route('/materials/<int:material_id>/delete', methods = ['POST'])
+def material_delete(material_id):
+    material = pl.session.query(Material).get(material_id)
+    if not material:
+        flash('Material not found.')
+        return redirect(url_for('materials'))
+    pl.session.delete(material)
+    pl.session.commit()
+    flash('Material deleted successfully.')
+    return redirect(url_for('materials'))
+
+@app.route('/materials/<int:material_id>/archivate', methods = ['POST'])
+def material_archivate(material_id):
+    material = pl.session.query(Material).get(material_id)
+    if not material:
+        flash('Material not found.')
+        return redirect(url_for('materials'))
+    material.is_archived = True
+    pl.session.commit()
+    flash('Material archivate successfully.')
+    return redirect(url_for('materials'))
+
+#Sample data
+def add_sample_material():
+    if not pl.session.query(Material).filter_by(name="Steel AISI 1020").first():
+        material = Material(
+            uuid=str(uuid.uuid4()),
+            name="Steel AISI 1020",
+            density=7.85,  # Convert 7850 kg/m³ to 7.85 g/cm³
+            elastic_modulus=2.1e5,  # Convert 2.1e11 Pa to 2.1e5 MPa (or 210 GPa)
+            poisson_ratio=0.29,
+            yield_strength=350,  # 3.5e8 Pa to 350 MPa
+            tensile_strength=420, # 4.2e8 Pa to 420 MPa
+            thermal_conductivity=51,
+            specific_heat_capacity=486,
+            thermal_expansion=1.2e-5
+        )
+        pl.session.add(material)
+        pl.session.commit()
+add_sample_material()
+
+        
 ''' 
 ***********
 File routes

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Material Details</h2>
+<ul>
+    <li><strong>Name:</strong> {{ material.name }}</li>
+    <li><strong>Description:</strong> {{ material.description }}</li>
+    <li><strong>Archived:</strong> {{ 'Yes' if material.is_archived else 'No' }}</li>
+    
+</ul>
+<a href="{{ url_for('material_update', material_id=material.id) }}" class="btn btn-secondary">Edit</a>
+{% endblock %}
+
+{% block content %}

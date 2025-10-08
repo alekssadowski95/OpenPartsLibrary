@@ -23,3 +23,17 @@ class CreateSupplierForm(FlaskForm):
     country = StringField('Country', validators=[DataRequired(), Length(min=1, max=100)])
     postal_code = StringField('Postal code', validators=[DataRequired(), Length(min=1, max=20)])
     submit = SubmitField('Create supplier')
+
+class CreateMaterialForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])
+    category = StringField('Category', validators=[DataRequired(), Length(min=1, max=100)])
+    density = FloatField('Density (g/cm³)', validators=[DataRequired()])
+    youngs_modulus = FloatField("Young's modulus (GPa)", validators=[DataRequired()])
+    yield_strength = FloatField('Yield strength (MPa)', validators=[DataRequired()])
+    poisson_ratio = FloatField("Poisson's ratio", validators=[DataRequired()])
+    ultimate_strength = FloatField('Ultimate strength (MPa)', validators=[DataRequired()])
+    thermal_conductivity = FloatField('Thermal conductivity (W/mK)', validators=[DataRequired()])
+    specific_heat = FloatField('Specific heat (J/gK)', validators=[DataRequired()])
+    thermal_expansion = FloatField('Thermal expansion (1/K)', validators=[DataRequired()])
+    submit = SubmitField('Create material')
+ 

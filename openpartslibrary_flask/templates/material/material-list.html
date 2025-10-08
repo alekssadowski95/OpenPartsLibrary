@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Materials</h2>
+<a href="{{ url_for('material_create') }}" class="btn btn-primary">Add New Material</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th>Archived</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for material in materials %}
+        <tr>
+            <td>{{ material.name }}</td>
+            <td>{{ material.description }}</td>
+            <td>{{ 'Yes' if material.archived else 'No' }}</td>
+            <td>
+                <a href="{{ url_for('material_read', material_id=material.id) }}">View</a>
+                <a href="{{ url_for('material_update', material_id=material.id) }}">Edit</a>
+                <a href="{{ url_for('material_delete', material_id=material.id) }}">Delete</a>
+                {% if not material.is_archived %}
+                <a href="{{ url_for('material_archivate', material_id=material.id) }}">Archive</a>
+                {% endif %}
+            </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

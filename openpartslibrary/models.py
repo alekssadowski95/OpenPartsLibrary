@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint, Boolean
+from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint, Boolean, Text
 from sqlalchemy.orm import DeclarativeBase, relationship, backref
 from datetime import datetime
 
@@ -116,51 +116,38 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
-    # General information
-    name = Column(String, nullable=False) # e.g. Steel plate 12 mm
-    standard_number = Column(String) # Standardized number (e.g., 1.4301)
-    density = Column(Float) # g/cm³
+    name = Column(String(128), unique=True, nullable=False)
+    description = Column(Text)
+    category = Column(String(64))  # e.g., 'Metal', 'Polymer', 'Composite'
+    
+    # --- Basic mechanical properties ---
+    density = Column(Float)                    # kg/m³
+    youngs_modulus = Column(Float)             # Pa
+    poisson_ratio = Column(Float)
+    shear_modulus = Column(Float)              # Pa
+    bulk_modulus = Column(Float)               # Pa
 
-    # Mechanical properties
-    elastic_modulus = Column(Float) # Young’s modulus (GPa)
-    shear_modulus = Column(Float) # Shear modulus (GPa)
-    poisson_ratio = Column(Float) # Dimensionless
-    tensile_strength = Column(Float) # Rm, MPa
-    yield_strength = Column(Float) # Re or Rp0.2, MPa
-    fatigue_strength = Column(Float) # Endurance limit, MPa
-    elongation = Column(Float) # Elongation at break, %
-    hardness = Column(Float) # hardness value, scale also has to specified
-    hardness_scale = Column(String) # e.g., HB, HV, HRC
-    toughness = Column(Float) # Charpy impact energy, J
+    # --- Plasticity properties ---
+    yield_strength = Column(Float)             # Pa
+    ultimate_strength = Column(Float)          # Pa
+    hardening_modulus = Column(Float)          # Pa (for isotropic hardening)
+    
+    # --- Thermal properties ---
+    thermal_conductivity = Column(Float)       # W/m·K
+    specific_heat = Column(Float)              # J/kg·K
+    thermal_expansion = Column(Float)          # 1/K (coefficient of linear expansion)
+    
+    # --- Damage or failure properties ---
+    fracture_toughness = Column(Float)         # MPa·m^0.5
+    fatigue_strength = Column(Float)           # Pa
+    
+    # --- Metadata ---
+    supplier = Column(String(256))               
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Physical properties
-    thermal_conductivity = Column(Float) # W/mK
-    specific_heat_capacity = Column(Float) # J/kgK
-    thermal_expansion = Column(Float) # 1/K
-    electrical_conductivity = Column(Float) # S/m
-    magnetic_behavior = Column(String) # Ferromagnetic, paramagnetic, diamagnetic
-
-    # Chemical properties
-    oxidation_resistance_air = Column(String) # good, limited, poor
-
-    # Technological properties
-    weldability = Column(String) # good, limited, poor
-    castability = Column(String) # good, limited, poor
-    formability = Column(String) # good, limited, poor
-    machinability = Column(String) # good, limited, poor
-    hardenability = Column(String) # good, limited, poor
-
-    # Operational properties
-    temperature_min = Column(String) # Usable min temperature
-    temperature_max = Column(String) # Usable max temperature
-    wear_resistance = Column(String) # good, limited, poor
-
-    # Economic aspects
-    price = Column(Float) # Price per kg, currency also has to be specified separately
-    currency = Column(String) # Currency for the price per kg
-    availability = Column(String) # available/ not available
-    lead_time = Column(Integer) # lead time for delivery in days
+    def __repr__(self):
+        return f"<Material {self.name}>"
 
 
 '''

@@ -116,6 +116,7 @@ class Material(Base):
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(128), unique=True, nullable=False)
     description = Column(Text)
     category = Column(String(64))  # e.g., 'Metal', 'Polymer', 'Composite'
@@ -149,6 +150,22 @@ class Material(Base):
 
     def __repr__(self):
         return f"<Material {self.name}>"
+    
+
+class Requirement(Base):
+    __tablename__ = "requirements"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)            
+    title = Column(String(200), nullable=False)                           
+    description = Column(Text, nullable=False)                            
+    requirement_type = Column(Enum("mandatory", "minimum", "desirable", name="requirement_type"), nullable=False)
+    owner = Column(String(100))                                
+    acceptance_criteria = Column(Text)                                                                
+    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f"<Requirement {self.uuid}: {self.title}>"
 
 
 '''

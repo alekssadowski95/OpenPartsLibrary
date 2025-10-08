@@ -161,12 +161,72 @@ class Requirement(Base):
     description = Column(Text, nullable=False)                            
     requirement_type = Column(Enum("mandatory", "minimum", "desirable", name="requirement_type"), nullable=False)
     owner = Column(String(100))                                
-    acceptance_criteria = Column(Text)                                                                
+    acceptance_criteria = Column(Text)      
+    source = Column(String(200))      
+    created_at = Column(DateTime, default=datetime.utcnow)                                                    
     last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f"<Requirement {self.uuid}: {self.title}>"
 
+"""
+sample_requirements = [
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Maximum Jaw Opening",
+        "description": "The vise shall accommodate workpieces up to 200 mm wide.",
+        "requirement_type": "mandatory",
+        "owner": "Alice Smith",
+        "acceptance_criteria": "Measured jaw opening ≥ 200 mm with gauge.",
+        "source": "Customer specification"
+    },
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Clamping Force",
+        "description": "The vise shall provide a clamping force of at least 1500 N to securely hold workpieces.",
+        "requirement_type": "mandatory",
+        "owner": "Bob Johnson",
+        "acceptance_criteria": "Verified using load cell measurement during clamping test.",
+        "source": "Engineering requirement"
+    },
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Jaw Parallelism",
+        "description": "The vise jaws shall maintain parallelism within 0.05 mm along the entire opening range.",
+        "requirement_type": "minimum",
+        "owner": "Carol Lee",
+        "acceptance_criteria": "Measured with precision dial gauge along jaw faces.",
+        "source": "Quality control standard"
+    },
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Surface Finish of Jaws",
+        "description": "The vise jaws should have a smooth, polished finish to prevent workpiece damage.",
+        "requirement_type": "desirable",
+        "owner": "David Kim",
+        "acceptance_criteria": "Visual inspection; minor surface scratches acceptable.",
+        "source": "Design recommendation"
+    },
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Rotatable Base",
+        "description": "The vise base should be rotatable 360° for flexible workpiece orientation.",
+        "requirement_type": "desirable",
+        "owner": "Eve Martinez",
+        "acceptance_criteria": "Base rotation smooth, full 360° rotation without obstruction.",
+        "source": "Optional feature"
+    },
+    {
+        "uuid": uuid.uuid4().hex,
+        "title": "Material Hardness",
+        "description": "The vise body shall be made of steel with a hardness of at least 200 HB.",
+        "requirement_type": "mandatory",
+        "owner": "Frank Li",
+        "acceptance_criteria": "Hardness verified with Rockwell or Brinell test.",
+        "source": "Mechanical design standard"
+    }
+]
+"""
 
 '''
 Relationship tables

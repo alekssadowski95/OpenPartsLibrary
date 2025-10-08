@@ -317,6 +317,21 @@ def material_archivate(uuid):
     pl.session.commit()
     return redirect(url_for('materials'))
 
+''' 
+***********
+Component routes
+***********
+'''
+@app.route('/components')
+def components():
+    components = pl.session.query(Component).all()
+    return render_template('component/component-list.html', components = components) 
+
+
+@app.route('/component/create', methods = ['GET', 'POST'])
+def component_create():
+    return render_template('component/component-create.html')
+
         
 ''' 
 ***********

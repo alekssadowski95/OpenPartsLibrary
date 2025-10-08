@@ -114,9 +114,16 @@
     <!-- Main view and sidebars -->
     <div class="row p-0 m-0" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px);">
         <!-- Sidebar left-->
-        <div class="col" style="overflow-y: auto; overflow-x: hidden; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); min-width: 60px; max-width: 60px; width: 60px; background-color: #042c61; border: none; padding: 0; border-right: 1px solid lightgray;">
+        <div class="col" style="overflow-y: auto; overflow-x: hidden; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); min-width: 80px; max-width: 80px; width: 80px; background-color: #042c61; border: none; padding: 0; border-right: 1px solid lightgray;">
             <nav class="sidebar-nav" style="width: 100%;">
                 <ul class="px-0" style="list-style: none; margin: 0; margin-top: 16px; margin-bottom: 16px; width: 100%;">
+                    <!-- Components button -->
+                    <li>
+                        <a title="Browse all parts" href="{{ url_for('components') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
+                            <img src="{{ url_for('static', filename='settings.png') }}" style="height: 20px; width: 20px;" alt=""></img>
+                            <span style="color: white;">Components</span>
+                        </a>
+                    </li>
                     <!-- Parts button -->
                     <li>
                         <a title="Browse all parts" href="{{ url_for('parts') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
@@ -127,7 +134,7 @@
                     <!-- Materials button -->
                     <li>
                         <a title="Browse all materials" href="{{ url_for('materials') }}" class="text-muted p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center">
-                            <img src="{{ url_for('static', filename='material.png') }}" style="height: 22px; width: 22px;" alt=""></img>
+                            <img src="{{ url_for('static', filename='material.png') }}" style="height: 20px; width: 20px;" alt=""></img>
                             <span style="color: white;">Materials</span>
                         </a>
                     </li>

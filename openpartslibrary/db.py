@@ -5,7 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 
-from .models import Base, Part, Supplier, File, Component, ComponentComponent
+from .models import Base, Part, Supplier, File, Component, ComponentComponent, Material
 
 import uuid
 
@@ -335,3 +335,38 @@ class PartsLibrary:
         component_5.children.append(self.session.query(Component).filter_by(id = 3).first())
         component_5.children.append(self.session.query(Component).filter_by(id = 4).first())
         self.session.commit()
+
+#Adding sample materials
+        material_steel_1020 = Material(
+            uuid = str(uuid.uuid4()),
+            name = "Steel AISI 1020",
+            category="Metal",
+            density=7850,
+            youngs_modulus=2.1e11,
+            poisson_ratio=0.29,
+            yield_strength=3.5e8,
+            ultimate_strength=4.2e8,
+            thermal_conductivity=51,
+            specific_heat=486,
+            thermal_expansion=1.2e-5
+        )
+        self.session.add(material_steel_1020)
+        self.session.commit()
+
+def add_material(self, name, category, density, youngs_modulus, poisson_ratio, yield_strength, ultimate_strength, thermal_conductivity, specific_heat, thermal_expansion):
+        material = Material(
+            uuid = str(uuid.uuid4()),
+            name = name,
+            category = category,
+            density = density,
+            youngs_modulus = youngs_modulus,
+            poisson_ratio = poisson_ratio,
+            yield_strength = yield_strength,
+            ultimate_strength = ultimate_strength,
+            thermal_conductivity = thermal_conductivity,
+            specific_heat = specific_heat,
+            thermal_expansion = thermal_expansion
+        )
+        self.session.add(material)
+        self.session.commit()
+        print(f"Material '{name}' added successfully.")

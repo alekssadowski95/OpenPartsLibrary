@@ -212,7 +212,7 @@ def create_part():
 @app.route('/part_view/<uuid>')
 def part_view(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_reference.uuid + '.FCStd'))
+    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_file.uuid + '.FCStd'))
     print(part_cad_filepath)
     return render_template('part/part-read.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
 

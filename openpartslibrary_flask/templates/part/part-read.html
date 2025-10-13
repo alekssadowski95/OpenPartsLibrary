@@ -21,7 +21,7 @@
     <div class="row">
         <!-- 3D View -->
         <div class="col-4">
-            <iframe style="min-width: 100%; min-height: max(100%, 400px); border: 1px solid #dadada;" src="{{ url_for('viewer', filename = part.cad_reference.uuid + '.FCStd') }}"></iframe>
+            <iframe style="min-width: 100%; min-height: max(100%, 400px); border: 1px solid #dadada;" src="{{ url_for('viewer', filename = part.cad_file.uuid + '.FCStd') }}"></iframe>
         </div>
         <!-- Properties -->
         <div class="col-8">
@@ -72,13 +72,13 @@
             </table>  
         </div>
     </div>
-    <h2 class="pt-4">Files</h2>
+    <h2 class="pt-4">Attached Files</h2>
     <div class="pt-3 mb-2">
         <nobr>
             <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('create_file') }}"><i class="bi-plus-lg" style="padding-right: 6px;"></i>Add file</a>
         </nobr>
     </div>
-    <p class="mb-2">{{ len(files) }} files found.</p>
+    <p class="mb-2">{{ part.files|length }} files found.</p>
     <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
         <thead>
             <tr>

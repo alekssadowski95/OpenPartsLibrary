@@ -1,0 +1,20 @@
+{% extends "base-row.html" %}
+
+{% block main_view_content %}
+<div class="container col-xl-4 py-5" style="background-color: #f5f5f5;">
+    <h4 class="mb-3">Edit File: {{ file.name }}</h4>
+    <form action="" method="POST" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.file.label(class="form-label") }}
+            {{ form.file(class="form-control") }}
+            <small class="form-text text-muted">Leave blank to keep current file.</small>
+        </div>
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Update File</button>
+    </form>
+</div>
+{% endblock %}

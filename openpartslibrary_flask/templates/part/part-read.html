@@ -75,7 +75,7 @@
     <h2 class="pt-4">Attached Files</h2>
     <div class="pt-3 mb-2">
         <nobr>
-            <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('create_file') }}"><i class="bi-plus-lg" style="padding-right: 6px;"></i>Add file</a>
+            <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('create_file', part_uuid=part.uuid) }}"><i class="bi-plus-lg" style="padding-right: 6px;"></i>Add file</a>
         </nobr>
     </div>
     <p class="mb-2">{{ part.files|length }} files found.</p>
@@ -116,7 +116,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for file in files %}
+            {% for file in used_in_files %}
             <tr>
                 <td>{{ file.name }}</td>
                 <td>{{ file.date_created }}</td>

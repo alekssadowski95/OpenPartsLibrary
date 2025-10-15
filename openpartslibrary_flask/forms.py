@@ -49,4 +49,9 @@ class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
+class CreateFileForm(FlaskForm):
+    description = TextAreaField('Description', validators=[DataRequired(), Length(min=1, max=1000)])
+    file = FileField('Upload file', validators=[DataRequired()])
+  
  

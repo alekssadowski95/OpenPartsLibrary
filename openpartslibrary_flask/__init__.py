@@ -72,8 +72,8 @@ def copy_sample_files():
 copy_sample_files()
 
 # Clear the parts library
-pl.delete_all()
-pl.add_sample_data()
+#pl.delete_all()
+#pl.add_sample_data()
 
 login_manager = LoginManager()
 login_manager.init_app(app)

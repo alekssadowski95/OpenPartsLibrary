@@ -1,0 +1,19 @@
+{% extends "base-row.html" %}
+
+{% block main_view_content %}
+<div class="container col-xl-4 py-5">
+    <h4 class="mb-3">Add File to {{ part.name }}</h4>
+    <form action="" method="POST" enctype="multipart/form-data">
+        {{ form.csrf_token }}
+        <div class="mb-3">
+            {{ form.file.label(class="form-label") }}
+            {{ form.file(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.description.label(class="form-label") }}
+            {{ form.description(class="form-control") }}
+        </div>
+        <button type="submit" class="btn btn-primary">Upload File</button>
+    </form>
+</div>
+{% endblock %}

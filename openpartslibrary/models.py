@@ -59,8 +59,11 @@ class File(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    part_id = Column(ForeignKey('parts.id'))
-    part = relationship('Part', back_populates='cad_reference')
+    # Many-to-many relationship with Parts
+    parts = relationship('Part', secondary='part_file', back_populates='files')
+
+    # One-to-one relationship with Part for CAD reference
+    cad_part = relationship('Part', back_populates='cad_file', uselist=False, foreign_keys='Part.cad_file_id')
 
 class Part(Base):
     __tablename__ = 'parts'
@@ -89,8 +92,12 @@ class Part(Base):
     currency = Column(String(3))
     is_archived = Column(Boolean, default=False)
 
-    cad_reference = relationship('File', back_populates='part', uselist=False)
+    cad_file_id = Column(Integer, ForeignKey('files.id'))
+    cad_file= relationship('File', back_populates='cad_part', uselist=False, foreign_keys=[cad_file_id])
 
+    # Many-to-many relationship with Files
+    files = relationship('File', secondary='part_file', back_populates='parts')
+    
     supplier_id = Column(ForeignKey('suppliers.id'))
     supplier = relationship('Supplier', back_populates='parts')
 
@@ -252,6 +259,11 @@ class PartFile(Base):
     __tablename__ = 'part_file'
 
     id = Column(Integer, primary_key=True)
+    parts_id = Column(Integer, ForeignKey('parts.id'), nullable=False)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=False)
+    date_linked = Column(DateTime, default=datetime.utcnow)
+
+    __table__args__ = (UniqueConstraint('parts_id', 'file_id', name='uq_part_file'),)
 
 class SupplierAdress(Base):
     __tablename__ = 'supplier_adress'

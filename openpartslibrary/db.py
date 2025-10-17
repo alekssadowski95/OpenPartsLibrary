@@ -289,7 +289,9 @@ class PartsLibrary:
                     dst_file.write(data)
             
             # Create a new file
-            file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
+            cad_file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
+            self.session.add(cad_file)
+            self.session.commit()
 
             part = Part(
                     uuid = str(uuid.uuid4()),
@@ -311,7 +313,7 @@ class PartsLibrary:
                     manufacturer_number='MFN-100001',
                     unit_price=0.10,
                     currency='EUR',
-                    cad_reference = file
+                    cad_file=cad_file,
             )
             self.session.add(part)
             self.session.commit()
@@ -336,7 +338,11 @@ class PartsLibrary:
         component_5.children.append(self.session.query(Component).filter_by(id = 4).first())
         self.session.commit()
 
-#Adding sample materials
+def add_sample_materials(self):
+    # Adding sample materials
+    material_name = "Steel AISI 1020"
+    existing_material = self.session.query(Material).filter_by(name=material_name).first()
+    if not existing_material:
         material_steel_1020 = Material(
             uuid = str(uuid.uuid4()),
             name = "Steel AISI 1020",
@@ -352,6 +358,8 @@ class PartsLibrary:
         )
         self.session.add(material_steel_1020)
         self.session.commit()
+    else:
+        print(f"Material '{material_name}' already exists. Skipping addition.")
 
 def add_material(self, name, category, density, youngs_modulus, poisson_ratio, yield_strength, ultimate_strength, thermal_conductivity, specific_heat, thermal_expansion):
         material = Material(

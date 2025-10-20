@@ -6,6 +6,7 @@ from flask import render_template, url_for, send_from_directory, redirect, reque
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from .settings import load_settings, save_settings
 
 from sqlalchemy import or_
 
@@ -460,6 +461,25 @@ def delete_file(file_uuid):
 def file_list():
     files = pl.session.query(File).all()
     return render_template('file/file-list.html', files = files)
+
+'''
+*************
+Settings routes
+*************
+'''
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    settings = load_settings()
+    if request.method == 'POST':
+        kicad_path = request.form.get('kicad_path', "")
+        freecad_path = request.form.get('freecad_path', "")
+        settings['executables']['KiCad'] = kicad_path
+        settings['executables']['FreeCAD'] = freecad_path
+        save_settings(settings)
+        flash('Settings saved successfully!', 'success')
+        return redirect(url_for('settings'))
+    return render_template('settings.html', settings = settings)
+        
     
 
 ''' 

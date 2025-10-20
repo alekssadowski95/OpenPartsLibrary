@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block main_view %}
+<div class="container col-x1-4 py-5">
+    <h4 class="mb-3">Settings</h4>
+    <form method="POST">
+        <div class="mb-3">
+            <label for="kicad_path" class="form-label">KiCad Executable Path</label>
+            <input type="text" class="form-control" name="kicad_path" value="{{ settings.executables.KiCad }}">
+            </div>
+            <div class="mb-3">
+                <label for="freecad_path" class="form-label">FreeCAD Executable Path</label>
+                <input type="text" class="form-control" name="freecad_path" value="{{ settings.executables.FreeCAD }}">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+    </form>
+</div>
+{% endblock %}

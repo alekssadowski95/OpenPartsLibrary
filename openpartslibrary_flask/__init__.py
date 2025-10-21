@@ -6,6 +6,7 @@ from flask import render_template, url_for, send_from_directory, redirect, reque
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from .settings import load_settings, save_settings
 
 from sqlalchemy import or_
 
@@ -13,16 +14,18 @@ from flask_cors import CORS
 
 from openpartslibrary.db import PartsLibrary
 from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent, Material, User
-from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm, CreateMaterialForm, LoginForm, RegistrationForm
+from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm, CreateMaterialForm, LoginForm, RegistrationForm, CreateFileForm
 
 
 # Setup directories
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
 DATA_DIR = os.path.join(STATIC_DIR, 'data')
 CAD_DIR = os.path.join(DATA_DIR,'cad')
+FILE_DIR = os.path.join(DATA_DIR,'files')
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(CAD_DIR, exist_ok=True)
-
+os.makedirs(FILE_DIR, exist_ok=True)
+ 
 # Create the flask app instance
 app = Flask(__name__)
 
@@ -70,8 +73,8 @@ def copy_sample_files():
 copy_sample_files()
 
 # Clear the parts library
-pl.delete_all()
-pl.add_sample_data()
+#pl.delete_all()
+#pl.add_sample_data()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -212,9 +215,12 @@ def create_part():
 @app.route('/part_view/<uuid>')
 def part_view(uuid):
     part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_reference.uuid + '.FCStd'))
-    print(part_cad_filepath)
-    return render_template('part/part-read.html', part = part, len = len, part_cad_filepath = part_cad_filepath) 
+    if part is None:
+        return f"Part not found with UUID: {uuid}", 404
+    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_file.uuid + '.FCStd'))
+    files = part.files if part else []
+    used_in_files = []
+    return render_template('part/part-read.html', part = part, len = len, part_cad_filepath = part_cad_filepath, files = files, used_in_files = used_in_files) 
 
 @app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
 def update_part(uuid):
@@ -388,10 +394,93 @@ def component_create():
 File routes
 ***********
 '''
-@app.route('/create-file', methods = ['GET', 'POST'])
-def create_file():
+@app.route('/create-file/<part_uuid>', methods = ['GET', 'POST'])
+def create_file(part_uuid):
+    form = CreateFileForm()
+    part = pl.session.query(Part).filter_by(uuid = part_uuid).first()
+    if part is None:
+        return f"Part not found with UUID: {part_uuid}", 404
+    if form.validate_on_submit():
+        uploaded_file = request.files['file']
+        if uploaded_file.filename == '':
+            return "No selected file", 400
+        file_uuid = str(uuid.uuid4())
+        file_name = secure_filename(uploaded_file.filename)
+        stored_file_name = file_uuid + os.path.splitext(file_name)[1]
+        upload_path = os.path.join(FILE_DIR, stored_file_name)
+        uploaded_file.save(upload_path)
+        file = File(uuid = file_uuid, name = file_name, description = form.description.data)
+        pl.session.add(file)
+        part.files.append(file)
+        pl.session.commit()
+        return redirect(url_for('part_view', uuid = part_uuid))
+    return render_template('file/file-create.html', form = form, part = part)
+
+@app.route('/read-file/<file_uuid>')
+def read_file(file_uuid):
+    file = pl.session.query(File).filter_by(uuid = file_uuid).first()
+    if file is None:
+        return f"File not found with UUID: {file_uuid}", 404
+    return render_template('file/file-read.html', file = file)
+
+@app.route('/update-file/<file_uuid>', methods = ['GET', 'POST'])
+def update_file(file_uuid):
+    file = pl.session.query(File).filter_by(uuid = file_uuid).first()
+    if file is None:
+        return f"File not found with UUID: {file_uuid}", 404
+    form = CreateFileForm(obj = file)
+    if form.validate_on_submit():
+        uploaded_file = request.files['file']
+        if uploaded_file and uploaded_file.filename != '':
+            file_name = secure_filename(uploaded_file.filename)
+            stored_file_name = file.uuid + os.path.splitext(file_name)[1]
+            upload_path = os.path.join(FILE_DIR, stored_file_name)
+            uploaded_file.save(upload_path)
+            file.name = file_name
+        file.description = form.description.data
+        pl.session.commit()
+        part = file.parts[0] if file.parts else None
+        if part:
+            return redirect(url_for('part_view', uuid = part.uuid))
+        else:
+            return "File updated, but no associated part found.", 200
+    return render_template('file/file-update.html', form = form, file = file)
+
+@app.route('/delete-file/<file_uuid>', methods = ['GET', 'POST'])
+def delete_file(file_uuid):
+    file = pl.session.query(File).filter_by(uuid = file_uuid).first()
+    if file is None:
+        return f"File not found with UUID: {file_uuid}", 404
+    for part in file.parts:
+        part.files.remove(file)
+    pl.session.delete(file)
+    pl.session.commit()
     return redirect(url_for('parts'))
 
+@app.route('/file-list')
+def file_list():
+    files = pl.session.query(File).all()
+    return render_template('file/file-list.html', files = files)
+
+'''
+*************
+Settings routes
+*************
+'''
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    settings = load_settings()
+    if request.method == 'POST':
+        kicad_path = request.form.get('kicad_path', "")
+        freecad_path = request.form.get('freecad_path', "")
+        settings['executables']['KiCad'] = kicad_path
+        settings['executables']['FreeCAD'] = freecad_path
+        save_settings(settings)
+        flash('Settings saved successfully!', 'success')
+        return redirect(url_for('settings'))
+    return render_template('settings.html', settings = settings)
+        
+    
 
 ''' 
 ***********

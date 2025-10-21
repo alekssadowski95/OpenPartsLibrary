@@ -26,6 +26,7 @@ class CreateSupplierForm(FlaskForm):
 
 class CreateMaterialForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])
+    description = TextAreaField('Description', validators=[DataRequired(), Length(min=1, max=1000)])
     category = StringField('Category', validators=[DataRequired(), Length(min=1, max=100)])
     density = FloatField('Density (g/cm³)', validators=[DataRequired()])
     youngs_modulus = FloatField("Young's modulus (GPa)", validators=[DataRequired()])
@@ -48,4 +49,9 @@ class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
+
+class CreateFileForm(FlaskForm):
+    description = TextAreaField('Description', validators=[DataRequired(), Length(min=1, max=1000)])
+    file = FileField('Upload file', validators=[DataRequired()])
+  
  

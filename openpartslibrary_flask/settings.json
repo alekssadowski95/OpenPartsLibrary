@@ -1,6 +1,6 @@
 {
     "executables": {
-        "KiCad": "",
-        "FreeCAD": ""
+        "KiCad": "C:\\Users\\Work\\Documents\\Github\\OpenPartsLibrary\\openpartslibrary_flask\\static",
+        "FreeCAD": "C:\\Users\\Work\\Documents\\Github\\OpenPartsLibrary\\openpartslibrary_flask\\static\\"
     }
 }

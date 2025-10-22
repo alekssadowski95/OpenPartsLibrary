@@ -2,6 +2,7 @@ openpartslibrary_flask/static/data/*
 openpartslibrary/data/*
 
 apps/*
+utils/*
 
 
 # Byte-compiled / optimized / DLL files

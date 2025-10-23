@@ -8,18 +8,36 @@
 {% endblock style %}
 
 {% block main_view %}
-<div class="container p-0 m-0" style="background-color: rgb(255, 255, 255); min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%;">
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <!-- Put your content in here -->
     <!-- ... -->
-     <h2>Register</h2>
-    <form method="POST">
-    {{ form.hidden_tag() }}
-    {{ form.username.label }} {{ form.username() }}<br>
-    {{ form.email.label }} {{ form.email() }}<br>
-    {{ form.password.label }} {{ form.password() }}<br>
-    {{ form.confirm_password.label }} {{ form.confirm_password() }}<br>
-    {{ form.submit() }}
-    </form>
+    <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
+        <div class="card-body">
+            <h3 class="card-title mb-4 text-center">Register</h3>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control", placeholder="Choose a username") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control", placeholder="Enter your email") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control", placeholder="Create password") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.confirm_password.label(class="form-label") }}
+                    {{ form.confirm_password(class="form-control", placeholder="Confirm your password") }}
+                </div>
+                <div class="d-grid">
+                    {{ form.submit(class="btn btn-success") }}
+                </div>
+            </form>
+            </div>
+    </div>  
 </div>
 {% endblock main_view %}
 

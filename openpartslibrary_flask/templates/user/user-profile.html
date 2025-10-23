@@ -10,12 +10,16 @@
 
 
 {% block main_view %}
-<div class="container p-0 m-0" style="background-color: rgb(255, 255, 255); min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%;">
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <!-- Put your content in here -->
     <!-- ... -->
-    <h2>Welcome, {{ user.username }}!</h2>
-    <p>Email: {{ user.email }}</p>
+     <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
+        <div class="card-body text-center">
+    <h3 class="card-title mb-4">Welcome, {{ user.username }}!</h3>
+    <p class="mb-3"><strong>Email:</strong> {{ user.email }}</p>
     <a class="btn btn-outline-secondary" type="button" href="{{ url_for('logout') }}">Logout</a>
+</div>
+    </div>
 </div>
 {% endblock main_view %}
 

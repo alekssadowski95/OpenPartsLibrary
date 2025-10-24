@@ -4,8 +4,12 @@ import os
 SETTINGS_FILE = os.path.join(os.path.dirname(__file__), 'settings.json')
 DEFAULT_SETTINGS = {
     "executables": {
-        "KiCad" : "",
-        "FreeCAD" : "",
+        "FreeCAD_GUI": "",
+        "FreeCAD_CMD": "",
+        "PreProMax": "",
+        "LibreOffice_Writer": "",
+        "LibreOffice_Calc": "",
+        "LibreOffice_Impress": "",  
     }
 }
 

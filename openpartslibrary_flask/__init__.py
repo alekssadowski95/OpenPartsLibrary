@@ -112,15 +112,18 @@ def register():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('profile'))
     form = LoginForm()
     if form.validate_on_submit():
         user = pl.session.query(User).filter_by(email=form.email.data).first()
         if user and check_password_hash(user.password, form.password.data):
             login_user(user)
+            print("Authenticated after login", current_user.is_authenticated)
             return redirect(url_for('profile'))
         else:
             flash('Invalid email or password', 'danger')
-    return render_template('user/user-login.html', form = LoginForm())
+    return render_template('user/user-login.html', form = form)
 
 @app.route('/profile')
 @login_required
@@ -479,10 +482,12 @@ Settings routes
 def settings():
     settings = load_settings()
     if request.method == 'POST':
-        kicad_path = request.form.get('kicad_path', "")
-        freecad_path = request.form.get('freecad_path', "")
-        settings['executables']['KiCad'] = kicad_path
-        settings['executables']['FreeCAD'] = freecad_path
+        settings['executables']['FreeCAD_GUI'] = request.form.get('FreeCAD_GUI', '')
+        settings['executables']['FreeCAD_CMD'] = request.form.get('FreeCAD_CMD', '')
+        settings['executables']['PrePoMax'] = request.form.get('PrePoMax', '')
+        settings['executables']['LibreOffice_Writer'] = request.form.get('LibreOffice_Writer', '')
+        settings['executables']['LibreOffice_Calc'] = request.form.get('LibreOffice_Calc', '')
+        settings['executables']['LibreOffice_Impress'] = request.form.get('LibreOffice_Impress', '')
         save_settings(settings)
         flash('Settings saved successfully!', 'success')
         return redirect(url_for('settings'))

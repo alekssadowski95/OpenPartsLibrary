@@ -208,7 +208,7 @@ def create_part():
                 manufacturer_number = 'MFN-100001',
                 unit_price = str(form.unit_price.data),
                 currency = 'EUR',
-                cad_reference = file
+                cad_file = file
         )
         pl.session.add(part)
         pl.session.commit()

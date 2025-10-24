@@ -80,9 +80,15 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'  # redirect unauthorized users
 
+@app.context_processor
+def inject_user():
+    return dict(user=current_user)
+
 @login_manager.user_loader
 def load_user(user_id):
     return pl.session.query(User).filter_by(id=int(user_id)).first()
+
+
 
 '''
 **************
@@ -112,7 +118,9 @@ def login():
         if user and check_password_hash(user.password, form.password.data):
             login_user(user)
             return redirect(url_for('profile'))
-    return render_template('user/user-login.html', form = form)
+        else:
+            flash('Invalid email or password', 'danger')
+    return render_template('user/user-login.html', form = LoginForm())
 
 @app.route('/profile')
 @login_required

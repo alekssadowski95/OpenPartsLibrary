@@ -9,23 +9,61 @@
 
 
 {% block main_view %}
-<div class="container p-0 m-0" style="background-color: rgb(255, 255, 255); min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%;">
-    <!-- Put your content in here -->
+<div class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
+    <div class="card shadow-sm p-4" style="width: 100%; max-width: 400px;">
+        <div class="card-body">
     <!-- ... -->
-    <h2>Login</h2>
+    <h3 class="card-title mb-4 text-center">Login</h3>
     <form method="POST">
     {{ form.hidden_tag() }}
-    {{ form.email.label }} {{ form.email() }}<br>
-    {{ form.password.label }} {{ form.password() }}<br>
-    {{ form.submit() }}
+    <div class="mb-3">
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control", placeholder="Enter your email") }}
+    </div>
+    <div class="mb-3 position-relative">
+        {{ form.password.label(class="form-label") }}
+        <div class="input-group">
+        {{ form.password(class="form-control", placeholder="Enter your password", id="passwordField") }}
+        <button type="button" class="btn btn-outline-secondary" id="togglePassword" tabindex="-1">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+        </button>
+    </div>
+    </div>
+    <div class="d-grid mb-3">
+        {{ form.submit(class="btn btn-primary") }}
+    </div>
     </form>
-    <span>No account yet?</span>
-    <a class="btn btn-outline-secondary" type="button" href="{{ url_for('register') }}">Register</a>
+    <div class="text-center mt-3">
+        <span>No account yet?</span>
+        <a class="btn btn-outline-secondary btn-sm ms-2" href="{{ url_for('register') }}">Register</a>
+    </div>
+        </div>
+    </div>
 </div>
 {% endblock main_view %}
 
 {% block script %}
 <!-- Extent the scripts here -->
 <!-- ... -->
+ <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const passwordField = document.getElementById('passwordField');
+        const togglePassword = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
 
-{% endblock script %}
+        togglePassword.addEventListener('click', function() {
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            if (type == "text") {
+                eyeIcon.classList.remove('bi-eye');
+                eyeIcon.classList.add('bi-eye-slash');
+            } else {
+                eyeIcon.classList.remove('bi-eye-slash');
+                eyeIcon.classList.add('bi-eye');
+            }
+            });
+        });
+    </script>
+    {% endblock script %}
+
+          

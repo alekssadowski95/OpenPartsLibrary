@@ -138,8 +138,9 @@ This table outlines the `Part` properties used in the OpenPartsLibrary.
 `id` and `uuid` will also be used internally, but database users does not have to worry about those.
 
 Credits:
-<a href="https://www.flaticon.com/free-icons/database" title="database icons">Database icons created by Smashicons - Flaticon</a>
-<a href="https://www.flaticon.com/free-icons/supplier" title="supplier icons">Supplier icons created by Muhajir - Flaticon</a>
+* <a href="https://www.flaticon.com/free-icons/database" title="database icons">Database icons created by Smashicons - Flaticon</a>
+* <a href="https://www.flaticon.com/free-icons/supplier" title="supplier icons">Supplier icons created by Muhajir - Flaticon</a>
+* <a href="https://www.flaticon.com/free-icons/assembly-line" title="assembly line icons">Assembly line icons created by HANIS - Flaticon</a>
 
 ## How to Contribute
 This section helps in understanding how to contribute to the project.

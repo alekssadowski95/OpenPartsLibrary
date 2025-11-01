@@ -143,6 +143,7 @@ Credits:
 * <a href="https://www.flaticon.com/free-icons/assembly-line" title="assembly line icons">Assembly line icons created by HANIS - Flaticon</a>
 * <a href="https://www.flaticon.com/free-icons/user" title="user icons">User icons created by Phoenix Group - Flaticon</a>
 * <a href="https://www.flaticon.com/free-icons/trash" title="trash icons">Trash icons created by Freepik - Flaticon</a>
+* <a href="https://www.flaticon.com/free-icons/assemble" title="assemble icons">Assemble icons created by Puckung - Flaticon</a>
 
 ## How to Contribute
 This section helps in understanding how to contribute to the project.

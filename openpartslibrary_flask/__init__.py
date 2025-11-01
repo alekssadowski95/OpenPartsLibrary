@@ -13,8 +13,8 @@ from sqlalchemy import or_
 from flask_cors import CORS
 
 from openpartslibrary.db import PartsLibrary
-from openpartslibrary.models import Part, Supplier, File, Component, ComponentComponent, Material, User
-from openpartslibrary_flask.forms import CreatePartForm, CreateSupplierForm, CreateMaterialForm, LoginForm, RegistrationForm, CreateFileForm
+from openpartslibrary.models import Supplier, File, Component, ComponentComponent, Material, User
+from openpartslibrary_flask.forms import CreateComponentForm, CreateSupplierForm, CreateMaterialForm, LoginForm, RegistrationForm, CreateFileForm
 
 
 # Setup directories
@@ -39,10 +39,7 @@ app.config['APP_PATH'] = os.path.dirname(os.path.abspath(__file__))
 app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 
 # Application paths
-app.config['APPLICATION_PATH_FREECAD'] = 'C:/Users/Work/Documents/Github/OpenPartsLibrary/apps/FreeCAD_1.0.2-conda-Windows-x86_64-py311/bin/freecad.exe'
-app.config['APPLICATION_PATH_LIBREOFFICE'] = None
-app.config['APPLICATION_PATH_PREPOMAX'] = None
-app.config['APPLICATION_PATH_KICAD'] = None
+# initialize
 
 # Initialize the parts library
 db_path = os.path.join(app.static_folder, 'data', 'parts.db')
@@ -70,11 +67,11 @@ def copy_sample_files():
                 print(f"Skipped copying {fname}: already exists or not a file.")
 
 # Copy sample files to data dir
-copy_sample_files()
+#copy_sample_files()
 
 # Clear the parts library
 pl.delete_all()
-pl.add_sample_data()
+#pl.add_sample_data()
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -89,6 +86,14 @@ def load_user(user_id):
     return pl.session.query(User).filter_by(id=int(user_id)).first()
 
 
+'''
+**************
+General routes
+**************
+'''
+@app.route('/')
+def home():
+    return redirect(url_for('components'))
 
 '''
 **************
@@ -136,59 +141,50 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
-'''
-**************
-General routes
-**************
-'''
-@app.route('/')
-def home():
-    return redirect(url_for('parts'))
-
-
 ''' 
 ***********
-Part routes
+Component routes
 ***********
 '''
-@app.route('/parts', defaults={'search_query': None})
-def parts(search_query):
+@app.route('/components', defaults={'search_query': None})
+def components(search_query):
     search_query = request.args.get("search_query", "")
 
     like_pattern = f"%{search_query}%"
 
-    parts = pl.session.query(Part).filter(
+    components = pl.session.query(Component).filter(
             or_(
-                Part.name.ilike(like_pattern),
-                Part.description.ilike(like_pattern)
+                Component.name.ilike(like_pattern),
+                Component.description.ilike(like_pattern)
             )
         ).limit(1000).all()
     
-    return render_template('part/part-list.html', parts = parts, len = len, search_query = search_query, user = current_user)
+    return render_template('component/component-list.html', components = components, len = len, search_query = search_query, user = current_user)
 
-@app.route('/create-part', methods = ['GET', 'POST'])
-def create_part():
-    form = CreatePartForm()
+@app.route('/component/create', methods = ['GET', 'POST'])
+def component_create():
+    form = CreateComponentForm()
     if form.validate_on_submit():
-        # check if the post request has the file part
-        if "file" not in request.files:
-            return "No file part", 400
+        # check if the post request has the file component
+        if "cad_file" not in request.files:
+            return "No file component", 400
 
-        file = request.files["file"]
+        cad_file = request.files["cad_file"]
 
-        if file.filename == "":
-            return "No selected file", 400
+        if cad_file.filename == "":
+            return "No selected cad file", 400
 
         file_uuid = str(uuid.uuid4())
 
         # Sanitize filename and save
         file_name = file_uuid + '.FCStd'
-        file.save(os.path.join(CAD_DIR, file_name))
+        cad_file.save(os.path.join(CAD_DIR, file_name))
         
         # Create a new file
-        file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
+        cad_file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
 
-        part = Part(
+        # Create a new component
+        component = Component(
                 uuid = str(uuid.uuid4()),
                 number = str(form.number.data),
                 name = str(form.name.data),
@@ -196,63 +192,45 @@ def create_part():
                 revision = "1",
                 lifecycle_state = "In Work",
                 owner = str(form.owner.data),
-                material = str(form.material.data),
-                mass = 0.0,
-                dimension_x = 0.0,
-                dimension_y = 0.0,
-                dimension_z = 0.0,
-                quantity = 0,
-                attached_documents_reference = 'DOCUMENTS REFERENCE',
-                lead_time = 30,
-                make_or_buy = 'make',
                 manufacturer_number = 'MFN-100001',
                 unit_price = str(form.unit_price.data),
                 currency = 'EUR',
-                cad_file = file
+                cad_file = cad_file
         )
-        pl.session.add(part)
-        pl.session.commit()
-
-        supplier = pl.session.query(Supplier).filter_by(id = 1).first()
-        supplier.parts.append(part)
-        pl.session.commit()
-
-        component = Component(uuid = str(uuid.uuid4()), part = part, name = part.name)
         pl.session.add(component)
         pl.session.commit()
-        return redirect(url_for('all_parts'))
-    return render_template('part/part-create.html', form = form) 
+        return redirect(url_for('components'))
+    return render_template('component/component-create.html', form = form) 
 
-@app.route('/part_view/<uuid>')
-def part_view(uuid):
-    part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    if part is None:
-        return f"Part not found with UUID: {uuid}", 404
-    part_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, part.cad_file.uuid + '.FCStd'))
-    files = part.files if part else []
+@app.route('/component_view/<uuid>')
+def component_view(uuid):
+    component = pl.session.query(Component).filter_by(uuid = uuid).first()
+    if component is None:
+        return f"Component not found with UUID: {uuid}", 404
+    component_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, component.cad_file.uuid + '.FCStd'))
+    files = component.files if component else []
     used_in_files = []
-    return render_template('part/part-read.html', part = part, len = len, part_cad_filepath = part_cad_filepath, files = files, used_in_files = used_in_files) 
+    return render_template('component/component-read.html', component = component, len = len, component_cad_filepath = component_cad_filepath, files = files, used_in_files = used_in_files) 
 
-@app.route('/update-part/<uuid>', methods = ['GET', 'POST'])
-def update_part(uuid):
-    part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    form = CreatePartForm()
+@app.route('/update-component/<uuid>', methods = ['GET', 'POST'])
+def component_update(uuid):
+    component = pl.session.query(Component).filter_by(uuid = uuid).first()
+    form = CreateComponentForm()
     if form.validate_on_submit():
-        part.name = str(form.name.data)
-        part.description = str(form.description.data)
-        part.owner = str(form.owner.data)
-        part.material = str(form.material.data)
-        part.unit_price = str(form.unit_price.data)
+        component.name = str(form.name.data)
+        component.description = str(form.description.data)
+        component.owner = str(form.owner.data)
+        component.material = str(form.material.data)
+        component.unit_price = str(form.unit_price.data)
         pl.session.commit()
-        return redirect(url_for('part_view', uuid = uuid))
-    return render_template('part/part-update.html', form = form, part = part) 
+        return redirect(url_for('component_view', uuid = uuid))
+    return render_template('component/component-update.html', form = form, component = component) 
 
-@app.route('/delete-part/<uuid>', methods = ['GET', 'POST'])
-def archive_part(uuid):
-    part = pl.session.query(Part).filter_by(uuid = uuid).first()
-    part.is_archived = True
-    return redirect(url_for('parts'))
-
+@app.route('/component/archivate/<uuid>', methods = ['GET', 'POST'])
+def component_archivate(uuid):
+    component = pl.session.query(Component).filter_by(uuid = uuid).first()
+    component.is_archived = True
+    return redirect(url_for('components'))
 
 ''' 
 ***************
@@ -264,7 +242,7 @@ def suppliers():
     suppliers = pl.session.query(Supplier).all()
     return render_template('supplier/supplier-list.html', suppliers = suppliers, len = len)
 
-@app.route('/create-supplier', methods = ['GET', 'POST'])
+@app.route('/supplier/create', methods = ['GET', 'POST'])
 def create_supplier():
     form = CreateSupplierForm()
     if form.validate_on_submit():
@@ -283,7 +261,7 @@ def create_supplier():
         return redirect(url_for('suppliers'))
     return render_template('supplier/supplier-create.html', form = form)
 
-@app.route('/update-supplier/<uuid>', methods = ['GET', 'POST'])
+@app.route('/supplier/update/<uuid>', methods = ['GET', 'POST'])
 def update_supplier(uuid):
     supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
     form = CreateSupplierForm(obj=supplier)
@@ -293,8 +271,8 @@ def update_supplier(uuid):
         return redirect(url_for('suppliers'))
     return render_template('supplier/supplier-update.html', form = form, supplier = supplier)
 
-@app.route('/delete-supplier/<uuid>', methods = ['GET', 'POST'])
-def delete_supplier(uuid):
+@app.route('/supplier/delete/<uuid>', methods = ['GET', 'POST'])
+def supplier_delete(uuid):
     supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
     pl.session.delete(supplier)
     pl.session.commit()
@@ -304,7 +282,6 @@ def delete_supplier(uuid):
 def supplier_view(uuid):
     supplier = pl.session.query(Supplier).filter_by(uuid = uuid).first()
     return render_template('supplier/supplier-read.html', supplier = supplier, len = len)
-
 
 '''
 ************
@@ -383,34 +360,18 @@ def material_archivate(uuid):
     material.is_archived = True
     pl.session.commit()
     return redirect(url_for('materials'))
-
-''' 
-***********
-Component routes
-***********
-'''
-@app.route('/components')
-def components():
-    components = pl.session.query(Component).all()
-    return render_template('component/component-list.html', components = components, len = len) 
-
-
-@app.route('/component/create', methods = ['GET', 'POST'])
-def component_create():
-    return render_template('component/component-create.html')
-
         
 ''' 
 ***********
 File routes
 ***********
 '''
-@app.route('/create-file/<part_uuid>', methods = ['GET', 'POST'])
-def create_file(part_uuid):
+@app.route('/file/create/<component_uuid>', methods = ['GET', 'POST'])
+def file_create(component_uuid):
     form = CreateFileForm()
-    part = pl.session.query(Part).filter_by(uuid = part_uuid).first()
-    if part is None:
-        return f"Part not found with UUID: {part_uuid}", 404
+    component = pl.session.query(Component).filter_by(uuid = component_uuid).first()
+    if component is None:
+        return f"Component not found with UUID: {component_uuid}", 404
     if form.validate_on_submit():
         uploaded_file = request.files['file']
         if uploaded_file.filename == '':
@@ -422,19 +383,19 @@ def create_file(part_uuid):
         uploaded_file.save(upload_path)
         file = File(uuid = file_uuid, name = file_name, description = form.description.data)
         pl.session.add(file)
-        part.files.append(file)
+        component.files.append(file)
         pl.session.commit()
-        return redirect(url_for('part_view', uuid = part_uuid))
-    return render_template('file/file-create.html', form = form, part = part)
+        return redirect(url_for('component_view', uuid = component_uuid))
+    return render_template('file/file-create.html', form = form, component = component)
 
-@app.route('/read-file/<file_uuid>')
+@app.route('/file/read/<file_uuid>')
 def read_file(file_uuid):
     file = pl.session.query(File).filter_by(uuid = file_uuid).first()
     if file is None:
         return f"File not found with UUID: {file_uuid}", 404
     return render_template('file/file-read.html', file = file)
 
-@app.route('/update-file/<file_uuid>', methods = ['GET', 'POST'])
+@app.route('/file/update/<file_uuid>', methods = ['GET', 'POST'])
 def update_file(file_uuid):
     file = pl.session.query(File).filter_by(uuid = file_uuid).first()
     if file is None:
@@ -450,14 +411,14 @@ def update_file(file_uuid):
             file.name = file_name
         file.description = form.description.data
         pl.session.commit()
-        part = file.parts[0] if file.parts else None
-        if part:
-            return redirect(url_for('part_view', uuid = part.uuid))
+        component = file.components[0] if file.parts else None
+        if component:
+            return redirect(url_for('part_view', uuid = component.uuid))
         else:
             return "File updated, but no associated part found.", 200
     return render_template('file/file-update.html', form = form, file = file)
 
-@app.route('/delete-file/<file_uuid>', methods = ['GET', 'POST'])
+@app.route('/file/delete/<file_uuid>', methods = ['GET', 'POST'])
 def delete_file(file_uuid):
     file = pl.session.query(File).filter_by(uuid = file_uuid).first()
     if file is None:
@@ -489,12 +450,9 @@ def settings():
         settings['executables']['LibreOffice_Calc'] = request.form.get('LibreOffice_Calc', '')
         settings['executables']['LibreOffice_Impress'] = request.form.get('LibreOffice_Impress', '')
         save_settings(settings)
-        flash('Settings saved successfully!', 'success')
         return redirect(url_for('settings'))
-    return render_template('settings.html', settings = settings)
+    return render_template('settings/settings.html', settings = settings)
         
-    
-
 ''' 
 ***********
 Viewer routes
@@ -504,7 +462,7 @@ Viewer routes
 def viewer(filename):
     filepath = url_for('static', filename=f'data/cad/{filename}')
     print(f"Serving file to viewer : {filepath}")
-    return render_template('viewer.html', filepath = filepath)
+    return render_template('viewer/viewer.html', filepath = filepath)
 
 @app.route('/static/cad/<filename>')
 def serve_model_file(filename):
@@ -556,7 +514,6 @@ def print_database():
     # Get all the items from the database
     components_components = pl.session.query(ComponentComponent).all()
     components = pl.session.query(Component).all()
-    parts = pl.session.query(Part).all()
     suppliers = pl.session.query(Supplier).all()
     files = pl.session.query(File).all()
-    return render_template('print-database.html', components_components = components_components, components = components, parts = parts, suppliers = suppliers, files = files)
+    return render_template('debug/print-database.html', components_components = components_components, components = components, suppliers = suppliers, files = files)

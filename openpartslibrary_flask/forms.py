@@ -3,16 +3,14 @@ from wtforms.fields import StringField, TextAreaField, SubmitField, FileField, F
 from wtforms.validators import DataRequired, Length, Email, EqualTo
 
 
-class CreatePartForm(FlaskForm):
+class CreateComponentForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])
     description = TextAreaField('Description', validators=[DataRequired(), Length(min=1, max=1000)])
-    number = StringField('Part number', default='SPN-1000001')
-    owner = StringField('Owner', default='Aleksander Sadowski')
-    material = StringField('Material')
-    lead_time = FloatField('Lead time (d)', default=30)
-    unit_price = FloatField('Unit price (€)')
-    file = FileField('CAD file')
-    submit = SubmitField('Create part')
+    number = StringField('Component number', default='SPN-1000001')
+    owner = StringField('Owner', default='Max Mustermann')
+    unit_price = FloatField('Unit price (€)', default='0.00')
+    cad_file = FileField('CAD file')
+    submit = SubmitField('Create component')
 
 class CreateSupplierForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired(), Length(min=1, max=200)])

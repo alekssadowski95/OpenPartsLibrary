@@ -1,0 +1,139 @@
+{% extends "base-row.html" %}
+
+
+{% block style %}
+<!-- Extent the styles here -->
+<!-- ... -->
+{% endblock style %}
+
+{% block function_buttons %}
+<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}" style="font-size: smaller;">&larr; All components</a>
+{% endblock function_buttons %}
+
+{% block view_buttons %}
+<!-- Add your view buttons here -->
+<!-- ... -->
+{% endblock view_buttons %}
+
+{% block main_view_content %}
+<div class="container p-3 m-0" style="background-color: white; width: 100%; min-width: 100%; overflow-y: auto;">
+   <div class="container-fluid p-3">
+    <div class="row">
+        <!-- 3D View -->
+        <div class="col-4">
+            <iframe style="min-width: 100%; min-height: max(100%, 400px); border: 1px solid #dadada;" src="{{ url_for('viewer', filename = component.cad_file.uuid + '.FCStd') }}"></iframe>
+        </div>
+        <!-- Properties -->
+        <div class="col-8">
+            <p>Component</p>
+            <h1 class="mb-3">{{ component.name }}</h1>
+            <div class="mb-2">
+                <nobr>
+                    <a type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;" href="{{ url_for('run_freecad_gui', filepath = component_cad_filepath) }}"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit CAD</a>
+                    <a type="button" class="btn btn-outline-secondary" href="{{ url_for('component_update', uuid = component.uuid) }}" id="liveToastBtn" style="padding-left: 10px; padding-right: 10px; margin-right: 4px;"><i class="bi-pencil-square" style="padding-right: 6px;"></i>Edit Info</a>
+                    <a type="button" class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('component_archivate', uuid = component.uuid) }}"><i class="bi-x-lg" style="padding-right: 6px;"></i>Archivate</a>
+                </nobr>
+            </div>
+            <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+                <tbody>
+                    <tr>
+                        <th>UUID</th>
+                        <td>{{ component.uuid }}</td>
+                    </tr>
+                    <tr>
+                        <th>Name</th>
+                        <td>{{ component.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td>{{ component.description }}</td>
+                    </tr>
+                    <tr>
+                        <th>Component number</th>
+                        <td>{{ component.number }}</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>{{ component.lifecycle_state }}</td>
+                    </tr>
+                    <tr>
+                        <th>Date created</th>
+                        <td>{{ component.date_created }}</td>
+                    </tr>
+                    <tr>
+                        <th>Supplier</th>
+                        <td>{{ component.supplier.name }}</td>
+                    </tr>
+                    <tr>
+                        <th>Unit price</th>
+                        <td>{{ component.unit_price }} {{ component.currency }}</td>
+                    </tr>
+                </tbody>
+            </table>  
+        </div>
+    </div>
+    <h2 class="pt-4">Attached Files</h2>
+    <div class="pt-3 mb-2">
+        <nobr>
+            <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_create', part_uuid=part.uuid) }}"><i class="bi-plus-lg" style="padding-right: 6px;"></i>Add file</a>
+        </nobr>
+    </div>
+    <p class="mb-2">{{ component.files|length }} files found.</p>
+    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last modified</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>{{ file.name }}</td>
+                <td>{{ file.date_created }}</td>
+                <td>
+                    <nobr>
+                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_read', file_uuid = file.uuid) }}"><i class="bi-eye"></i></a>
+                        <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_update', file_uuid = file.uuid) }}"><i class="bi-pencil"></i></a>
+                        <a class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_delete', file_uuid = file.uuid) }}"><i class="bi-x-lg"></i></a>
+                    </nobr>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="pt-4">Used in</h2>
+
+    <p class="mb-2">{{ len(files) }} assemblies found.</p>
+    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Last modified</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>{{ file.name }}</td>
+                <td>{{ file.date_created }}</td>
+                <td>
+                    <nobr>
+                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_read', file_uuid = file.uuid) }}"><i class="bi-eye"></i></a>
+                        <a class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_update', file_uuid = file.uuid) }}"><i class="bi-pencil"></i></a>
+                        <a class="btn btn-outline-danger" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('file_delete', file_uuid = file.uuid) }}"><i class="bi-x-lg"></i></a>
+                    </nobr>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</div>
+
+{% endblock main_view_content %}
+
+{% block script %}{% endblock script %}

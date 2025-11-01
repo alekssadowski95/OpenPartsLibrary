@@ -5,7 +5,7 @@ import pandas as pd
 
 from datetime import datetime
 
-from .models import Base, Part, Supplier, File, Component, ComponentComponent, Material
+from .models import Base, Supplier, File, Component, ComponentComponent, ComponentFile, ComponentSupplier, Material
 
 import uuid
 
@@ -31,145 +31,53 @@ class PartsLibrary:
             self.data_dir_path = data_dir_path
         else:
             self.data_dir_path = os.path.join(os.path.dirname(__file__), 'data') 
-        
         self.data_cad_dir_path = os.path.join(self.data_dir_path, "cad")
         self.data_files_dir_path = os.path.join(self.data_dir_path, "files")
-
         self.sample_data_dir_path = os.path.join(os.path.dirname(__file__), 'sample') 
 
+    # Imports components and their suppliers from a spreadsheet (*.xlsx) into the parts library database.
+    def import_from_spreadsheet(self, file_path, components_sheet_name = 'components', suppliers_sheet_name = 'suppliers'):
+        # convert component and supplier sheets to pandas dataframes
+        components_df = pd.read_excel(file_path, sheet_name = components_sheet_name)
+        suppliers_df = pd.read_excel(file_path, sheet_name = suppliers_sheet_name)
 
-    def display(self):
-        # Print the components table to the terminal
-        component_component_table = pd.read_sql_table(table_name="component_component", con=self.engine)
-        print('ComponentComponent:')
-        print('===================')
-        print(component_component_table)
-        print('')
-
-        # Print the components table to the terminal
-        components_table = pd.read_sql_table(table_name="components", con=self.engine)
-        print('Components:')
-        print('===========')
-        print(components_table)
-        print('')
-
-        # Print the parts table to the terminal
-        part_table = pd.read_sql_table(table_name="parts", con=self.engine)
-        print('Parts:')
-        print('======')
-        print(part_table)
-        print('')
-
-        # Print the suppliers table to the terminal
-        supplier_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
-        print('Suppliers:')
-        print('==========')
-        print(supplier_table)
-        print('')
-
-        # Print the files table to the terminal
-        files_table = pd.read_sql_table(table_name="files", con=self.engine)
-        print('Files:')
-        print('==========')
-        print(files_table)
-        print('')
-
-    def display_reduced(self):
-        # Print the parts table to the terminal in reduced form
-        pass
-
-    def display_parts(self):
-        # Print the parts table to the terminal
-        part_table = pd.read_sql_table(table_name="parts", con=self.engine)
-        print('Parts:')
-        print('======')
-        print(part_table)
-        print('')
-
-    def display_suppliers(self):
-        # Print the suppliers table to the terminal
-        supplier_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
-        print('Suppliers:')
-        print('==========')
-        print(supplier_table)
-        print('')
-
-    def display_files(self):
-        # Print the files table to the terminal
-        files_table = pd.read_sql_table(table_name="files", con=self.engine)
-        print('Files:')
-        print('==========')
-        print(files_table)
-        print('')
-
-    def delete_all(self):
-        print('[ INFO ] Clearing the parts library.')
-        self.session.query(ComponentComponent).delete()
-        self.session.query(Component).delete()
-        self.session.query(Part).delete()
-        self.session.query(Supplier).delete()
-        self.session.query(File).delete()
-        self.session.commit()
-        
-        for filename in os.listdir(self.data_cad_dir_path):
-            filepath = os.path.join(self.data_cad_dir_path, filename)
-            if os.path.isfile(filepath) and filename != "README.md":
-                os.remove(filepath)
-                print(f"[ INFO ] Deleted: {filename}")
-
-    def total_value(self):
-        from decimal import Decimal
-        all_parts = self.session.query(Part).all()
-
-        total_value = Decimal(0.0)
-        for part in all_parts:
-            total_value = Decimal(total_value) + (Decimal(part.unit_price) * part.quantity)
-
-        return total_value
-
-    def create_parts_from_spreadsheet(self, file_path):
-        df = pd.read_excel(file_path)
-
-        parts = []
-        for _, row in df.iterrows():
-            part = Part(
-                uuid=row["uuid"],
-                number=row["number"],
-                name=row["name"],
-                description=row.get("description", "No description"),
-                revision=str(row.get("revision", "1")),
-                lifecycle_state=row.get("lifecycle_state", "In Work"),
-                owner=row.get("owner", "system"),
-                date_created=row.get("date_created", datetime.utcnow()),
-                date_modified=row.get("date_modified", datetime.utcnow()),
-                material=row.get("material"),
-                mass=row.get("mass"),
-                dimension_x=row.get("dimension_x"),
-                dimension_y=row.get("dimension_y"),
-                dimension_z=row.get("dimension_z"),
-                quantity=row.get("quantity", 0),
-                cad_reference=row.get("cad_reference"),
-                attached_documents_reference=row.get("attached_documents_reference"),
-                lead_time=row.get("lead_time"),
-                make_or_buy=row.get("make_or_buy"),
-                manufacturer_number=row.get("manufacturer_number"),
-                unit_price=row.get("unit_price"),
-                currency=row.get("currency")
+        # add components from spreadsheet to database
+        components = []
+        for _, row in components_df.iterrows():
+            component = Component(
+                uuid = row["uuid"],
+                number = row["number"],
+                name = row["name"],
+                description = row.get("description", "No description"),
+                revision = str(row.get("revision", "1")),
+                lifecycle_state = row.get("lifecycle_state", "In Work"),
+                owner = row.get("owner", "system"),
+                date_created = row.get("date_created", datetime.utcnow()),
+                date_modified = row.get("date_modified", datetime.utcnow()),
+                material = row.get("material"),
+                mass = row.get("mass"),
+                dimension_x = row.get("dimension_x"),
+                dimension_y = row.get("dimension_y"),
+                dimension_z = row.get("dimension_z"),
+                quantity = row.get("quantity", 0),
+                cad_reference = row.get("cad_reference"),
+                attached_documents_reference = row.get("attached_documents_reference"),
+                lead_time = row.get("lead_time"),
+                make_or_buy = row.get("make_or_buy"),
+                manufacturer_number = row.get("manufacturer_number"),
+                unit_price = row.get("unit_price"),
+                currency = row.get("currency")
             )
-            parts.append(part)
+            components.append(component)
 
-        self.session.add_all(parts)
+        self.session.add_all(component)
         self.session.commit()
-        print(f"Imported {len(parts)} parts successfully from {file_path}")
-    
-    def create_suppliers_from_spreadsheet(self, file_path):
-        self.session.query(Supplier).delete()
-        self.session.commit()
+        print(f"Imported {len(components)} comnponents successfully from {file_path}")
 
-        df = pd.read_excel(file_path)
-
+        # add suppliers from spreadsheet to database
+        '''
         suppliers = []
-        for _, row in df.iterrows():
+        for _, row in suppliers_df.iterrows():
             supplier = Supplier(
                 uuid=row.get("uuid", str(uuid.uuid4())),
                 name=row["name"],
@@ -185,7 +93,11 @@ class PartsLibrary:
         self.session.add_all(suppliers)
         self.session.commit()
         print(f"Imported {len(suppliers)} suppliers successfully from {file_path}")
+        '''
     
+    def add_sample_data(self, components_spredsheet_path, components_cad_dir_path):
+        pass
+
     def display_suppliers_table(self):
         from tabulate import tabulate
         import textwrap
@@ -197,6 +109,25 @@ class PartsLibrary:
         pd.set_option('display.width', 200)
         print(tabulate(suppliers_table, headers='keys', tablefmt='github'))
 
+        # Prints a simplified version of the database to the console
+    def print_database(self):
+        components_table = pd.read_sql_table(table_name="components", con=self.engine)
+        suppliers_table = pd.read_sql_table(table_name="suppliers", con=self.engine)
+        files_table = pd.read_sql_table(table_name="files", con=self.engine)
+        print('Components:')
+        print('==========')
+        print(components_table)
+        print('')
+        print('Suppliers:')
+        print('==========')
+        print(suppliers_table)
+        print('')
+        print('Files:')
+        print('==========')
+        print(files_table)
+        print('')
+    
+    '''
     def add_sample_data(self):
         # Create a new supplier
         supplier_1 = Supplier(
@@ -337,44 +268,56 @@ class PartsLibrary:
         component_5.children.append(self.session.query(Component).filter_by(id = 3).first())
         component_5.children.append(self.session.query(Component).filter_by(id = 4).first())
         self.session.commit()
+    '''       
 
-def add_sample_materials(self):
-    # Adding sample materials
-    material_name = "Steel AISI 1020"
-    existing_material = self.session.query(Material).filter_by(name=material_name).first()
-    if not existing_material:
-        material_steel_1020 = Material(
-            uuid = str(uuid.uuid4()),
-            name = "Steel AISI 1020",
-            category="Metal",
-            density=7850,
-            youngs_modulus=2.1e11,
-            poisson_ratio=0.29,
-            yield_strength=3.5e8,
-            ultimate_strength=4.2e8,
-            thermal_conductivity=51,
-            specific_heat=486,
-            thermal_expansion=1.2e-5
-        )
-        self.session.add(material_steel_1020)
+    def delete_all(self):
+        print('[ INFO ] Clearing the parts library.')
+        self.session.query(ComponentComponent).delete()
+        self.session.query(ComponentSupplier).delete()
+        self.session.query(ComponentFile).delete()
+        self.session.query(Component).delete()
+        self.session.query(Supplier).delete()
+        self.session.query(File).delete()
+        self.session.query(Material).delete()
         self.session.commit()
-    else:
-        print(f"Material '{material_name}' already exists. Skipping addition.")
+        
+        for filename in os.listdir(self.data_cad_dir_path):
+            filepath = os.path.join(self.data_cad_dir_path, filename)
+            if os.path.isfile(filepath) and filename != "README.md":
+                os.remove(filepath)
+                print(f"[ INFO ] Deleted: {filename}")
+           
+    def add_sample_materials(self):
+        # Adding sample materials
+        material_name = "Steel AISI 1020"
+        existing_material = self.session.query(Material).filter_by(name=material_name).first()
+        if not existing_material:
+            material_steel_1020 = Material(
+                uuid = str(uuid.uuid4()),
+                name = "Steel AISI 1020",
+                category="Metal",
+                density=7850,
+                youngs_modulus=2.1e11,
+                poisson_ratio=0.29,
+                yield_strength=3.5e8,
+                ultimate_strength=4.2e8,
+                thermal_conductivity=51,
+                specific_heat=486,
+                thermal_expansion=1.2e-5
+            )
+            self.session.add(material_steel_1020)
+            self.session.commit()
+        else:
+            print(f"Material '{material_name}' already exists. Skipping addition.")
 
-def add_material(self, name, category, density, youngs_modulus, poisson_ratio, yield_strength, ultimate_strength, thermal_conductivity, specific_heat, thermal_expansion):
-        material = Material(
-            uuid = str(uuid.uuid4()),
-            name = name,
-            category = category,
-            density = density,
-            youngs_modulus = youngs_modulus,
-            poisson_ratio = poisson_ratio,
-            yield_strength = yield_strength,
-            ultimate_strength = ultimate_strength,
-            thermal_conductivity = thermal_conductivity,
-            specific_heat = specific_heat,
-            thermal_expansion = thermal_expansion
-        )
-        self.session.add(material)
-        self.session.commit()
-        print(f"Material '{name}' added successfully.")
+    # Prints the total value of all components in the parts library database.
+    # Currently not relevant, because the components counts is not being tracked.
+    def total_value(self):
+        from decimal import Decimal
+        all_components = self.session.query(Component).all()
+
+        total_value = Decimal(0.0)
+        for component in all_components:
+            total_value = Decimal(total_value) + (Decimal(component.unit_price) * component.quantity)
+
+        return total_value

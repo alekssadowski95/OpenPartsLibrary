@@ -33,10 +33,10 @@ tbody tr td {
 {% endblock function_buttons %}
 
 {% block view_buttons %}
-<a title="Show component results as list" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
+<a title="Show components results as list" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
 </a>
-<a title="Show component results in splitscreen with preview" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
+<a title="Show components results in splitscreen with preview" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
 </a>
 {% endblock view_buttons %}
@@ -55,8 +55,7 @@ function addPartToBucket(uuid){
         <tr>
             <th></th>
             <th>Name</th>
-            <th>Part number</th>
-            <th>Material</th>
+            <th>Component number</th>
             <th>Supplier</th>
             <th>Unit price</th>
             <th>Description</th>
@@ -66,23 +65,22 @@ function addPartToBucket(uuid){
     </thead>
     <tbody>
         {% for component in components %}
-        <tr class="part-row" data-model="{{ component.part.cad_file.uuid }}.FCStd">
+        <tr class="part-row" data-model="{{ component.cad_file.uuid }}.FCStd">
             <td style="min-width: 100px; max-width: 100px;">
-                <a title="Open part details" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('part_view', uuid = component.part.uuid ) }}">
+                <a title="Open component details" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_view', uuid = component.uuid ) }}">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18">
                 </a>
-                <a title="Add part to bucket" type="button" data-uuid="{{ component.part.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
+                <a title="Add component to bucket" type="button" data-uuid="{{ component.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
                 </a>
             </td>
-            <td style="min-width: 260px; max-width: 260px;">{{ component.part.name }}</td>
-            <td style="min-width: 120px; max-width: 120px;">{{ component.part.number }}</td>
-            <td style="min-width: 120px; max-width: 120px;">{{ component.part.material }}</td>
-            <td style="min-width: 220px; max-width: 220px;">{{ component.part.supplier.name }}</td>
-            <td style="min-width: 100px; max-width: 100px;">{{ component.part.unit_price }} {{ component.part.currency }}</td>
-            <td style="min-width: 300px; max-width: 300px;">{{ component.part.description }}</td>
-            <td style="min-width: 140px; max-width: 140px;">{{ component.part.lifecycle_state }}</td>
-            <td style="min-width: 80px; max-width: 80px;">{{ component.part.revision }}</td>
+            <td style="min-width: 260px; max-width: 260px;">{{ component.name }}</td>
+            <td style="min-width: 220px; max-width: 220px;">{{ component.number }}</td>
+            <td style="min-width: 220px; max-width: 220px;">{{ component.supplier.name }}</td>
+            <td style="min-width: 100px; max-width: 100px;">{{ component.unit_price }} {{ component.currency }}</td>
+            <td style="min-width: 300px; max-width: 300px;">{{ component.description }}</td>
+            <td style="min-width: 140px; max-width: 140px;">{{ component.lifecycle_state }}</td>
+            <td style="min-width: 80px; max-width: 80px;">{{ component.revision }}</td>
         </tr>
         {% endfor %}
     </tbody>

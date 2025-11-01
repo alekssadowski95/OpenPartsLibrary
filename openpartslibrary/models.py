@@ -6,17 +6,9 @@ from datetime import datetime
 class Base(DeclarativeBase):
   pass
 
-class User(UserMixin, Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), nullable=False)
-    email = Column(String(120), unique=True, nullable=False)
-    password = Column(String(200), nullable=False)
-
-    def __repr__(self):
-        return f'<User {self.username}>'
-
+'''
+Relationship tables
+'''
 class ComponentComponent(Base):
     __tablename__ = 'component_component'
 
@@ -30,82 +22,81 @@ class ComponentComponent(Base):
     def __repr__(self):
         return f"<ComponentComponent(id={self.id}, parent_component_id={self.parent_component_id}, child_component_id={self.child_component_id})>"
 
+class ComponentSupplier(Base):
+    __tablename__ = 'component_supplier'
+
+    id = Column(Integer, primary_key=True)
+
+class ComponentFile(Base):
+    __tablename__ = 'component_file'
+
+    id = Column(Integer, primary_key=True)
+    component_id = Column(Integer, ForeignKey('components.id'), nullable=False)
+    file_id = Column(Integer, ForeignKey('files.id'), nullable=False)
+    date_linked = Column(DateTime, default=datetime.utcnow)
+
+    __table__args__ = (UniqueConstraint('component_id', 'file_id', name='uq_component_file'),)
+
+'''
+Tables
+'''
+class User(UserMixin, Base):
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    password = Column(String(200), nullable=False)
+
+    def __repr__(self):
+        return f'<User {self.username}, {self.email}>'
+
 class Component(Base):
     __tablename__ = 'components'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, unique=True, primary_key=True)
     uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(200), nullable=False)
-
-    part = relationship('Part', back_populates='component', uselist=False)
-
-    # children: Components that this component is parent of
-    children = relationship(
-        "Component",
-        secondary="component_component",
-        primaryjoin=id == ComponentComponent.parent_component_id,
-        secondaryjoin=id == ComponentComponent.child_component_id,
-        backref=backref("parents", lazy="joined"),
-        lazy="joined",
-    )
-
-class File(Base):
-    __tablename__ = 'files'
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(String(1000))
-    date_created = Column(DateTime, default=datetime.utcnow)
-    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    # Many-to-many relationship with Parts
-    parts = relationship('Part', secondary='part_file', back_populates='files')
-
-    # One-to-one relationship with Part for CAD reference
-    cad_part = relationship('Part', back_populates='cad_file', uselist=False, foreign_keys='Part.cad_file_id')
-
-class Part(Base):
-    __tablename__ = 'parts'
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
     number = Column(String(50), nullable=False)
-    name = Column(String(200), nullable=False)
-    description = Column(String(1000), default="No description")
+    description = Column(String(1000))
     revision = Column(String(10), default="1")
     lifecycle_state = Column(String(50), default="In Work")
-    owner = Column(String(100), default="system")
-    date_created = Column(DateTime, default=datetime.utcnow)
-    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    material = Column(String(100))
-    mass = Column(Float)
-    dimension_x = Column(Float)
-    dimension_y = Column(Float)
-    dimension_z = Column(Float)
-    quantity = Column(Integer, default=0)
-    attached_documents_reference = Column(String(200))
-    lead_time = Column(Integer)
-    make_or_buy = Column(Enum('make', 'buy', name='make_or_buy_enum'))
-    manufacturer_number = Column(String(100))
+    owner = Column(String(100), default="System")
+
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
-    is_archived = Column(Boolean, default=False)
-
+    
+    # CAD related
     cad_file_id = Column(Integer, ForeignKey('files.id'))
-    cad_file= relationship('File', back_populates='cad_part', uselist=False, foreign_keys=[cad_file_id])
+    cad_file = relationship('File', back_populates='cad_component', uselist=False, foreign_keys=[cad_file_id])
+
+    # Supplier
+    supplier_id = Column(ForeignKey('suppliers.id'))
+    supplier = relationship('Supplier', back_populates='components')
+    manufacturer_number = Column(String(100))
 
     # Many-to-many relationship with Files
-    files = relationship('File', secondary='part_file', back_populates='parts')
+    files = relationship('File', secondary='component_file', back_populates='components')
     
-    supplier_id = Column(ForeignKey('suppliers.id'))
-    supplier = relationship('Supplier', back_populates='parts')
+    # Enables multi-level hierarchies - components that this component is parent of
+    children = relationship(
+        "Component",
+        secondary = "component_component",
+        primaryjoin = id == ComponentComponent.parent_component_id,
+        secondaryjoin = id == ComponentComponent.child_component_id,
+        backref = backref("parents", lazy="joined"),
+        lazy = "joined",
+    )
 
-    component_id = Column(ForeignKey('components.id'))
-    component = relationship('Component', back_populates='part')
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_archived = Column(Boolean, default=False)
+
+    # Future feature
+    # material = Column(String(100))
 
     def __repr__(self):
-        return f"<Part(id={self.id}, number={self.number}, name={self.name})>"
+        return f"<Component(id={self.id}, number={self.number}, name={self.name})>"
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
@@ -125,11 +116,28 @@ class Supplier(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    parts = relationship(Part)
+    components = relationship(Component)
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
+class File(Base):
+    __tablename__ = 'files'
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
+    name = Column(String(200), nullable=False)
+    description = Column(String(1000))
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Many-to-many relationship with components
+    components = relationship('Component', secondary='component_file', back_populates='files')
+
+    # One-to-one relationship with Component for CAD reference
+    cad_component = relationship('Component', back_populates='cad_file', uselist=False, foreign_keys='Component.cad_file_id')
+
+# Future feature, not part of MVP
 class Material(Base):
     __tablename__ = "materials"
 
@@ -161,15 +169,14 @@ class Material(Base):
     fatigue_strength = Column(Float)            # Pa
     
     # --- Metadata ---
-    supplier = Column(String(256))               
     is_archived = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
         return f"<Material {self.name}>"
-    
 
+# Future feature, not part of MVP
 class Requirement(Base):
     __tablename__ = "requirements"
 
@@ -187,93 +194,8 @@ class Requirement(Base):
     def __repr__(self):
         return f"<Requirement {self.uuid}: {self.title}>"
 
-"""
-sample_requirements = [
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Maximum Jaw Opening",
-        "description": "The vise shall accommodate workpieces up to 200 mm wide.",
-        "requirement_type": "mandatory",
-        "owner": "Alice Smith",
-        "acceptance_criteria": "Measured jaw opening ≥ 200 mm with gauge.",
-        "source": "Customer specification"
-    },
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Clamping Force",
-        "description": "The vise shall provide a clamping force of at least 1500 N to securely hold workpieces.",
-        "requirement_type": "mandatory",
-        "owner": "Bob Johnson",
-        "acceptance_criteria": "Verified using load cell measurement during clamping test.",
-        "source": "Engineering requirement"
-    },
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Jaw Parallelism",
-        "description": "The vise jaws shall maintain parallelism within 0.05 mm along the entire opening range.",
-        "requirement_type": "minimum",
-        "owner": "Carol Lee",
-        "acceptance_criteria": "Measured with precision dial gauge along jaw faces.",
-        "source": "Quality control standard"
-    },
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Surface Finish of Jaws",
-        "description": "The vise jaws should have a smooth, polished finish to prevent workpiece damage.",
-        "requirement_type": "desirable",
-        "owner": "David Kim",
-        "acceptance_criteria": "Visual inspection; minor surface scratches acceptable.",
-        "source": "Design recommendation"
-    },
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Rotatable Base",
-        "description": "The vise base should be rotatable 360° for flexible workpiece orientation.",
-        "requirement_type": "desirable",
-        "owner": "Eve Martinez",
-        "acceptance_criteria": "Base rotation smooth, full 360° rotation without obstruction.",
-        "source": "Optional feature"
-    },
-    {
-        "uuid": uuid.uuid4().hex,
-        "title": "Material Hardness",
-        "description": "The vise body shall be made of steel with a hardness of at least 200 HB.",
-        "requirement_type": "mandatory",
-        "owner": "Frank Li",
-        "acceptance_criteria": "Hardness verified with Rockwell or Brinell test.",
-        "source": "Mechanical design standard"
-    }
-]
-"""
 
-'''
-Relationship tables
-'''
 
-class PartSupplier(Base):
-    __tablename__ = 'part_supplier'
-
-    id = Column(Integer, primary_key=True)
-
-class PartFile(Base):
-    __tablename__ = 'part_file'
-
-    id = Column(Integer, primary_key=True)
-    parts_id = Column(Integer, ForeignKey('parts.id'), nullable=False)
-    file_id = Column(Integer, ForeignKey('files.id'), nullable=False)
-    date_linked = Column(DateTime, default=datetime.utcnow)
-
-    __table__args__ = (UniqueConstraint('parts_id', 'file_id', name='uq_part_file'),)
-
-class SupplierAdress(Base):
-    __tablename__ = 'supplier_adress'
-
-    id = Column(Integer, primary_key=True)
-
-class SupplierFile(Base):
-    __tablename__ = 'supplier_file'
-
-    id = Column(Integer, primary_key=True)
 
 
 

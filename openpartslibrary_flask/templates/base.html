@@ -107,16 +107,16 @@
                 {% if user and user.is_authenticated %}
                     <a title="Open and close the components bucket" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('profile') }}">
                         <span style="color: white;">{{ user.username }}</span>
-                        <img src="{{ url_for('static', filename='bootstrap-icons-1.11.3/person-circle.svg') }}" alt="" style="padding: 0;" height="32px" width="32px">
+                        <img src="{{ url_for('static', filename='bootstrap-icons-1.11.3/person-circle.svg') }}" alt="" style="padding: 0;" height="28px" width="28px">
                     </a>
                 {% else %}
                 <a title="Open and close the components bucket" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('login') }}">
                     <span style="color: white; ">Login</span>
-                    <img src="{{ url_for('static', filename='bootstrap-icons-1.11.3/person-circle.svg') }}" alt="" style="padding: 0;" height="32px" width="32px">
+                    <img src="{{ url_for('static', filename='bootstrap-icons-1.11.3/person-circle.svg') }}" alt="" style="padding: 0;" height="28px" width="28px">
                 </a>
                 {% endif %}
                 <button title="Open and close the components bucket" class="btn btn-link p-1 btn-link-transparent">
-                    <img src="{{ url_for('static', filename='delivery-service.png') }}" alt="" style="padding: 0;" height="32px" width="32px" onclick="showPartsBucket()">
+                    <img src="{{ url_for('static', filename='assembly-line.png') }}" alt="" style="padding: 0;" height="28px" width="28px" onclick="showPartsBucket()">
                 </button>
             </div>
         </header>
@@ -164,7 +164,7 @@
         <!-- Main view -->
         <main class="col p-0" style="position: relative; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); width: calc(100vw - 99px); background-color: #f8f9fa;">
             {% block main_view %}{% endblock main_view %}
-            <!-- Overlay div -->
+            <!-- New assembly sidebar -->
             <div id="parts-bucket-div" class="overlay" style="color: white;">
                 <div class="container-fluid" style="height: 40px; border-bottom: 1px solid #042c61; padding-top: 6px;">
                     <span>New component assembly</span>

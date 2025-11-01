@@ -107,12 +107,12 @@
                 {% if user and user.is_authenticated %}
                     <a title="Open and close the components bucket" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('profile') }}">
                         <span style="color: white; font-size: 0.9rem">{{ user.username }}</span>
-                        <img src="{{ url_for('static', filename='account.png') }}" alt="" style="padding: 0;" height="24px" width="24px">
+                        <img src="{{ url_for('static', filename='user.png') }}" alt="" style="padding: 0;" height="22px" width="22px">
                     </a>
                 {% else %}
                 <a title="Open and close the components bucket" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('login') }}">
                     <span style="color: white; font-size: 0.9rem;">Login</span>
-                    <img src="{{ url_for('static', filename='account.png') }}" alt="" style="padding: 0;" height="24px" width="24px">
+                    <img src="{{ url_for('static', filename='user.png') }}" alt="" style="padding: 0;" height="22px" width="22px">
                 </a>
                 {% endif %}
                 <button title="Open and close the components bucket" class="btn btn-link p-1 btn-link-transparent">

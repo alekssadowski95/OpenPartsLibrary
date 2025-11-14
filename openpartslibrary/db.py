@@ -36,14 +36,27 @@ class PartsLibrary:
         self.sample_data_dir_path = os.path.join(os.path.dirname(__file__), 'sample') 
 
     # Imports components and their suppliers from a spreadsheet (*.xlsx) into the parts library database.
-    def import_from_spreadsheet(self, file_path, components_sheet_name = 'components', suppliers_sheet_name = 'suppliers'):
+    def import_from_spreadsheet(self, spreadsheet_file_path, components_sheet_name = 'components', components_cad_dir_path = None, suppliers_sheet_name = 'suppliers'):
         # convert component and supplier sheets to pandas dataframes
-        components_df = pd.read_excel(file_path, sheet_name = components_sheet_name)
-        suppliers_df = pd.read_excel(file_path, sheet_name = suppliers_sheet_name)
+        components_df = pd.read_excel(spreadsheet_file_path, sheet_name = components_sheet_name)
+        suppliers_df = pd.read_excel(spreadsheet_file_path, sheet_name = suppliers_sheet_name)
 
         # add components from spreadsheet to database
         components = []
         for _, row in components_df.iterrows():
+
+            # check if required fields are present
+            if row["uuid"] == None:
+                print(f"[ ERROR ] Component is missing a UUID. Skipping import of this component.")
+                continue
+            if row["number"] == None:
+                print(f"[ ERROR ] Component is missing a number. Skipping import of this component.")
+                continue
+            if row["name"] == None:
+                print(f"[ ERROR ] Component is missing a name. Skipping import of this component.")
+                continue
+
+            # create component object
             component = Component(
                 uuid = row["uuid"],
                 number = row["number"],
@@ -51,49 +64,21 @@ class PartsLibrary:
                 description = row.get("description", "No description"),
                 revision = str(row.get("revision", "1")),
                 lifecycle_state = row.get("lifecycle_state", "In Work"),
-                owner = row.get("owner", "system"),
-                date_created = row.get("date_created", datetime.utcnow()),
-                date_modified = row.get("date_modified", datetime.utcnow()),
+                owner = row.get("owner", "System"),
                 material = row.get("material"),
-                mass = row.get("mass"),
-                dimension_x = row.get("dimension_x"),
-                dimension_y = row.get("dimension_y"),
-                dimension_z = row.get("dimension_z"),
-                quantity = row.get("quantity", 0),
-                cad_reference = row.get("cad_reference"),
-                attached_documents_reference = row.get("attached_documents_reference"),
-                lead_time = row.get("lead_time"),
-                make_or_buy = row.get("make_or_buy"),
-                manufacturer_number = row.get("manufacturer_number"),
                 unit_price = row.get("unit_price"),
-                currency = row.get("currency")
+                currency = row.get("currency"),
+                date_created = datetime.utcnow(),
+                date_modified = datetime.utcnow()
             )
+
+            # Add component to collection
             components.append(component)
-
-        self.session.add_all(component)
+            
+        # add all components to the session and commit
+        self.session.add_all(components)
         self.session.commit()
-        print(f"Imported {len(components)} comnponents successfully from {file_path}")
-
-        # add suppliers from spreadsheet to database
-        '''
-        suppliers = []
-        for _, row in suppliers_df.iterrows():
-            supplier = Supplier(
-                uuid=row.get("uuid", str(uuid.uuid4())),
-                name=row["name"],
-                description=row.get("description", "No description"),
-                street=row.get("street"),
-                city=row.get("city"),
-                postal_code=row.get("postal_code"),
-                house_number=row.get("house_number"),
-                country=row.get("country")   
-            )
-            suppliers.append(supplier)
-
-        self.session.add_all(suppliers)
-        self.session.commit()
-        print(f"Imported {len(suppliers)} suppliers successfully from {file_path}")
-        '''
+        print(f"Imported {len(components)} comnponents successfully from {spreadsheet_file_path}")
     
     def add_sample_data(self, components_spredsheet_path, components_cad_dir_path):
         pass

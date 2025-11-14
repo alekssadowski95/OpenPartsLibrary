@@ -2,6 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 import pandas as pd
+import math
 
 from datetime import datetime
 
@@ -38,7 +39,7 @@ class PartsLibrary:
     # Imports components and their suppliers from a spreadsheet (*.xlsx) into the parts library database.
     def import_from_spreadsheet(self, spreadsheet_file_path, components_sheet_name = 'components', components_cad_dir_path = None, suppliers_sheet_name = 'suppliers'):
         # convert component and supplier sheets to pandas dataframes
-        components_df = pd.read_excel(spreadsheet_file_path, sheet_name = components_sheet_name)
+        components_df = pd.read_excel(spreadsheet_file_path, sheet_name = components_sheet_name, dtype={'number': str})
         suppliers_df = pd.read_excel(spreadsheet_file_path, sheet_name = suppliers_sheet_name)
 
         # add components from spreadsheet to database
@@ -46,25 +47,25 @@ class PartsLibrary:
         for _, row in components_df.iterrows():
 
             # check if required fields are present
-            if row["uuid"] == None:
+            if pd.isna(row["uuid"]):
                 print(f"[ ERROR ] Component is missing a UUID. Skipping import of this component.")
                 continue
-            if row["number"] == None:
+            if pd.isna(row["number"]):
                 print(f"[ ERROR ] Component is missing a number. Skipping import of this component.")
                 continue
-            if row["name"] == None:
+            if pd.isna(row["name"]):
                 print(f"[ ERROR ] Component is missing a name. Skipping import of this component.")
                 continue
 
             # create component object
             component = Component(
                 uuid = row["uuid"],
-                number = row["number"],
+                number = str(row["number"]),
                 name = row["name"],
-                description = row.get("description", "No description"),
-                revision = str(row.get("revision", "1")),
-                lifecycle_state = row.get("lifecycle_state", "In Work"),
-                owner = row.get("owner", "System"),
+                description = row.get("description"),
+                revision = str(row.get("revision")),
+                lifecycle_state = row.get("lifecycle_state"),
+                owner = row.get("owner"),
                 material = row.get("material"),
                 unit_price = row.get("unit_price"),
                 currency = row.get("currency"),
@@ -73,12 +74,15 @@ class PartsLibrary:
             )
 
             # Add component to collection
-            components.append(component)
-            
+            #components.append(component)
+
+            self.session.add(component)
+            self.session.commit()
+
         # add all components to the session and commit
-        self.session.add_all(components)
-        self.session.commit()
-        print(f"Imported {len(components)} comnponents successfully from {spreadsheet_file_path}")
+        #self.session.add_all(components)
+        #self.session.commit()
+        #print(f"Imported {len(components)} comnponents successfully from {spreadsheet_file_path}")
     
     def add_sample_data(self, components_spredsheet_path, components_cad_dir_path):
         pass

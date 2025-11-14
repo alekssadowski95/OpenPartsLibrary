@@ -71,7 +71,7 @@ def copy_sample_files():
 
 # Clear the parts library
 pl.delete_all()
-#pl.add_sample_data()
+pl.import_from_spreadsheet(os.path.join(pl.sample_data_dir_path, 'components.ods'))
 
 login_manager = LoginManager()
 login_manager.init_app(app)

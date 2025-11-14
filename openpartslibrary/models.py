@@ -58,11 +58,12 @@ class Component(Base):
     uuid = Column(String(32), unique=True, nullable=False)
     name = Column(String(200), nullable=False)
     number = Column(String(50), nullable=False)
-    description = Column(String(1000))
-    revision = Column(String(10), default="1")
-    lifecycle_state = Column(String(50), default="In Work")
-    owner = Column(String(100), default="System")
 
+    description = Column(String(1000))
+    revision = Column(String(10))
+    lifecycle_state = Column(String(50))
+    owner = Column(String(100))
+    material = Column(String(200))
     unit_price = Column(Numeric(10, 2))
     currency = Column(String(3))
     
@@ -91,9 +92,6 @@ class Component(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_archived = Column(Boolean, default=False)
-
-    # Future feature
-    # material = Column(String(100))
 
     def __repr__(self):
         return f"<Component(id={self.id}, number={self.number}, name={self.name})>"

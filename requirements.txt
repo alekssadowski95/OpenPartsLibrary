@@ -12,3 +12,4 @@ Flask-WTF
 WTForms
 Flask-Login
 email_validator
+odfpy

@@ -1,5 +1,6 @@
 import os
 import uuid
+import sqlite3
 
 from flask import Flask
 from flask import render_template, url_for, send_from_directory, redirect, request, flash, session
@@ -41,9 +42,36 @@ app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 # Application paths
 # initialize
 
-# Initialize the parts library
 db_path = os.path.join(app.static_folder, 'data', 'parts.db')
+
+# Initialize the parts library
 pl = PartsLibrary(db_path = db_path, data_dir_path = DATA_DIR)
+
+
+def migrate_legacy_database_schema(db_path):
+    if not os.path.exists(db_path):
+        return
+
+    component_column_definitions = {
+        'material': 'VARCHAR(200)',
+    }
+
+    with sqlite3.connect(db_path) as connection:
+        cursor = connection.cursor()
+        cursor.execute("PRAGMA table_info(components)")
+        component_columns = {row[1] for row in cursor.fetchall()}
+
+        for column_name, column_type in component_column_definitions.items():
+            if column_name in component_columns:
+                continue
+            cursor.execute(
+                f"ALTER TABLE components ADD COLUMN {column_name} {column_type}"
+            )
+
+        connection.commit()
+
+
+migrate_legacy_database_schema(db_path)
 
 # Function to copy sample files to data directory
 import shutil
@@ -69,9 +97,8 @@ def copy_sample_files():
 # Copy sample files to data dir
 #copy_sample_files()
 
-# Clear the parts library
-pl.delete_all()
-pl.import_from_spreadsheet(os.path.join(pl.sample_data_dir_path, 'components.ods'))
+if not pl.session.query(Component).first():
+    pl.import_from_spreadsheet(os.path.join(pl.sample_data_dir_path, 'components.ods'))
 
 login_manager = LoginManager()
 login_manager.init_app(app)

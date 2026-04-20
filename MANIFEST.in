@@ -1,0 +1,6 @@
+recursive-include openpartslibrary/sample *
+recursive-include openpartslibrary/images *
+recursive-include openpartslibrary/export *
+recursive-include openpartslibrary_flask/templates *
+recursive-include openpartslibrary_flask/static *
+include openpartslibrary_flask/settings.json

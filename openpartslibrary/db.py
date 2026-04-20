@@ -1,46 +1,66 @@
+import os
+import uuid
+from datetime import datetime
+from pathlib import Path
+
+import math
+import pandas as pd
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-import pandas as pd
-import math
-
-from datetime import datetime
-
 from .models import Base, Supplier, File, Component, ComponentComponent, ComponentFile, ComponentSupplier, Material
-
-import uuid
-
-import os
 
 
 class PartsLibrary:
     def __init__(self, db_path = None, data_dir_path = None):
-        # Set database path
-        if db_path is not None:
-            self.db_path = db_path
+        package_dir = Path(__file__).resolve().parent
+
+        if data_dir_path is not None:
+            self.data_dir_path = Path(data_dir_path).expanduser().resolve()
         else:
-            self.db_path = os.path.join(os.path.dirname(__file__), 'data', 'parts.db') 
-        
-        # Initialize the database and its connection 
-        self.engine = create_engine('sqlite:///' + self.db_path)
+            self.data_dir_path = package_dir / 'data'
+
+        self.data_dir_path.mkdir(parents=True, exist_ok=True)
+        self.data_cad_dir_path = self.data_dir_path / "cad"
+        self.data_files_dir_path = self.data_dir_path / "files"
+        self.data_cad_dir_path.mkdir(parents=True, exist_ok=True)
+        self.data_files_dir_path.mkdir(parents=True, exist_ok=True)
+
+        if db_path is not None:
+            self.db_path = Path(db_path).expanduser().resolve()
+        else:
+            self.db_path = self.data_dir_path / 'parts.db'
+
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Initialize the database and its connection
+        self.engine = create_engine(f"sqlite:///{self.db_path.as_posix()}")
         Base.metadata.create_all(self.engine)
         self.session_factory = sessionmaker(bind=self.engine)
         self.session = self.session_factory()
 
-        # Set reference files directory path
-        if data_dir_path is not None:
-            self.data_dir_path = data_dir_path
-        else:
-            self.data_dir_path = os.path.join(os.path.dirname(__file__), 'data') 
-        self.data_cad_dir_path = os.path.join(self.data_dir_path, "cad")
-        self.data_files_dir_path = os.path.join(self.data_dir_path, "files")
-        self.sample_data_dir_path = os.path.join(os.path.dirname(__file__), 'sample') 
+        self.sample_data_dir_path = package_dir / 'sample'
+
+    def _read_spreadsheet(self, spreadsheet_file_path, sheet_name, dtype=None):
+        spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
+        suffix = spreadsheet_path.suffix.lower()
+        engine = None
+        if suffix == '.ods':
+            engine = 'odf'
+        return pd.read_excel(spreadsheet_path, sheet_name=sheet_name, dtype=dtype, engine=engine)
+
+    def get_default_sample_spreadsheet_path(self):
+        for candidate in ("components.ods", "components.xlsx"):
+            candidate_path = self.sample_data_dir_path / candidate
+            if candidate_path.exists():
+                return candidate_path
+        raise FileNotFoundError(f"No supported sample spreadsheet found in {self.sample_data_dir_path}")
 
     # Imports components and their suppliers from a spreadsheet (*.xlsx) into the parts library database.
     def import_from_spreadsheet(self, spreadsheet_file_path, components_sheet_name = 'components', components_cad_dir_path = None, suppliers_sheet_name = 'suppliers'):
         # convert component and supplier sheets to pandas dataframes
-        components_df = pd.read_excel(spreadsheet_file_path, sheet_name = components_sheet_name, dtype={'number': str})
-        suppliers_df = pd.read_excel(spreadsheet_file_path, sheet_name = suppliers_sheet_name)
+        components_df = self._read_spreadsheet(spreadsheet_file_path, components_sheet_name, dtype={'number': str})
+        suppliers_df = self._read_spreadsheet(spreadsheet_file_path, suppliers_sheet_name)
 
         # add components from spreadsheet to database
         components = []
@@ -272,6 +292,12 @@ class PartsLibrary:
         
         for filename in os.listdir(self.data_cad_dir_path):
             filepath = os.path.join(self.data_cad_dir_path, filename)
+            if os.path.isfile(filepath) and filename != "README.md":
+                os.remove(filepath)
+                print(f"[ INFO ] Deleted: {filename}")
+
+        for filename in os.listdir(self.data_files_dir_path):
+            filepath = os.path.join(self.data_files_dir_path, filename)
             if os.path.isfile(filepath) and filename != "README.md":
                 os.remove(filepath)
                 print(f"[ INFO ] Deleted: {filename}")

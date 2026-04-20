@@ -13,6 +13,18 @@ Install the openpartslibrary via pip
 pip install OpenPartsLibrary
 ```
 
+Run the web application locally:
+```console
+python run-flask.py
+```
+
+Run the desktop app wrapper:
+```console
+python run_local.py
+```
+
+The project is intended to work on both Windows and Ubuntu 24.04. Desktop integration paths such as FreeCAD or LibreOffice can be configured in the Settings page, but they are optional.
+
 A minimal OpenPartsLibrary application looks something like this:
 ```python 
 from openpartslibrary.db import PartsLibrary
@@ -99,9 +111,12 @@ Getting the total value of all parts in the library:
 print('Total value of all parts in the library: ' + str(pl.total_value()) + ' EUR')
 ```
 
-Creating parts from a parts list in a Excel-spreadsheet (*.xlsx). Take note, that the spreadsheet needs to implement the schema specified in this repository:
+Creating parts from a spreadsheet (`*.xlsx` or `*.ods`). The file needs to implement the schema specified in this repository:
 ```python 
-pl.create_parts_from_spreadsheet('C:/Users/Work/Documents/Github/OpenPartsLibrary/openpartslibrary/sample/parts_data_sample.xlsx')
+from pathlib import Path
+
+spreadsheet_path = Path("openpartslibrary") / "sample" / "components.ods"
+pl.import_from_spreadsheet(spreadsheet_path)
 ```
 ## Database structure
 <img src="./openpartslibrary/images/Database-structure-openpartslibrary.png" width="100%" alt="OpenPartsLibrary database structure"></img>

@@ -29,8 +29,8 @@ OpenPartsLibrary - run.py (Overview)
 # Initialize the parts library
 pl = PartsLibrary()
 
-# Clear the parts library
-os.system('cls')
+# Clear the terminal in a cross-platform way
+os.system('cls' if os.name == 'nt' else 'clear')
 pl.delete_all()
 
 # Get the paths for this project
@@ -42,7 +42,9 @@ LIBRARY_DATA_FILES_DIR = os.path.join(LIBRARY_DATA_DIR, "files")
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_1_path = os.path.join(SAMPLE_DATA_DIR, 'M6x12-Screw.FCStd')
+sample_cad_dir = os.path.join(SAMPLE_DATA_DIR, 'components-cad')
+
+file_1_path = os.path.join(sample_cad_dir, 'ISO4762_M6x12.FCStd')
 file_1_uuid = str(uuid.uuid4())
 file_1_name = os.path.basename(file_1_path)
 file_1_ext = os.path.splitext(file_1_path)[1]  # includes the dot
@@ -56,7 +58,7 @@ file_1 = File(uuid = file_1_uuid, name = file_1_name, description = 'This is a C
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_2_path = os.path.join(SAMPLE_DATA_DIR, 'M6x20-Screw.FCStd')
+file_2_path = os.path.join(sample_cad_dir, 'ISO4762_M6x20.FCStd')
 file_2_uuid = str(uuid.uuid4())
 file_2_name = os.path.basename(file_2_path)
 file_2_ext = os.path.splitext(file_2_path)[1]  # includes the dot
@@ -70,7 +72,7 @@ file_2 = File(uuid = file_2_uuid, name = file_2_name, description = 'This is a C
 
 # Load file and original name, change name to uuid and save it in the data/files dir
 # ..
-file_3_path = os.path.join(SAMPLE_DATA_DIR, 'M6x35-Screw.FCStd')
+file_3_path = os.path.join(sample_cad_dir, 'ISO4762_M6x35.FCStd')
 file_3_uuid = str(uuid.uuid4())
 file_3_name = os.path.basename(file_3_path)
 file_3_ext = os.path.splitext(file_3_path)[1]  # includes the dot

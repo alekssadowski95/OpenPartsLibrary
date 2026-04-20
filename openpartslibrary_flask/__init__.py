@@ -1,6 +1,9 @@
 import os
-import uuid
+import shutil
 import sqlite3
+import subprocess
+import uuid
+from pathlib import Path
 
 from flask import Flask
 from flask import render_template, url_for, send_from_directory, redirect, request, flash, session
@@ -19,13 +22,14 @@ from openpartslibrary_flask.forms import CreateComponentForm, CreateSupplierForm
 
 
 # Setup directories
-STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-DATA_DIR = os.path.join(STATIC_DIR, 'data')
-CAD_DIR = os.path.join(DATA_DIR,'cad')
-FILE_DIR = os.path.join(DATA_DIR,'files')
-os.makedirs(DATA_DIR, exist_ok=True)
-os.makedirs(CAD_DIR, exist_ok=True)
-os.makedirs(FILE_DIR, exist_ok=True)
+PACKAGE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = PACKAGE_DIR / 'static'
+DATA_DIR = STATIC_DIR / 'data'
+CAD_DIR = DATA_DIR / 'cad'
+FILE_DIR = DATA_DIR / 'files'
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+CAD_DIR.mkdir(parents=True, exist_ok=True)
+FILE_DIR.mkdir(parents=True, exist_ok=True)
  
 # Create the flask app instance
 app = Flask(__name__)
@@ -42,7 +46,7 @@ app.config['SECRET_KEY'] = 'afs87fas7bfsa98fbasbas98fh78oizu'
 # Application paths
 # initialize
 
-db_path = os.path.join(app.static_folder, 'data', 'parts.db')
+db_path = DATA_DIR / 'parts.db'
 
 # Initialize the parts library
 pl = PartsLibrary(db_path = db_path, data_dir_path = DATA_DIR)
@@ -56,7 +60,7 @@ def migrate_legacy_database_schema(db_path):
         'material': 'VARCHAR(200)',
     }
 
-    with sqlite3.connect(db_path) as connection:
+    with sqlite3.connect(str(db_path)) as connection:
         cursor = connection.cursor()
         cursor.execute("PRAGMA table_info(components)")
         component_columns = {row[1] for row in cursor.fetchall()}
@@ -73,22 +77,20 @@ def migrate_legacy_database_schema(db_path):
 
 migrate_legacy_database_schema(db_path)
 
-# Function to copy sample files to data directory
-import shutil
 def copy_sample_files():
-    sample_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'openpartslibrary', 'sample'))
+    sample_dir = pl.sample_data_dir_path
     print(f"Looking for model files in : {sample_dir}" )
-    if not os.path.isdir(sample_dir):
+    if not sample_dir.is_dir():
         print(f"Sample directory does not exist: {sample_dir}")
         return
     for fname in os.listdir(sample_dir):
         print(f"Found sample file: {fname}")
         if fname.endswith('.FCStd'):
-            src = os.path.join(sample_dir, fname)
-            dst = os.path.join(CAD_DIR, fname)
+            src = sample_dir / fname
+            dst = CAD_DIR / fname
             print(f"Checking if exists: {dst}")
-            print(f"Is file ? {os.path.isfile(dst)}")
-            if os.path.isfile(src) and not os.path.isfile(dst):
+            print(f"Is file ? {dst.is_file()}")
+            if src.is_file() and not dst.is_file():
                 print(f"Copying {src} to {dst}")
                 shutil.copy(src, dst)
             else:
@@ -98,7 +100,28 @@ def copy_sample_files():
 #copy_sample_files()
 
 if not pl.session.query(Component).first():
-    pl.import_from_spreadsheet(os.path.join(pl.sample_data_dir_path, 'components.ods'))
+    pl.import_from_spreadsheet(pl.get_default_sample_spreadsheet_path())
+
+
+def open_with_default_application(filepath):
+    filepath = Path(filepath).expanduser().resolve()
+    if os.name == 'nt':
+        os.startfile(str(filepath))  # type: ignore[attr-defined]
+        return
+
+    opener = shutil.which('xdg-open') or shutil.which('open')
+    if opener is None:
+        raise RuntimeError("No system opener found. Install xdg-open or configure an application path in settings.")
+    subprocess.Popen([opener, str(filepath)])
+
+
+def launch_application(executable_path, filepath):
+    filepath = Path(filepath).expanduser().resolve()
+    executable = (executable_path or '').strip()
+    if executable:
+        subprocess.Popen([executable, str(filepath)])
+    else:
+        open_with_default_application(filepath)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -205,7 +228,7 @@ def component_create():
 
         # Sanitize filename and save
         file_name = file_uuid + '.FCStd'
-        cad_file.save(os.path.join(CAD_DIR, file_name))
+        cad_file.save(CAD_DIR / file_name)
         
         # Create a new file
         cad_file = File(uuid = file_uuid, name = file_name, description = 'This is a CAD file.')
@@ -234,7 +257,9 @@ def component_view(uuid):
     component = pl.session.query(Component).filter_by(uuid = uuid).first()
     if component is None:
         return f"Component not found with UUID: {uuid}", 404
-    component_cad_filepath = os.path.abspath(os.path.join(CAD_DIR, component.cad_file.uuid + '.FCStd'))
+    component_cad_filepath = None
+    if component.cad_file is not None:
+        component_cad_filepath = str((CAD_DIR / f"{component.cad_file.uuid}.FCStd").resolve())
     files = component.files if component else []
     used_in_files = []
     return render_template('component/component-read.html', component = component, len = len, component_cad_filepath = component_cad_filepath, files = files, used_in_files = used_in_files) 
@@ -406,7 +431,7 @@ def file_create(component_uuid):
         file_uuid = str(uuid.uuid4())
         file_name = secure_filename(uploaded_file.filename)
         stored_file_name = file_uuid + os.path.splitext(file_name)[1]
-        upload_path = os.path.join(FILE_DIR, stored_file_name)
+        upload_path = FILE_DIR / stored_file_name
         uploaded_file.save(upload_path)
         file = File(uuid = file_uuid, name = file_name, description = form.description.data)
         pl.session.add(file)
@@ -433,7 +458,7 @@ def update_file(file_uuid):
         if uploaded_file and uploaded_file.filename != '':
             file_name = secure_filename(uploaded_file.filename)
             stored_file_name = file.uuid + os.path.splitext(file_name)[1]
-            upload_path = os.path.join(FILE_DIR, stored_file_name)
+            upload_path = FILE_DIR / stored_file_name
             uploaded_file.save(upload_path)
             file.name = file_name
         file.description = form.description.data
@@ -470,12 +495,12 @@ Settings routes
 def settings():
     settings = load_settings()
     if request.method == 'POST':
-        settings['executables']['FreeCAD_GUI'] = request.form.get('FreeCAD_GUI', '')
-        settings['executables']['FreeCAD_CMD'] = request.form.get('FreeCAD_CMD', '')
-        settings['executables']['PrePoMax'] = request.form.get('PrePoMax', '')
-        settings['executables']['LibreOffice_Writer'] = request.form.get('LibreOffice_Writer', '')
-        settings['executables']['LibreOffice_Calc'] = request.form.get('LibreOffice_Calc', '')
-        settings['executables']['LibreOffice_Impress'] = request.form.get('LibreOffice_Impress', '')
+        settings['executables']['FreeCAD_GUI'] = request.form.get('freecad_gui_path', '')
+        settings['executables']['FreeCAD_CMD'] = request.form.get('freecad_cmd_path', '')
+        settings['executables']['PrePoMax'] = request.form.get('prepomax_path', '')
+        settings['executables']['LibreOffice_Writer'] = request.form.get('libreoffice_writer_path', '')
+        settings['executables']['LibreOffice_Calc'] = request.form.get('libreoffice_calc_path', '')
+        settings['executables']['LibreOffice_Impress'] = request.form.get('libreoffice_impress_path', '')
         save_settings(settings)
         return redirect(url_for('settings'))
     return render_template('settings/settings.html', settings = settings)
@@ -493,7 +518,7 @@ def viewer(filename):
 
 @app.route('/static/cad/<filename>')
 def serve_model_file(filename):
-    return send_from_directory(CAD_DIR, filename)
+    return send_from_directory(str(CAD_DIR), filename)
 
 
 ''' 
@@ -503,7 +528,8 @@ Desktop application startup routes
 '''
 @app.route('/run-freecad-gui/<filepath>')
 def run_freecad_gui(filepath):
-    os.system('start ' + app.config['APPLICATION_PATH_FREECAD'] + ' ' + filepath)
+    settings = load_settings()
+    launch_application(settings['executables'].get('FreeCAD_GUI', ''), filepath)
     return ('', 204)
 
 @app.route('/run-libreoffice-gui/<filepath>')

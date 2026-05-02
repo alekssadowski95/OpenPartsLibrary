@@ -8,7 +8,7 @@ import zipfile
 from pathlib import Path
 
 from flask import Flask
-from flask import render_template, url_for, send_from_directory, send_file, redirect, request, flash, session
+from flask import render_template, url_for, send_from_directory, send_file, redirect, request, flash, session, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -340,6 +340,43 @@ def selection_download():
         as_attachment=True,
         download_name='openpartslibrary-selection.zip',
     )
+
+@app.route('/selection/components', methods=['POST'])
+def selection_components():
+    selection_items = request.get_json(silent=True) or []
+    if not isinstance(selection_items, list):
+        return jsonify([])
+
+    components = []
+    quantities_by_uuid = {}
+    for item in selection_items:
+        if isinstance(item, dict):
+            component_uuid = str(item.get('uuid', ''))
+            quantity = item.get('quantity', 1)
+        else:
+            component_uuid = str(item)
+            quantity = 1
+
+        if not component_uuid:
+            continue
+
+        quantities_by_uuid[component_uuid] = quantities_by_uuid.get(component_uuid, 0) + int(quantity or 1)
+
+    for component_uuid, quantity in quantities_by_uuid.items():
+        component = pl.session.query(Component).filter_by(uuid=component_uuid).first()
+        if component is None:
+            continue
+
+        components.append({
+            'uuid': component.uuid,
+            'name': component.name,
+            'part_number': component.number,
+            'quantity': quantity,
+            'price_per_item': str(component.unit_price or ''),
+            'currency': component.currency or '',
+        })
+
+    return jsonify(components)
 
 ''' 
 ***************

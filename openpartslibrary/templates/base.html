@@ -60,8 +60,9 @@
     .parts-bucket-column {
         flex: 0 0 400px;
         width: 400px;
-        min-height: calc(100vh - 79px);
-        max-height: calc(100vh - 79px);
+        padding-left: 0;
+        padding-right: 0;
+        height: calc(100vh - 79px);
         background-color: rgb(1, 29, 65);
         color: white;
         border-left: 1px solid #0a3b7a;
@@ -163,24 +164,25 @@
       </div>
     </div>
     <!-- Main view and sidebars -->
-    <div class="row p-0 m-0 flex-nowrap" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px);">
+    <div class="row p-0 m-0 flex-nowrap" style="height: calc(100vh - 79px);">
         <!-- Main view -->
         <main class="col p-0" style="position: relative; min-width: 0; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); background-color: #f8f9fa;">
             {% block main_view %}{% endblock main_view %}
         </main>
         <!-- New assembly column -->
-        <aside id="parts-bucket-div" class="parts-bucket-column d-none">
-            <div class="container-fluid d-flex align-items-center justify-content-between px-0" style="height: 40px; border-bottom: 1px solid #042c61;">
+        <aside id="parts-bucket-div" class="parts-bucket-column d-none d-flex flex-column">
+            <div class="container-fluid d-flex align-items-center justify-content-between px-2" style="height: 40px; border-bottom: 1px solid #042c61;">
                 <span>Part selection</span>
                 <button id="clear-parts-bucket-button" type="button" class="parts-bucket-clear-button" title="Clear selection" onclick="clearSessionList('partsBucketList')">
                     <img src="{{ url_for('static', filename = 'bin.png') }}" width="16" height="16" alt="">
                 </button>
             </div>
-            <div id="parts-bucket-scroll" class="m-0 p-0" style="height: calc(100% - 102px); overflow-y: scroll;">
+            <div id="parts-bucket-scroll" class="m-0 p-0 flex-grow-1" style="min-height: 0; overflow-y: scroll;">
                 <ul id="parts-bucket-list" class="p-2 pb-0 m-0">
                 </ul>
             </div>
-            <div class="container-fluid px-0" style="height: 60px; border-top: 1px solid #042c61; padding-top: 12px;">
+            <div class="container-fluid px-2" style="height: 86px; flex: 0 0 86px; border-top: 1px solid #042c61; padding-top: 8px;">
+                <div id="parts-bucket-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">Estimated total: 0</div>
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary" type="button" onclick="downloadSelection()">Download all</button>
                 </div>
@@ -198,6 +200,7 @@
     <script>
         const partsBucketDiv = document.getElementById("parts-bucket-div");
         const partsBucketList = document.getElementById("parts-bucket-list");
+        const partsBucketTotal = document.getElementById("parts-bucket-total");
         const selectionNotification = document.getElementById("selection-notification");
         let selectionNotificationTimeout = null;
 
@@ -205,15 +208,45 @@
             return JSON.parse(sessionStorage.getItem("partsBucketList")) || [];
         }
 
+        function normalizeSelectionItem(item) {
+            if (typeof item === "string") {
+                return { uuid: item, quantity: 1 };
+            }
+
+            return {
+                uuid: item.uuid,
+                quantity: Number(item.quantity) || 1
+            };
+        }
+
         function saveSelectionList(list) {
             sessionStorage.setItem("partsBucketList", JSON.stringify(list));
         }
 
-        function updatePartsBucketContent() {
-            let cardsHTML = buildCardsFromSession("partsBucketList");
+        async function updatePartsBucketContent() {
+            let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
+            if (list.length === 0) {
+                partsBucketList.innerHTML = "";
+                updateSelectionTotal([]);
+                return;
+            }
 
-            // Insert into a container element on the page
-            document.getElementById("parts-bucket-list").innerHTML = cardsHTML;
+            const response = await fetch("{{ url_for('selection_components') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(list)
+            });
+
+            if (!response.ok) {
+                partsBucketList.innerHTML = "";
+                return;
+            }
+
+            const components = await response.json();
+            partsBucketList.innerHTML = buildSelectionCards(components);
+            updateSelectionTotal(components);
         }
 
         function showPartsBucket() {
@@ -226,11 +259,14 @@
                 return;
             }
 
-            let list = getSelectionList();
-            if (!list.includes(componentUuid)) {
-                list.push(componentUuid);
-                saveSelectionList(list);
+            let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
+            let selectionItem = list.find(item => item.uuid === componentUuid);
+            if (selectionItem) {
+                selectionItem.quantity += 1;
+            } else {
+                list.push({ uuid: componentUuid, quantity: 1 });
             }
+            saveSelectionList(list);
 
             updatePartsBucketContent();
             showSelectionNotification("Added to selection");
@@ -255,18 +291,27 @@
             updatePartsBucketContent();
         }
 
+        function removeComponentFromSelection(componentUuid) {
+            let list = getSelectionList()
+                .map(normalizeSelectionItem)
+                .filter(item => item.uuid && item.uuid !== componentUuid);
+            saveSelectionList(list);
+            updatePartsBucketContent();
+        }
+
         async function downloadSelection() {
-            let list = getSelectionList();
+            let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
             if (list.length === 0) {
                 return;
             }
+            let componentUuids = list.map(item => item.uuid);
 
             const response = await fetch("{{ url_for('selection_download') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(list)
+                body: JSON.stringify(componentUuids)
             });
 
             if (!response.ok) {
@@ -284,26 +329,64 @@
             window.URL.revokeObjectURL(downloadUrl);
         }
 
-        // Function to build Bootstrap card HTML from list in sessionStorage
-        function buildCardsFromSession(key) {
-            // Get list from sessionStorage
-            let list = JSON.parse(sessionStorage.getItem(key)) || [];
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
 
-            // Start with empty HTML string
-            let html = "";
+        function updateSelectionTotal(components) {
+            let totalsByCurrency = {};
 
-            // Loop through each item and build a Bootstrap card
-            list.forEach(item => {
-                html += `
-                <div class="card mb-2" style="background-color: #042c61; color: white; border-color: #0a3b7a;">
-                    <div class="card-body">
-                    <p class="card-text">${item}</p>
-                    </div>
-                </div>
-                `;
+            components.forEach(component => {
+                const price = Number(component.price_per_item);
+                const quantity = Number(component.quantity) || 0;
+                const currency = component.currency || "";
+
+                if (!Number.isFinite(price)) {
+                    return;
+                }
+
+                totalsByCurrency[currency] = (totalsByCurrency[currency] || 0) + (price * quantity);
             });
 
-            return html;
+            const totalText = Object.entries(totalsByCurrency)
+                .map(([currency, total]) => `${total.toFixed(2)} ${currency}`.trim())
+                .join(" + ");
+
+            partsBucketTotal.textContent = `Estimated total: ${totalText || "0"}`;
+        }
+
+        function buildSelectionCards(components) {
+            return components.map(component => {
+                const uuid = escapeHtml(component.uuid);
+                const name = escapeHtml(component.name);
+                const partNumber = escapeHtml(component.part_number);
+                const quantity = escapeHtml(component.quantity);
+                const price = escapeHtml(component.price_per_item);
+                const currency = escapeHtml(component.currency);
+
+                return `
+                <li class="card mb-2" style="background-color: #042c61; color: white; border-color: #0a3b7a;">
+                    <div class="card-body p-2">
+                        <div class="d-flex align-items-start justify-content-between gap-2">
+                            <div style="min-width: 0;">
+                                <div class="fw-semibold text-truncate" title="${name}">${name}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">Part number: ${partNumber}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">Quantity: ${quantity}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">Price per item: ${price} ${currency}</div>
+                            </div>
+                            <button type="button" class="parts-bucket-clear-button" title="Remove from selection" onclick="removeComponentFromSelection('${uuid}')">
+                                <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
+                            </button>
+                        </div>
+                    </div>
+                </li>
+                `;
+            }).join("");
         }
 
         document.addEventListener("DOMContentLoaded", function () {

@@ -254,7 +254,7 @@
             partsBucketDiv.classList.toggle("d-none");
         }
 
-        function addComponentToSelection(componentUuid) {
+        function addComponentToSelection(componentUuid, componentName = "") {
             if (!componentUuid) {
                 return;
             }
@@ -269,7 +269,13 @@
             saveSelectionList(list);
 
             updatePartsBucketContent();
-            showSelectionNotification("Added to selection");
+            const safeName = String(componentName || "").trim();
+            if (safeName) {
+                const shortName = safeName.slice(0, 12) + "...";
+                showSelectionNotification("<" + shortName + "> added to selection");
+            } else {
+                showSelectionNotification("Added to selection");
+            }
         }
 
         function showSelectionNotification(message) {
@@ -282,7 +288,7 @@
 
             selectionNotificationTimeout = window.setTimeout(() => {
                 selectionNotification.classList.add("d-none");
-            }, 1800);
+            }, 3000);
         }
 
         // Function to clear the list in sessionStorage

@@ -16,9 +16,7 @@
 </style>
 {% endblock style %}
 
-{% block function_buttons %}
-<a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}" style="font-size: smaller;">&larr; All components</a>
-{% endblock function_buttons %}
+{% block function_buttons %}{% endblock function_buttons %}
 
 {% block view_buttons %}
 <!-- Add your view buttons here -->
@@ -28,6 +26,9 @@
 {% block main_view_content %}
 <div class="container p-3 m-0 component-detail-scroll" style="background-color: white; width: 100%; min-width: 100%; overflow-y: auto;">
    <div class="container-fluid p-3">
+    <div class="mb-3">
+        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">&larr; All components</a>
+    </div>
     <div class="row mb-4">
         <!-- 3D View -->
         <div class="col-4">
@@ -94,7 +95,7 @@
                 <td>{{ file.date_modified }}</td>
                 <td>
                     <nobr>
-                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('read_file', file_uuid = file.uuid) }}"><i class="bi-eye"></i></a>
+                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('download_file', file_uuid = file.uuid) }}"><i class="bi-download"></i></a>
                     </nobr>
                 </td>
             </tr>

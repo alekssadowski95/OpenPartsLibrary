@@ -29,6 +29,7 @@ def build_components_url(overrides=None):
 def register_routes(app, parts_library):
     session = parts_library.session
     cad_dir = app.config["CAD_DIR"]
+    file_dir = app.config["FILE_DIR"]
 
     @app.route("/")
     def home():
@@ -292,12 +293,26 @@ def register_routes(app, parts_library):
 
         return jsonify(components)
 
-    @app.route("/file/read/<file_uuid>")
-    def read_file(file_uuid):
+    @app.route("/file/download/<file_uuid>")
+    def download_file(file_uuid):
         file = session.query(File).filter_by(uuid=file_uuid).first()
         if file is None:
             return f"File not found with UUID: {file_uuid}", 404
-        return render_template("file.html", file=file)
+
+        matching_files = sorted(file_dir.glob(f"{file.uuid}.*"))
+        if not matching_files:
+            return "File content not found.", 404
+
+        source_file = matching_files[0]
+        downloaded_filename = with_openpartslibrary_suffix(file.name or source_file.name)
+        record_download_event(
+            session,
+            "component_file",
+            downloaded_filename,
+            file=file,
+            quantity=1,
+        )
+        return send_file(source_file, as_attachment=True, download_name=downloaded_filename)
 
     @app.route("/viewer/<filename>")
     def viewer(filename):

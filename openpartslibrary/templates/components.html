@@ -2,6 +2,7 @@
 
 
 {% block style %}
+{{ super() }}
 <style>
 .table-hover tbody tr:hover {
     background-color: #d3d3d3;
@@ -60,6 +61,15 @@ tbody tr td {
 .component-sort-link:hover {
     color: #0d6efd;
 }
+
+.component-table thead th {
+    background-color: #ffffff;
+}
+
+.part-number-col {
+    width: 120px;
+    min-width: 120px;
+}
 </style>
 {% endblock style %}
 
@@ -76,9 +86,8 @@ tbody tr td {
 {% endblock view_buttons %}
 
 {% block main_view_content_list %}
-<h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Components</h1>
-<p class="mb-2 px-3 py-0">{{ len(components) }} components were found.</p>
 <form class="component-filter-bar px-3 py-2" method="get" action="{{ url_for('components') }}">
+    <h1 class="mb-0 mt-1" style="font-size: x-large;">Parts</h1>
     <input type="hidden" name="search_query" value="{{ search_query }}">
     <input type="hidden" name="sort" value="{{ sort_key }}">
     <input type="hidden" name="direction" value="{{ direction }}">
@@ -92,50 +101,33 @@ tbody tr td {
                 {% endfor %}
             </select>
         </div>
-        <div class="col-12 col-md-2">
-            <label class="form-label" for="material-filter">Material</label>
-            <select id="material-filter" class="form-select form-select-sm" name="material">
-                <option value="">All materials</option>
-                {% for material in materials %}
-                <option value="{{ material }}" {% if filters.material == material %}selected{% endif %}>{{ material }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-12 col-md-2">
-            <label class="form-label" for="currency-filter">Currency</label>
-            <select id="currency-filter" class="form-select form-select-sm" name="currency">
-                <option value="">All currencies</option>
-                {% for currency in currencies %}
-                <option value="{{ currency }}" {% if filters.currency == currency %}selected{% endif %}>{{ currency }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-6 col-md-1">
-            <label class="form-label" for="price-min-filter">Min price</label>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="price-min-filter">Min price (EUR)</label>
             <input id="price-min-filter" class="form-control form-control-sm" name="price_min" type="number" min="0" step="0.01" value="{{ filters.price_min }}">
         </div>
-        <div class="col-6 col-md-1">
-            <label class="form-label" for="price-max-filter">Max price</label>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="price-max-filter">Max price (EUR)</label>
             <input id="price-max-filter" class="form-control form-control-sm" name="price_max" type="number" min="0" step="0.01" value="{{ filters.price_max }}">
         </div>
-        <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end">
+        <div class="col-12 col-md-5 d-flex gap-2 justify-content-md-end">
             <button class="btn btn-primary btn-sm" type="submit">Apply</button>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'material': '', 'currency': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">Reset</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">Reset</a>
         </div>
     </div>
 </form>
-<table class="table table-hover" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+<p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ len(components) }} parts were found.</p>
+<table class="table table-striped table-hover component-table" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
     <thead>
         <tr>
             <th class="component-actions-col"></th>
+            {% set next_direction = 'desc' if sort_key == 'number' and direction == 'asc' else 'asc' %}
+            <th class="part-number-col"><a class="component-sort-link text-nowrap" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">Part number{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'name' and direction == 'asc' else 'asc' %}
             <th><a class="component-sort-link" href="{{ components_url({'sort': 'name', 'direction': next_direction}) }}">Name{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
-            {% set next_direction = 'desc' if sort_key == 'number' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">Part number{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
-            {% set next_direction = 'desc' if sort_key == 'supplier' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">Supplier{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'unit_price' and direction == 'asc' else 'asc' %}
             <th><a class="component-sort-link" href="{{ components_url({'sort': 'unit_price', 'direction': next_direction}) }}">Unit price{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            {% set next_direction = 'desc' if sort_key == 'supplier' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">Supplier{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'description' and direction == 'asc' else 'asc' %}
             <th><a class="component-sort-link" href="{{ components_url({'sort': 'description', 'direction': next_direction}) }}">Description{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
         </tr>
@@ -154,15 +146,15 @@ tbody tr td {
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/download.svg') }}" width="18" height="18">
                 </a>
                 {% endif %}
-                <a title="Add component to bucket" type="button" data-uuid="{{ component.uuid }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
+                <a title="Add component to bucket" type="button" data-uuid="{{ component.uuid }}" data-name="{{ component.name }}" class="btn btn-outline-secondary btn-sm add-part-to-bucket-button">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
                 </a>
                 </div>
             </td>
+            <td class="part-number-col">{{ component.number }}</td>
             <td style="min-width: 260px; max-width: 260px;">{{ component.name }}</td>
-            <td style="min-width: 220px; max-width: 220px;">{{ component.number }}</td>
-            <td style="min-width: 220px; max-width: 220px;">{{ component.supplier.name if component.supplier else "" }}</td>
             <td style="min-width: 100px; max-width: 100px;">{{ component.unit_price }} {{ component.currency }}</td>
+            <td style="min-width: 220px; max-width: 220px;">{{ component.supplier.name if component.supplier else "" }}</td>
             <td style="min-width: 300px; max-width: 300px;">{{ component.description }}</td>
         </tr>
         {% endfor %}
@@ -171,30 +163,24 @@ tbody tr td {
 {% endblock main_view_content_list %}
 
 {% block main_view_content_preview %}
-<iframe id="main-view-iframe" src="" frameborder="0" style="min-width: 100%; min-height: 100%; max-height: 100%; margin: 0; display: block;"></iframe>
+<div style="position: relative; width: 100%; height: 100%; overflow: hidden;">
+    <div id="main-view-preview-empty" class="d-none flex-column align-items-center justify-content-center" style="position: absolute; inset: 0; background: #f5f5f5;">
+        <img src="{{ url_for('static', filename='cube.png') }}" alt="" width="72" height="72" style="opacity: 0.65;">
+        <span class="mt-2" style="color: #6b7280;">No CAD file available</span>
+    </div>
+    <iframe id="main-view-iframe" src="" frameborder="0" style="position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; display: none;"></iframe>
+</div>
 {% endblock main_view_content_preview %}
 
 {% block script %}
+{{ super() }}
 <script>
 var main_view_list_col = document.getElementById('main-view-list-col');
 var main_view_preview_col = document.getElementById('main-view-preview-col');
 
 function setListView(){
-    main_view_list_col.classList.remove('col-6');
-    main_view_list_col.classList.remove('col-12');
-    main_view_preview_col.classList.remove('col-6');
-    main_view_preview_col.classList.remove('col-12');
-    main_view_list_col.classList.add('col-12');
-    main_view_preview_col.style.display = "none";
-    main_view_list_col.style.overflow = "scroll";
-
-    document.querySelectorAll('.part-row').forEach(function(row) {
-        row.classList.remove('selected-row');
-    });
-
-    var iframe = document.getElementById('main-view-iframe');
-    if (iframe) {
-        iframe.src = "";
+    if (typeof switchToListView === "function") {
+        switchToListView();
     }
 }
 
@@ -210,6 +196,7 @@ function setPreviewView(){
 
 document.addEventListener('DOMContentLoaded', function() {
     var iframe = document.getElementById('main-view-iframe');
+    var emptyState = document.getElementById('main-view-preview-empty');
     document.querySelectorAll('.part-row').forEach(function(row, event) {
         row.addEventListener('click', function(event) {
             event.stopPropagation(); // prevent the row click from firing
@@ -227,8 +214,16 @@ document.addEventListener('DOMContentLoaded', function() {
             var modelFile = this.getAttribute('data-model');
             console.log("Clicked row, model filename: ", modelFile);
             if (modelFile) {
+                emptyState.classList.add("d-none");
+                emptyState.classList.remove("d-flex");
+                iframe.style.display = "block";
                 iframe.src = '/viewer/' + encodeURIComponent(modelFile);
                 console.log("Set iframe src to: " , iframe.src);
+            } else {
+                iframe.src = "";
+                iframe.style.display = "none";
+                emptyState.classList.remove("d-none");
+                emptyState.classList.add("d-flex");
             }
         }); 
     });
@@ -239,7 +234,8 @@ document.addEventListener('DOMContentLoaded', function() {
         button.addEventListener("click", function(event) {
             event.stopPropagation(); // prevent the row click from firing
             var partUUID = this.getAttribute('data-uuid');
-            addComponentToSelection(partUUID);
+            var partName = this.getAttribute('data-name') || "";
+            addComponentToSelection(partUUID, partName);
         });
     });
 });

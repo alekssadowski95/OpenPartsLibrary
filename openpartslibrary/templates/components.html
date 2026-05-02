@@ -39,6 +39,27 @@ tbody tr td {
 .component-actions .btn {
     flex: 0 0 auto;
 }
+
+.component-filter-bar {
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.component-filter-bar .form-label {
+    font-size: 0.72rem;
+    color: #5f6b7a;
+    margin-bottom: 2px;
+}
+
+.component-sort-link {
+    color: inherit;
+    text-decoration: none;
+}
+
+.component-sort-link:hover {
+    color: #0d6efd;
+}
 </style>
 {% endblock style %}
 
@@ -56,16 +77,67 @@ tbody tr td {
 
 {% block main_view_content_list %}
 <h1 class="p-3 pb-0 mb-1" style="font-size: x-large;">Components</h1>
-<p class="mb-3 px-3 py-0">{{ len(components) }} components were found.</p>
+<p class="mb-2 px-3 py-0">{{ len(components) }} components were found.</p>
+<form class="component-filter-bar px-3 py-2" method="get" action="{{ url_for('components') }}">
+    <input type="hidden" name="search_query" value="{{ search_query }}">
+    <input type="hidden" name="sort" value="{{ sort_key }}">
+    <input type="hidden" name="direction" value="{{ direction }}">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+            <label class="form-label" for="supplier-filter">Supplier</label>
+            <select id="supplier-filter" class="form-select form-select-sm" name="supplier">
+                <option value="">All suppliers</option>
+                {% for supplier in suppliers %}
+                <option value="{{ supplier.id }}" {% if filters.supplier == supplier.id|string %}selected{% endif %}>{{ supplier.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label" for="material-filter">Material</label>
+            <select id="material-filter" class="form-select form-select-sm" name="material">
+                <option value="">All materials</option>
+                {% for material in materials %}
+                <option value="{{ material }}" {% if filters.material == material %}selected{% endif %}>{{ material }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <label class="form-label" for="currency-filter">Currency</label>
+            <select id="currency-filter" class="form-select form-select-sm" name="currency">
+                <option value="">All currencies</option>
+                {% for currency in currencies %}
+                <option value="{{ currency }}" {% if filters.currency == currency %}selected{% endif %}>{{ currency }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-1">
+            <label class="form-label" for="price-min-filter">Min price</label>
+            <input id="price-min-filter" class="form-control form-control-sm" name="price_min" type="number" min="0" step="0.01" value="{{ filters.price_min }}">
+        </div>
+        <div class="col-6 col-md-1">
+            <label class="form-label" for="price-max-filter">Max price</label>
+            <input id="price-max-filter" class="form-control form-control-sm" name="price_max" type="number" min="0" step="0.01" value="{{ filters.price_max }}">
+        </div>
+        <div class="col-12 col-md-3 d-flex gap-2 justify-content-md-end">
+            <button class="btn btn-primary btn-sm" type="submit">Apply</button>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'material': '', 'currency': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">Reset</a>
+        </div>
+    </div>
+</form>
 <table class="table table-hover" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
     <thead>
         <tr>
             <th class="component-actions-col"></th>
-            <th>Name</th>
-            <th>Part number</th>
-            <th>Supplier</th>
-            <th>Unit price</th>
-            <th>Description</th>
+            {% set next_direction = 'desc' if sort_key == 'name' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'name', 'direction': next_direction}) }}">Name{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            {% set next_direction = 'desc' if sort_key == 'number' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">Part number{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            {% set next_direction = 'desc' if sort_key == 'supplier' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">Supplier{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            {% set next_direction = 'desc' if sort_key == 'unit_price' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'unit_price', 'direction': next_direction}) }}">Unit price{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            {% set next_direction = 'desc' if sort_key == 'description' and direction == 'asc' else 'asc' %}
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'description', 'direction': next_direction}) }}">Description{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
         </tr>
     </thead>
     <tbody>

@@ -396,10 +396,16 @@
                 // Find the input by its name attribute
                 const queryInput = form.querySelector('[name="search_query"]');
                 const value = queryInput.value.trim();
+                const params = new URLSearchParams(window.location.search);
 
                 if (value) {
-                    window.location.href = "{{ url_for('components') }}?search_query=" + value;
+                    params.set("search_query", value);
+                } else {
+                    params.delete("search_query");
                 }
+
+                const queryString = params.toString();
+                window.location.href = "{{ url_for('components') }}" + (queryString ? "?" + queryString : "");
             });
         });
 

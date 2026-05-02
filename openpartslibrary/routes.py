@@ -1,14 +1,29 @@
 import io
 import json
 import zipfile
+from urllib.parse import urlencode
 
 from flask import jsonify, redirect, render_template, request, send_file, send_from_directory, url_for
-from sqlalchemy import or_
+from sqlalchemy import asc, desc, or_
 
 from openpartslibrary.desktop import open_with_default_application
 from openpartslibrary.downloads import record_download_event, with_openpartslibrary_suffix
 from openpartslibrary.hbom import build_spdx_hardware_bom
-from openpartslibrary.models import Component, File
+from openpartslibrary.models import Component, File, Supplier
+
+
+def build_components_url(overrides=None):
+    query_args = request.args.to_dict(flat=True)
+    for key, value in (overrides or {}).items():
+        if value is None or value == "":
+            query_args.pop(key, None)
+        else:
+            query_args[key] = value
+
+    query_string = urlencode(query_args)
+    if not query_string:
+        return url_for("components")
+    return f"{url_for('components')}?{query_string}"
 
 
 def register_routes(app, parts_library):
@@ -22,14 +37,73 @@ def register_routes(app, parts_library):
     @app.route("/components", defaults={"search_query": None})
     def components(search_query):
         search_query = request.args.get("search_query", "")
+        supplier_filter = request.args.get("supplier", "")
+        material_filter = request.args.get("material", "")
+        currency_filter = request.args.get("currency", "")
+        price_min = request.args.get("price_min", "")
+        price_max = request.args.get("price_max", "")
+        sort_key = request.args.get("sort", "name")
+        direction = request.args.get("direction", "asc")
         like_pattern = f"%{search_query}%"
 
-        component_results = session.query(Component).filter(
-            or_(
+        query = session.query(Component).outerjoin(Component.supplier)
+
+        if search_query:
+            query = query.filter(or_(
                 Component.name.ilike(like_pattern),
                 Component.description.ilike(like_pattern),
-            )
-        ).limit(1000).all()
+                Component.number.ilike(like_pattern),
+            ))
+
+        if supplier_filter and supplier_filter.isdigit():
+            query = query.filter(Component.supplier_id == int(supplier_filter))
+
+        if material_filter:
+            query = query.filter(Component.material == material_filter)
+
+        if currency_filter:
+            query = query.filter(Component.currency == currency_filter)
+
+        if price_min:
+            try:
+                query = query.filter(Component.unit_price >= float(price_min))
+            except ValueError:
+                price_min = ""
+
+        if price_max:
+            try:
+                query = query.filter(Component.unit_price <= float(price_max))
+            except ValueError:
+                price_max = ""
+
+        sort_columns = {
+            "name": Component.name,
+            "number": Component.number,
+            "supplier": Supplier.name,
+            "unit_price": Component.unit_price,
+            "description": Component.description,
+        }
+        sort_column = sort_columns.get(sort_key, Component.name)
+        sort_direction = desc if direction == "desc" else asc
+        component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
+
+        suppliers = session.query(Supplier).order_by(Supplier.name).all()
+        materials = [
+            value[0]
+            for value in session.query(Component.material)
+            .filter(Component.material.isnot(None), Component.material != "")
+            .distinct()
+            .order_by(Component.material)
+            .all()
+        ]
+        currencies = [
+            value[0]
+            for value in session.query(Component.currency)
+            .filter(Component.currency.isnot(None), Component.currency != "")
+            .distinct()
+            .order_by(Component.currency)
+            .all()
+        ]
 
         component_cad_filenames = {}
         for component in component_results:
@@ -45,6 +119,19 @@ def register_routes(app, parts_library):
             len=len,
             search_query=search_query,
             component_cad_filenames=component_cad_filenames,
+            suppliers=suppliers,
+            materials=materials,
+            currencies=currencies,
+            filters={
+                "supplier": supplier_filter,
+                "material": material_filter,
+                "currency": currency_filter,
+                "price_min": price_min,
+                "price_max": price_max,
+            },
+            sort_key=sort_key,
+            direction=direction,
+            components_url=build_components_url,
         )
 
     @app.route("/component_view/<uuid>")

@@ -1,6 +1,4 @@
 recursive-include openpartslibrary/sample *
 recursive-include openpartslibrary/images *
-recursive-include openpartslibrary/export *
 recursive-include openpartslibrary/templates *
 recursive-include openpartslibrary/static *
-include openpartslibrary/settings.json

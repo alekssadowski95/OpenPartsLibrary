@@ -1,6 +1,5 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint, Boolean, Text
 from sqlalchemy.orm import DeclarativeBase, relationship, backref
-from flask_login import UserMixin
 from datetime import datetime
 
 class Base(DeclarativeBase):
@@ -36,20 +35,6 @@ class ComponentFile(Base):
     date_linked = Column(DateTime, default=datetime.utcnow)
 
     __table__args__ = (UniqueConstraint('component_id', 'file_id', name='uq_component_file'),)
-
-'''
-Tables
-'''
-class User(UserMixin, Base):
-    __tablename__ = 'users'
-
-    id = Column(Integer, primary_key=True)
-    username = Column(String(50), nullable=False)
-    email = Column(String(120), unique=True, nullable=False)
-    password = Column(String(200), nullable=False)
-
-    def __repr__(self):
-        return f'<User {self.username}, {self.email}>'
 
 class Component(Base):
     __tablename__ = 'components'
@@ -134,6 +119,23 @@ class File(Base):
 
     # One-to-one relationship with Component for CAD reference
     cad_component = relationship('Component', back_populates='cad_file', uselist=False, foreign_keys='Component.cad_file_id')
+
+class DownloadEvent(Base):
+    __tablename__ = 'download_events'
+
+    id = Column(Integer, primary_key=True)
+    download_type = Column(String(50), nullable=False)
+    component_uuid = Column(String(32))
+    component_name = Column(String(200))
+    component_number = Column(String(50))
+    file_uuid = Column(String(32))
+    file_name = Column(String(255))
+    downloaded_filename = Column(String(255), nullable=False)
+    quantity = Column(Integer)
+    user_id = Column(Integer)
+    remote_addr = Column(String(100))
+    user_agent = Column(String(500))
+    date_downloaded = Column(DateTime, default=datetime.utcnow, nullable=False)
 
 # Future feature, not part of MVP
 class Material(Base):

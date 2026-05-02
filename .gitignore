@@ -1,5 +1,7 @@
 openpartslibrary_flask/static/data/*
 openpartslibrary/data/*
+openpartslibrary/static/data/*
+instance/
 
 apps/*
 utils/*

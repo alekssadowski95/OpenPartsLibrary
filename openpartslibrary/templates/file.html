@@ -1,0 +1,26 @@
+{% extends "page.html" %}
+
+{% block main_view_content %}
+<div class="container col-xl-4 py-5" style="background-color: #f5f5f5;">
+    <h4 class="mb-3">File Details</h4>
+    <table class="table">
+        <tr>
+            <th>Name</th>
+            <td>{{ file.name }}</td>
+        </tr>
+        <tr>
+            <th>Description</th>
+            <td>{{ file.description }}</td>
+        </tr>
+        <tr>
+            <th>Date Modified</th>
+            <td>{{ file.date_modified }}</td>
+        </tr>
+        <tr>
+            <th>UUID</th>
+            <td>{{ file.uuid }}</td>
+        </tr>
+    </table>
+    <a class="btn btn-outline-primary" href="{{ url_for('components') }}">Back to Components</a>
+</div>
+{% endblock %}

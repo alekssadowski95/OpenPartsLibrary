@@ -22,10 +22,8 @@ setup(
         'openpartslibrary': [
             'sample/**/*',
             'images/*',
-            'export/*',
             'templates/**/*',
             'static/**/*',
-            'settings.json',
         ],
     },
     install_requires=[
@@ -33,15 +31,9 @@ setup(
         'pandas',
         'openpyxl',
         'odfpy',
-        'networkx',
-        'matplotlib',
         'pywebview',
-        'tabulate',
         'flask-cors',
-        'Flask-WTF',
-        'WTForms',
-        'Flask-Login',
-        'email_validator',
+        'Flask-Admin',
     ],
     python_requires='>=3.10',
 

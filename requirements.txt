@@ -1,14 +1,7 @@
 sqlalchemy
 openpyxl
 pandas
-networkx
-matplotlib
 pywebview
-tabulate
 flask-cors
-sphinx
-Flask-WTF
-WTForms
-Flask-Login
-email_validator
+Flask-Admin
 odfpy

@@ -1,10 +1,12 @@
 import io
+import json
 import os
 import shutil
 import sqlite3
 import subprocess
 import uuid
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 
 from flask import Flask
@@ -305,32 +307,63 @@ def component_archivate(uuid):
 
 @app.route('/selection/download', methods=['POST'])
 def selection_download():
-    component_uuids = request.get_json(silent=True) or []
-    if not isinstance(component_uuids, list):
-        return "Expected a list of component UUIDs.", 400
+    selection_items = request.get_json(silent=True) or []
+    if not isinstance(selection_items, list):
+        return "Expected a list of selected components.", 400
 
-    unique_component_uuids = list(dict.fromkeys(str(component_uuid) for component_uuid in component_uuids))
+    selected_quantities = {}
+    for item in selection_items:
+        if isinstance(item, dict):
+            component_uuid = str(item.get('uuid', ''))
+            quantity = int(item.get('quantity') or 1)
+        else:
+            component_uuid = str(item)
+            quantity = 1
+
+        if component_uuid:
+            selected_quantities[component_uuid] = selected_quantities.get(component_uuid, 0) + quantity
+
     zip_buffer = io.BytesIO()
     files_added = 0
+    bom_components = []
 
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        for component_uuid in unique_component_uuids:
+        for component_uuid, quantity in selected_quantities.items():
             component = pl.session.query(Component).filter_by(uuid=component_uuid).first()
-            if component is None or component.cad_file is None:
-                continue
-
-            cad_filename = f"{component.cad_file.uuid}.FCStd"
-            cad_path = CAD_DIR / cad_filename
-            if not cad_path.exists():
+            if component is None:
                 continue
 
             part_number = str(component.number or component.uuid).replace("/", "-").replace("\\", "-")
-            original_name = component.cad_file.name or cad_filename
-            archive_name = f"{part_number}_{original_name}"
-            zip_file.write(cad_path, archive_name)
-            files_added += 1
+            archive_name = None
 
-    if files_added == 0:
+            if component.cad_file is not None:
+                cad_filename = f"{component.cad_file.uuid}.FCStd"
+                cad_path = CAD_DIR / cad_filename
+                if cad_path.exists():
+                    original_name = component.cad_file.name or cad_filename
+                    archive_name = f"{part_number}_{original_name}"
+                    zip_file.write(cad_path, archive_name)
+                    files_added += 1
+
+            bom_components.append({
+                'uuid': component.uuid,
+                'name': component.name,
+                'part_number': component.number,
+                'quantity': quantity,
+                'price_per_item': str(component.unit_price or ''),
+                'currency': component.currency or '',
+                'cad_file': archive_name,
+                'description': component.description or '',
+                'supplier': component.supplier.name if component.supplier else '',
+            })
+
+        if bom_components:
+            zip_file.writestr(
+                'hardware-bom.spdx.jsonld',
+                json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
+            )
+
+    if files_added == 0 and not bom_components:
         return "No CAD files found for the current selection.", 404
 
     zip_buffer.seek(0)
@@ -340,6 +373,82 @@ def selection_download():
         as_attachment=True,
         download_name='openpartslibrary-selection.zip',
     )
+
+def build_spdx_hardware_bom(components):
+    created = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
+    namespace = f"https://openpartslibrary.local/spdxdocs/selection-{uuid.uuid4()}"
+    creation_info = {
+        'type': 'CreationInfo',
+        'specVersion': '3.0.1',
+        'created': created,
+        'createdBy': ['https://openpartslibrary.local/agents/OpenPartsLibrary'],
+        'createdUsing': ['https://openpartslibrary.local/tools/OpenPartsLibrary'],
+    }
+    bom_id = f"{namespace}#hardware-bom"
+
+    graph = [
+        {
+            'spdxId': 'https://openpartslibrary.local/agents/OpenPartsLibrary',
+            'type': 'Agent',
+            'creationInfo': creation_info,
+            'name': 'OpenPartsLibrary',
+        },
+        {
+            'spdxId': 'https://openpartslibrary.local/tools/OpenPartsLibrary',
+            'type': 'Tool',
+            'creationInfo': creation_info,
+            'name': 'OpenPartsLibrary',
+        },
+    ]
+
+    component_ids = []
+    relationship_ids = []
+    for index, component in enumerate(components, start=1):
+        component_id = f"{namespace}#component-{index}"
+        component_ids.append(component_id)
+
+        graph.append({
+            'spdxId': component_id,
+            'type': 'Package',
+            'creationInfo': creation_info,
+            'name': component['name'],
+            'summary': f"Part number: {component['part_number']}",
+            'description': component['description'],
+            'downloadLocation': 'NOASSERTION',
+            'comment': (
+                f"Hardware BOM item. Quantity: {component['quantity']}; "
+                f"price per item: {component['price_per_item']} {component['currency']}; "
+                f"supplier: {component['supplier'] or 'NOASSERTION'}; "
+                f"CAD file in ZIP: {component['cad_file'] or 'not included'}."
+            ),
+        })
+
+        relationship_id = f"{namespace}#relationship-contains-{index}"
+        relationship_ids.append(relationship_id)
+        graph.append({
+            'spdxId': relationship_id,
+            'type': 'Relationship',
+            'creationInfo': creation_info,
+            'from': bom_id,
+            'relationshipType': 'contains',
+            'to': [component_id],
+        })
+
+    graph.append({
+        'spdxId': bom_id,
+        'type': 'Bom',
+        'creationInfo': creation_info,
+        'name': 'OpenPartsLibrary Hardware BOM',
+        'summary': 'Hardware bill of materials for selected OpenPartsLibrary components.',
+        'profileConformance': ['core', 'software'],
+        'rootElement': component_ids,
+        'element': component_ids + relationship_ids,
+    })
+
+    return {
+        '@context': 'https://spdx.org/rdf/3.0.1/spdx-context.jsonld',
+        '@graph': graph,
+    }
 
 @app.route('/selection/components', methods=['POST'])
 def selection_components():

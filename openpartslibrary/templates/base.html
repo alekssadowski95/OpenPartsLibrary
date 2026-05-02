@@ -304,14 +304,12 @@
             if (list.length === 0) {
                 return;
             }
-            let componentUuids = list.map(item => item.uuid);
-
             const response = await fetch("{{ url_for('selection_download') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify(componentUuids)
+                body: JSON.stringify(list)
             });
 
             if (!response.ok) {

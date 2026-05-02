@@ -19,8 +19,14 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'openpartslibrary': ['sample/**/*', 'images/*', 'export/*'],
-        'openpartslibrary_flask': ['templates/**/*', 'static/**/*', 'settings.json'],
+        'openpartslibrary': [
+            'sample/**/*',
+            'images/*',
+            'export/*',
+            'templates/**/*',
+            'static/**/*',
+            'settings.json',
+        ],
     },
     install_requires=[
         'sqlalchemy',

@@ -1,4 +1,5 @@
 import os
+import shutil
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -40,6 +41,14 @@ class PartsLibrary:
         self.session = self.session_factory()
 
         self.sample_data_dir_path = package_dir / 'sample'
+
+    def _cad_filename_candidates(self, cad_file_name):
+        cad_file_name = str(cad_file_name)
+        return dict.fromkeys([
+            cad_file_name,
+            cad_file_name.replace("_", "", 1),
+            cad_file_name.replace("_", ""),
+        ])
 
     def _read_spreadsheet(self, spreadsheet_file_path, sheet_name, dtype=None):
         spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
@@ -93,6 +102,8 @@ class PartsLibrary:
                 date_modified = datetime.utcnow()
             )
 
+            self._attach_cad_file_from_row(component, row, spreadsheet_file_path, components_cad_dir_path)
+
             # Add component to collection
             #components.append(component)
 
@@ -103,6 +114,74 @@ class PartsLibrary:
         #self.session.add_all(components)
         #self.session.commit()
         #print(f"Imported {len(components)} comnponents successfully from {spreadsheet_file_path}")
+
+    def _attach_cad_file_from_row(self, component, row, spreadsheet_file_path, components_cad_dir_path = None):
+        cad_file_name = row.get("cad_file_name")
+        if pd.isna(cad_file_name):
+            return
+
+        cad_file_name = str(cad_file_name)
+        file_uuid = str(uuid.uuid4())
+        cad_file = File(uuid=file_uuid, name=cad_file_name, description='This is a CAD file.')
+        component.cad_file = cad_file
+
+        if components_cad_dir_path is None:
+            return
+
+        cad_source_path = Path(components_cad_dir_path) / cad_file_name
+        cad_source_candidates = [
+            Path(components_cad_dir_path) / candidate
+            for candidate in self._cad_filename_candidates(cad_file_name)
+        ]
+        cad_link = row.get("cad_file_link")
+        cad_source_path = next((candidate for candidate in cad_source_candidates if candidate.exists()), cad_source_path)
+        if not cad_source_path.exists() and not pd.isna(cad_link):
+            cad_source_path = Path(spreadsheet_file_path).expanduser().resolve().parent / str(cad_link)
+
+        if cad_source_path.exists():
+            cad_destination_path = self.data_cad_dir_path / f"{file_uuid}{cad_source_path.suffix}"
+            shutil.copy2(cad_source_path, cad_destination_path)
+
+    def sync_cad_files_from_spreadsheet(self, spreadsheet_file_path, components_sheet_name = 'components'):
+        spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
+        components_df = self._read_spreadsheet(spreadsheet_path, components_sheet_name, dtype={'number': str})
+
+        for _, row in components_df.iterrows():
+            component_uuid = row.get("uuid")
+            cad_file_name = row.get("cad_file_name")
+            if pd.isna(component_uuid) or pd.isna(cad_file_name):
+                continue
+
+            component = self.session.query(Component).filter_by(uuid=str(component_uuid)).first()
+            if component is None:
+                continue
+
+            cad_file = component.cad_file
+            if cad_file is None:
+                cad_file = File(uuid=str(uuid.uuid4()), name=str(cad_file_name), description='This is a CAD file.')
+                component.cad_file = cad_file
+                self.session.add(cad_file)
+
+            cad_link = row.get("cad_file_link")
+            source_candidates = [
+                self.sample_data_dir_path / "components-cad" / candidate
+                for candidate in self._cad_filename_candidates(cad_file_name)
+            ]
+            if not pd.isna(cad_link):
+                source_candidates.extend(
+                    spreadsheet_path.parent / candidate
+                    for candidate in self._cad_filename_candidates(cad_link)
+                )
+
+            source_path = next((candidate for candidate in source_candidates if candidate.exists()), None)
+            if source_path is None:
+                continue
+
+            destination_path = self.data_cad_dir_path / f"{cad_file.uuid}{source_path.suffix}"
+            if not destination_path.exists():
+                shutil.copy2(source_path, destination_path)
+
+        self.session.commit()
     
     def add_sample_data(self, components_spredsheet_path, components_cad_dir_path):
         pass

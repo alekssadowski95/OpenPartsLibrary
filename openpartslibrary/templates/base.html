@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Title -->
+    {% if title %}
+        <title>{{ title }} | OpenPartsLibrary</title>
+    {% else %}
+        <title>OpenPartsLibrary</title>
+    {% endif %}
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ url_for('static', filename='nut-bolt.png') }}">
+
+    <!-- Custom styles -->
+    <style>
+    .btn-link-transparent:hover {
+        background-color: rgba(0, 0, 0, 0.136);
+        outline: 1px;
+    }
+    
+    .btn-link-transparent:hover:active {
+        background-color: rgba(0, 0, 0, 0.421);
+        outline: 1px;
+    }
+
+    .input-search-header {
+        color: rgb(15, 62, 124) !important;
+    }
+
+    .input-search-header:focus {
+        background-color: white !important;
+        color: rgb(0, 0, 0) !important;
+    }
+
+    .input-search-header:focus::placeholder {
+        color: rgb(15, 62, 124) !important;
+        opacity: 1; /* Firefox */
+    }
+
+    .input-search-header:focus::-ms-input-placeholder { /* Edge 12 -18 */
+        color: rgb(189, 189, 189) !important;
+    }
+
+    .input-search-header::placeholder {
+        color: rgb(23, 76, 145);
+        opacity: 1; /* Firefox */
+    }
+
+    .input-search-header::-ms-input-placeholder { /* Edge 12 -18 */
+        color: rgb(15, 62, 124);
+    }
+
+    .parts-bucket-column {
+        flex: 0 0 400px;
+        width: 400px;
+        min-height: calc(100vh - 79px);
+        max-height: calc(100vh - 79px);
+        background-color: rgb(1, 29, 65);
+        color: white;
+        border-left: 1px solid #0a3b7a;
+    }
+
+    .parts-bucket-clear-button {
+        width: 28px;
+        height: 28px;
+        padding: 4px;
+        border: 0;
+        border-radius: 4px;
+        background: transparent;
+        line-height: 1;
+    }
+
+    .parts-bucket-clear-button:hover {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .parts-bucket-clear-button:active {
+        background-color: rgba(255, 255, 255, 0.28);
+        transform: translateY(1px);
+    }
+
+    .parts-bucket-clear-button img,
+    .navbar-selection-icon {
+        filter: invert(1);
+    }
+
+    .selection-toggle-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .selection-notification {
+        position: absolute;
+        top: 38px;
+        right: 0;
+        min-width: 150px;
+        padding: 8px 10px;
+        background-color: white;
+        color: #042c61;
+        border: 1px solid #d7dee9;
+        border-radius: 8px;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.18);
+        font-size: 0.85rem;
+        text-align: left;
+        z-index: 30;
+    }
+
+    .selection-notification::before {
+        content: "";
+        position: absolute;
+        top: -7px;
+        right: 12px;
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-left: 1px solid #d7dee9;
+        border-top: 1px solid #d7dee9;
+        transform: rotate(45deg);
+    }
+    </style>
+    {% block style %}{% endblock style %}
+</head>
+<body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0; overflow: hidden;">
+    <!-- Header -->
+    <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
+        <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
+            <!-- Application logo and name -->
+            <div class="col-md-3 mb-2 mb-md-0" title="Go to home">
+                <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
+                    <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
+                    <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
+                </a>
+            </div>
+            <!-- Search form -->
+            <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+                <form id="search-form" role="search">
+                    <input title="Search for a component by its name or description" name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Search..." value="{{ search_query }}" id="site-search" aria-label="Search">
+                </form>
+            </ul>
+            <!-- Right side alighed elements -->
+            <div class="col-md-3 text-end">
+                {% if user and user.is_authenticated %}
+                    <a title="Open and close the components bucket" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('profile') }}">
+                        <span style="color: white; font-size: 0.9rem">{{ user.username }}</span>
+                        <img src="{{ url_for('static', filename='user.png') }}" alt="" style="padding: 0;" height="22px" width="22px">
+                    </a>
+                {% endif %}
+                <span class="selection-toggle-wrapper">
+                    <button title="Open and close the selection" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsBucket()">
+                        <img class="navbar-selection-icon" src="{{ url_for('static', filename='bootstrap-icons-1.11.3/clipboard-check.svg') }}" alt="" style="padding: 0;" height="26px" width="26px">
+                    </button>
+                    <span id="selection-notification" class="selection-notification d-none">Added to selection</span>
+                </span>
+            </div>
+        </header>
+      </div>
+    </div>
+    <!-- Main view and sidebars -->
+    <div class="row p-0 m-0 flex-nowrap" style="min-height: calc(100vh - 79px); max-height: calc(100vh - 79px);">
+        <!-- Main view -->
+        <main class="col p-0" style="position: relative; min-width: 0; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); background-color: #f8f9fa;">
+            {% block main_view %}{% endblock main_view %}
+        </main>
+        <!-- New assembly column -->
+        <aside id="parts-bucket-div" class="parts-bucket-column d-none">
+            <div class="container-fluid d-flex align-items-center justify-content-between px-0" style="height: 40px; border-bottom: 1px solid #042c61;">
+                <span>Part selection</span>
+                <button id="clear-parts-bucket-button" type="button" class="parts-bucket-clear-button" title="Clear selection" onclick="clearSessionList('partsBucketList')">
+                    <img src="{{ url_for('static', filename = 'bin.png') }}" width="16" height="16" alt="">
+                </button>
+            </div>
+            <div id="parts-bucket-scroll" class="m-0 p-0" style="height: calc(100% - 102px); overflow-y: scroll;">
+                <ul id="parts-bucket-list" class="p-2 pb-0 m-0">
+                </ul>
+            </div>
+            <div class="container-fluid px-0" style="height: 60px; border-top: 1px solid #042c61; padding-top: 12px;">
+                <div class="d-grid gap-2">
+                    <button class="btn btn-primary" type="button" onclick="downloadSelection()">Download all</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <!-- Bottom bar -->
+    <div style="min-height: 27px; max-height: 27px; margin: 0px; background-color:#042c61; color: white; ">
+        <span style="font-size: 11px; margin: 0px; padding-left: 8px;">
+            <span>Copyright (C) 2024 - 2025. OpenPartsLibrary by </span>
+            <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
+        </span>
+    </div>
+    <!-- Scripts -->
+    <script>
+        const partsBucketDiv = document.getElementById("parts-bucket-div");
+        const partsBucketList = document.getElementById("parts-bucket-list");
+        const selectionNotification = document.getElementById("selection-notification");
+        let selectionNotificationTimeout = null;
+
+        function getSelectionList() {
+            return JSON.parse(sessionStorage.getItem("partsBucketList")) || [];
+        }
+
+        function saveSelectionList(list) {
+            sessionStorage.setItem("partsBucketList", JSON.stringify(list));
+        }
+
+        function updatePartsBucketContent() {
+            let cardsHTML = buildCardsFromSession("partsBucketList");
+
+            // Insert into a container element on the page
+            document.getElementById("parts-bucket-list").innerHTML = cardsHTML;
+        }
+
+        function showPartsBucket() {
+            updatePartsBucketContent();
+            partsBucketDiv.classList.toggle("d-none");
+        }
+
+        function addComponentToSelection(componentUuid) {
+            if (!componentUuid) {
+                return;
+            }
+
+            let list = getSelectionList();
+            if (!list.includes(componentUuid)) {
+                list.push(componentUuid);
+                saveSelectionList(list);
+            }
+
+            updatePartsBucketContent();
+            showSelectionNotification("Added to selection");
+        }
+
+        function showSelectionNotification(message) {
+            selectionNotification.textContent = message;
+            selectionNotification.classList.remove("d-none");
+
+            if (selectionNotificationTimeout) {
+                window.clearTimeout(selectionNotificationTimeout);
+            }
+
+            selectionNotificationTimeout = window.setTimeout(() => {
+                selectionNotification.classList.add("d-none");
+            }, 1800);
+        }
+
+        // Function to clear the list in sessionStorage
+        function clearSessionList(key) {
+            sessionStorage.removeItem(key);
+            updatePartsBucketContent();
+        }
+
+        async function downloadSelection() {
+            let list = getSelectionList();
+            if (list.length === 0) {
+                return;
+            }
+
+            const response = await fetch("{{ url_for('selection_download') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(list)
+            });
+
+            if (!response.ok) {
+                return;
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = downloadUrl;
+            link.download = "openpartslibrary-selection.zip";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(downloadUrl);
+        }
+
+        // Function to build Bootstrap card HTML from list in sessionStorage
+        function buildCardsFromSession(key) {
+            // Get list from sessionStorage
+            let list = JSON.parse(sessionStorage.getItem(key)) || [];
+
+            // Start with empty HTML string
+            let html = "";
+
+            // Loop through each item and build a Bootstrap card
+            list.forEach(item => {
+                html += `
+                <div class="card mb-2" style="background-color: #042c61; color: white; border-color: #0a3b7a;">
+                    <div class="card-body">
+                    <p class="card-text">${item}</p>
+                    </div>
+                </div>
+                `;
+            });
+
+            return html;
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("search-form");
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault(); // stop page reload
+
+                // Find the input by its name attribute
+                const queryInput = form.querySelector('[name="search_query"]');
+                const value = queryInput.value.trim();
+
+                if (value) {
+                    window.location.href = "{{ url_for('components') }}?search_query=" + value;
+                }
+            });
+        });
+
+
+    </script>
+    <script src="{{ url_for('static', filename='bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js') }}"></script>
+    {% block script %}{% endblock script %}
+</body>
+</html>

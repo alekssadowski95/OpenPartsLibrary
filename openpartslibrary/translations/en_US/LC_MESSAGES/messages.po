@@ -357,3 +357,42 @@ msgstr "Search part or BOM"
 
 msgid "Total cost"
 msgstr "Total cost"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Download"
+msgstr "Download"
+
+msgid "Copy"
+msgstr "Copy"
+
+msgid "Edit BOM"
+msgstr "Edit BOM"
+
+msgid "Update BOM"
+msgstr "Update BOM"
+
+msgid "Save BOM"
+msgstr "Save BOM"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Expand BOM"
+msgstr "Expand BOM"
+
+msgid "BOM not found."
+msgstr "BOM not found."
+
+msgid "No CAD files found for this BOM."
+msgstr "No CAD files found for this BOM."
+
+msgid "Modify BOM"
+msgstr "Modify BOM"
+
+msgid "Part details"
+msgstr "Part details"
+
+msgid "No CAD file attached"
+msgstr "No CAD file attached"

@@ -245,3 +245,42 @@ msgstr "Rechercher une pièce ou une nomenclature"
 
 msgid "Total cost"
 msgstr "Coût total"
+
+msgid "Actions"
+msgstr "Actions"
+
+msgid "Download"
+msgstr "Télécharger"
+
+msgid "Copy"
+msgstr "Copier"
+
+msgid "Edit BOM"
+msgstr "Modifier la nomenclature"
+
+msgid "Update BOM"
+msgstr "Mettre à jour la nomenclature"
+
+msgid "Save BOM"
+msgstr "Enregistrer la nomenclature"
+
+msgid "Cancel"
+msgstr "Annuler"
+
+msgid "Expand BOM"
+msgstr "Déplier la nomenclature"
+
+msgid "BOM not found."
+msgstr "Nomenclature introuvable."
+
+msgid "No CAD files found for this BOM."
+msgstr "Aucun fichier CAO trouvé pour cette nomenclature."
+
+msgid "Modify BOM"
+msgstr "Modifier la nomenclature"
+
+msgid "Part details"
+msgstr "Détails de la pièce"
+
+msgid "No CAD file attached"
+msgstr "Aucun fichier CAO joint"

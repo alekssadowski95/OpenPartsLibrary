@@ -6,12 +6,12 @@ from urllib.parse import urlencode
 from flask import jsonify, redirect, render_template, request, send_file, send_from_directory, url_for
 from sqlalchemy import asc, desc, func
 
-from openpartslibrary.boms import ensure_part_boms, format_bom_cost, get_created_boms
+from openpartslibrary.boms import bom_part_quantities, ensure_part_boms, format_bom_cost, get_created_boms
 from openpartslibrary.desktop import open_with_default_application
 from openpartslibrary.downloads import branded_library_filename, branded_part_filename, record_download_event
 from openpartslibrary.hbom import build_spdx_hardware_bom
 from openpartslibrary.i18n import gettext as _
-from openpartslibrary.models import Component, File, Supplier
+from openpartslibrary.models import BillOfMaterials, Component, File, Supplier
 from openpartslibrary.search import search_parts
 from openpartslibrary.thumbnails import ensure_cad_thumbnail, placeholder_thumbnail_svg
 
@@ -181,6 +181,70 @@ def register_routes(app, parts_library):
             search_query=request.args.get("search_query", ""),
             format_bom_cost=format_bom_cost,
         )
+
+    @app.route("/bom/<int:bom_id>/download")
+    def bom_download(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+
+        zip_buffer = io.BytesIO()
+        files_added = 0
+        bom_components = []
+
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+            for row in bom_part_quantities(bom).values():
+                component = row["component"]
+                quantity = row["quantity"]
+                if component is None:
+                    continue
+
+                part_number = component.number or component.uuid
+                archive_name = None
+
+                if component.cad_file is not None:
+                    cad_filename = f"{component.cad_file.uuid}.FCStd"
+                    cad_path = cad_dir / cad_filename
+                    if cad_path.exists():
+                        original_name = component.cad_file.name or cad_filename
+                        archive_name = branded_part_filename(part_number, original_name)
+                        zip_file.write(cad_path, archive_name)
+                        files_added += 1
+                        record_download_event(
+                            session,
+                            "bom_cad_item",
+                            archive_name,
+                            component=component,
+                            file=component.cad_file,
+                            quantity=1,
+                        )
+
+                bom_components.append({
+                    "uuid": component.uuid,
+                    "name": component.name,
+                    "part_number": component.number,
+                    "quantity": quantity,
+                    "price_per_item": str(component.unit_price or ""),
+                    "currency": component.currency or "",
+                    "cad_file": archive_name,
+                    "description": component.description or "",
+                    "supplier": component.supplier.name if component.supplier else "",
+                })
+
+            if bom_components:
+                zip_file.writestr(
+                    branded_library_filename("hardware-bom.spdx.jsonld"),
+                    json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
+                )
+
+        if files_added == 0 and not bom_components:
+            return _("No CAD files found for this BOM."), 404
+
+        zip_buffer.seek(0)
+        zip_download_name = branded_library_filename(f"{bom.number or bom.name or 'bom'}.zip")
+        record_download_event(session, "bom_zip", zip_download_name, quantity=1)
+        return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
 
     @app.route("/component_view/<uuid>")
     def component_view(uuid):

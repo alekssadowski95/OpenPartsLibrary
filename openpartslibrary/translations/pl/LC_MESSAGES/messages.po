@@ -249,3 +249,42 @@ msgstr "Szukaj części lub zestawienia materiałowego"
 
 msgid "Total cost"
 msgstr "Koszt całkowity"
+
+msgid "Actions"
+msgstr "Akcje"
+
+msgid "Download"
+msgstr "Pobierz"
+
+msgid "Copy"
+msgstr "Kopiuj"
+
+msgid "Edit BOM"
+msgstr "Edytuj zestawienie materiałowe"
+
+msgid "Update BOM"
+msgstr "Aktualizuj zestawienie materiałowe"
+
+msgid "Save BOM"
+msgstr "Zapisz zestawienie materiałowe"
+
+msgid "Cancel"
+msgstr "Anuluj"
+
+msgid "Expand BOM"
+msgstr "Rozwiń zestawienie materiałowe"
+
+msgid "BOM not found."
+msgstr "Nie znaleziono zestawienia materiałowego."
+
+msgid "No CAD files found for this BOM."
+msgstr "Nie znaleziono plików CAD dla tego zestawienia materiałowego."
+
+msgid "Modify BOM"
+msgstr "Modyfikuj zestawienie materiałowe"
+
+msgid "Part details"
+msgstr "Szczegóły części"
+
+msgid "No CAD file attached"
+msgstr "Brak dołączonego pliku CAD"

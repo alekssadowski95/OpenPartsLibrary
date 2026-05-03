@@ -176,6 +176,80 @@ def create_bom(session, name, description="", items=None, number=None):
     return bom
 
 
+def replace_bom_items(session, bom, items=None):
+    for item in list(bom.children):
+        session.delete(item)
+    session.flush()
+
+    for position, item in enumerate(items or [], start=1):
+        child_bom_id = item.get("child_bom_id")
+        if not child_bom_id:
+            continue
+        child_bom = session.query(BillOfMaterials).filter_by(id=int(child_bom_id)).first()
+        if child_bom is None or child_bom.id == bom.id or bom_contains(session, child_bom.id, bom.id):
+            continue
+        session.add(BillOfMaterialsItem(
+            parent_bom=bom,
+            child_bom=child_bom,
+            quantity=decimal_quantity(item.get("quantity")),
+            position=position,
+            note=str(item.get("note") or "").strip() or None,
+        ))
+
+
+def update_bom(session, bom, name, description="", items=None):
+    bom.name = str(name or "").strip()
+    bom.description = str(description or "").strip() or None
+    replace_bom_items(session, bom, items)
+    session.commit()
+    return bom
+
+
+def copy_bom(session, bom):
+    copied_bom = BillOfMaterials(
+        uuid=str(uuid.uuid4()),
+        name=f"{bom.name} (copy)",
+        number=next_bom_number(session),
+        description=bom.description,
+        is_part_wrapper=False,
+    )
+    session.add(copied_bom)
+    session.flush()
+    replace_bom_items(
+        session,
+        copied_bom,
+        [
+            {
+                "child_bom_id": item.child_bom_id,
+                "quantity": item.quantity,
+                "note": item.note,
+            }
+            for item in sorted(bom.children, key=lambda child: (child.position, child.id))
+        ],
+    )
+    session.commit()
+    return copied_bom
+
+
+def bom_part_quantities(bom, multiplier=Decimal("1"), visited=None):
+    visited = set(visited or set())
+    if bom is None or bom.id in visited:
+        return {}
+
+    next_visited = visited | {bom.id}
+    if bom.is_part_wrapper:
+        return {bom.component.uuid: {"component": bom.component, "quantity": int(multiplier)}} if bom.component else {}
+
+    parts = {}
+    for item in sorted(bom.children, key=lambda child: (child.position, child.id)):
+        item_quantity = multiplier * decimal_quantity(item.quantity)
+        for component_uuid, row in bom_part_quantities(item.child_bom, item_quantity, next_visited).items():
+            if component_uuid not in parts:
+                parts[component_uuid] = {"component": row["component"], "quantity": 0}
+            parts[component_uuid]["quantity"] += row["quantity"]
+    return parts
+
+
 def get_created_boms(session):
     return (
         session.query(BillOfMaterials)

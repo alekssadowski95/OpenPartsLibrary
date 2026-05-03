@@ -245,3 +245,42 @@ msgstr "Teil oder Stückliste suchen"
 
 msgid "Total cost"
 msgstr "Gesamtkosten"
+
+msgid "Actions"
+msgstr "Aktionen"
+
+msgid "Download"
+msgstr "Herunterladen"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Edit BOM"
+msgstr "Stückliste bearbeiten"
+
+msgid "Update BOM"
+msgstr "Stückliste aktualisieren"
+
+msgid "Save BOM"
+msgstr "Stückliste speichern"
+
+msgid "Cancel"
+msgstr "Abbrechen"
+
+msgid "Expand BOM"
+msgstr "Stückliste aufklappen"
+
+msgid "BOM not found."
+msgstr "Stückliste nicht gefunden."
+
+msgid "No CAD files found for this BOM."
+msgstr "Für diese Stückliste wurden keine CAD-Dateien gefunden."
+
+msgid "Modify BOM"
+msgstr "Stückliste bearbeiten"
+
+msgid "Part details"
+msgstr "Teiledetails"
+
+msgid "No CAD file attached"
+msgstr "Keine CAD-Datei angehängt"

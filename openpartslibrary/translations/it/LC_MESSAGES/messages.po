@@ -245,3 +245,42 @@ msgstr "Cerca parte o distinta base"
 
 msgid "Total cost"
 msgstr "Costo totale"
+
+msgid "Actions"
+msgstr "Azioni"
+
+msgid "Download"
+msgstr "Scarica"
+
+msgid "Copy"
+msgstr "Copia"
+
+msgid "Edit BOM"
+msgstr "Modifica distinta base"
+
+msgid "Update BOM"
+msgstr "Aggiorna distinta base"
+
+msgid "Save BOM"
+msgstr "Salva distinta base"
+
+msgid "Cancel"
+msgstr "Annulla"
+
+msgid "Expand BOM"
+msgstr "Espandi distinta base"
+
+msgid "BOM not found."
+msgstr "Distinta base non trovata."
+
+msgid "No CAD files found for this BOM."
+msgstr "Nessun file CAD trovato per questa distinta base."
+
+msgid "Modify BOM"
+msgstr "Modifica distinta base"
+
+msgid "Part details"
+msgstr "Dettagli parte"
+
+msgid "No CAD file attached"
+msgstr "Nessun file CAD allegato"

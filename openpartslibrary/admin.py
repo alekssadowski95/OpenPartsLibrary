@@ -14,7 +14,7 @@ except ImportError:
 from flask import redirect, render_template_string, request, url_for
 from markupsafe import escape
 
-from openpartslibrary.boms import create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms
+from openpartslibrary.boms import copy_bom, create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms, update_bom
 from openpartslibrary.i18n import gettext as _, lazy_gettext
 from openpartslibrary.models import BillOfMaterials, BillOfMaterialsItem, Component, ComponentComponent, DownloadEvent, File, Material, Supplier
 
@@ -380,25 +380,36 @@ BOM_BUILDER_TEMPLATE = """
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ _('Bill of Materials') }} | {{ _('OpenPartsLibrary Admin') }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
     <style>
         body { background: #f8f9fa; }
         .bom-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
-        .bom-row { border-top: 1px solid #edf0f4; }
-        .bom-row:first-child { border-top: 0; }
-        .bom-row-main { display: grid; grid-template-columns: 30px minmax(0, 1fr) 150px; align-items: center; gap: 8px; padding: 8px; }
-        .bom-level-0 { background: #ffffff; }
-        .bom-level-1 { background: #f5f9ff; }
-        .bom-level-2 { background: #f4faf6; }
-        .bom-level-3 { background: #fff8ef; }
-        .bom-level-4 { background: #f8f6ff; }
-        .bom-level-5 { background: #f7fbfb; }
-        .bom-row-main:hover { background-color: #edf3fb; }
-        .bom-expand-button { width: 30px; height: 30px; border: 0; background: transparent; color: #042c61; }
+        .bom-list-scroll { min-height: 0; overflow: auto; background: white; }
+        .bom-list-header { border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; background-color: #f8f9fa; }
+        .bom-list-table { border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; }
+        .bom-list-row { border-top: 1px solid #e2e6ea; }
+        .bom-list-table > .bom-list-row:first-of-type { border-top: 0; }
+        .bom-list-main { display: grid; grid-template-columns: 34px minmax(260px, 1fr) 120px 150px 180px; align-items: center; min-height: 36px; gap: 8px; padding-top: 4px; padding-right: 12px; padding-bottom: 4px; cursor: default; }
+        .bom-list-main.is-expandable { cursor: pointer; }
+        .bom-level-0 { background: #f8f9fa; }
+        .bom-level-1 { background: #eef6ff; }
+        .bom-level-2 { background: #e3f0ff; }
+        .bom-level-3 { background: #d8eaff; }
+        .bom-level-4 { background: #cde4ff; }
+        .bom-level-5 { background: #c2ddfb; }
+        .bom-level-6 { background: #b7d6f6; }
+        .bom-level-7 { background: #accff2; }
+        .bom-row-bom:hover { background: #dbeafe; }
+        .bom-list-meta { color: #6c757d; font-size: 0.9rem; }
+        .bom-expand-button { width: 30px; height: 30px; border: 0; background: transparent; color: #042c61; pointer-events: none; }
         .bom-expand-button::before { content: "▸"; display: inline-block; transition: transform 120ms ease; }
         .bom-expand-button[aria-expanded="true"]::before { transform: rotate(90deg); }
-        .bom-child-list { display: none; margin-left: 30px; border-left: 2px solid #dce4ef; }
+        .bom-child-list { display: none; }
         .bom-child-list.is-open { display: block; }
         .bom-kind { color: #6c757d; font-size: 0.82rem; }
+        .bom-list-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-list-number, .bom-list-quantity, .bom-list-cost { color: #5f6b7a; font-size: 0.9rem; }
+        .bom-list-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
         .bom-builder-row { display: grid; grid-template-columns: minmax(180px, 1fr) 110px minmax(120px, 0.6fr) 36px; gap: 8px; }
         .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
         .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -414,6 +425,8 @@ BOM_BUILDER_TEMPLATE = """
         .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
         @media (max-width: 767.98px) {
             .bom-builder-row { grid-template-columns: 1fr; }
+            .bom-list-main { grid-template-columns: 34px minmax(0, 1fr) 80px; }
+            .bom-list-cost, .bom-list-actions { grid-column: 2 / -1; text-align: left !important; justify-content: flex-start; }
         }
     </style>
 </head>
@@ -422,22 +435,28 @@ BOM_BUILDER_TEMPLATE = """
     <main class="container-fluid py-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-                <h1 class="h3 mb-1">{{ _('Bill of Materials') }}</h1>
+                <h1 class="h3 mb-1">{{ _('Edit BOM') if edit_bom else _('Bill of Materials') }}</h1>
                 <div class="text-muted">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
             </div>
         </div>
 
         <section class="bom-card p-3 mb-3">
-            <h2 class="h5 mb-3">{{ _('Create BOM') }}</h2>
-            <form method="post" action="{{ url_for('admin_bill_of_materials') }}">
+            <h2 class="h5 mb-3">{{ _('Update BOM') if edit_bom else _('Create BOM') }}</h2>
+            <form method="post" action="{{ form_action }}">
                 <div class="row g-2 mb-3">
-                    <div class="col-12 col-md-5">
-                        <label class="form-label">{{ _('Name') }}</label>
-                        <input class="form-control" name="name" required>
+                    {% if edit_bom %}
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">{{ _('BOM number') }}</label>
+                        <div class="form-control-plaintext fw-semibold">{{ edit_bom.number }}</div>
                     </div>
-                    <div class="col-12 col-md-7">
+                    {% endif %}
+                    <div class="col-12 {{ 'col-md-4' if edit_bom else 'col-md-5' }}">
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input class="form-control" name="name" value="{{ edit_bom.name if edit_bom else '' }}" required>
+                    </div>
+                    <div class="col-12 {{ 'col-md-5' if edit_bom else 'col-md-7' }}">
                         <label class="form-label">{{ _('Description') }}</label>
-                        <input class="form-control" name="description">
+                        <input class="form-control" name="description" value="{{ edit_bom.description if edit_bom and edit_bom.description else '' }}">
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -462,20 +481,27 @@ BOM_BUILDER_TEMPLATE = """
                     </div>
                 </template>
                 <div class="mt-3">
-                    <button class="btn btn-primary" type="submit">{{ _('Create BOM') }}</button>
+                    <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
+                    {% if edit_bom %}
+                    <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
+                    {% endif %}
                 </div>
             </form>
         </section>
 
-        <section class="bom-card">
-            <div class="p-3 border-bottom">
-                <h2 class="h5 mb-0">{{ _('All BOMs') }}</h2>
+        {% if not edit_bom %}
+        <section class="container-fluid p-0 m-0 d-flex flex-column bom-list-scroll">
+            <div class="bom-list-header px-3 py-2">
+                <h2 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Bill of Materials') }}</h2>
             </div>
-            <div>
-                <div class="bom-row-main fw-semibold">
+            <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', boms|length) }}</p>
+            <div class="bom-list-table">
+                <div class="bom-list-main fw-semibold" style="background: #ffffff;">
                     <span></span>
                     <span>{{ _('Name') }}</span>
+                    <span class="text-end">{{ _('Quantity') }}</span>
                     <span class="text-end">{{ _('Total cost') }}</span>
+                    <span class="text-end">{{ _('Actions') }}</span>
                 </div>
                 {% for bom in boms %}
                     {{ render_bom_row(bom, 0)|safe }}
@@ -484,14 +510,24 @@ BOM_BUILDER_TEMPLATE = """
                 {% endfor %}
             </div>
         </section>
+        {% endif %}
     </main>
     <script>
         const bomOptions = {{ bom_options|tojson }};
+        const initialItems = {{ initial_items|tojson }};
 
-        function addBomBuilderRow() {
+        function addBomBuilderRow(item = null) {
             const template = document.getElementById("bom-builder-row-template");
             const target = document.getElementById("bom-builder-items");
-            target.appendChild(template.content.cloneNode(true));
+            const fragment = template.content.cloneNode(true);
+            const row = fragment.querySelector(".bom-builder-row");
+            if (item) {
+                row.querySelector(".bom-item-search").value = item.display_label || "";
+                row.querySelector("input[name='child_bom_id']").value = item.child_bom_id || "";
+                row.querySelector("input[name='quantity']").value = item.quantity || 1;
+                row.querySelector("input[name='note']").value = item.note || "";
+            }
+            target.appendChild(fragment);
         }
 
         function syncBomSearch(input) {
@@ -505,7 +541,8 @@ BOM_BUILDER_TEMPLATE = """
         }
 
         function toggleBomChildren(button) {
-            const target = document.getElementById(button.getAttribute("aria-controls"));
+            const row = button.closest(".bom-list-main");
+            const target = row ? row.nextElementSibling : null;
             if (!target) {
                 return;
             }
@@ -513,8 +550,22 @@ BOM_BUILDER_TEMPLATE = """
             button.setAttribute("aria-expanded", isOpen ? "true" : "false");
         }
 
+        function toggleBomChildrenForRow(event, childrenId) {
+            if (event.target.closest("a, button, form, input, select, textarea")) {
+                return;
+            }
+            const button = event.currentTarget.querySelector(".bom-expand-button");
+            if (button) {
+                toggleBomChildren(button);
+            }
+        }
+
         document.addEventListener("DOMContentLoaded", () => {
-            addBomBuilderRow();
+            if (initialItems.length) {
+                initialItems.forEach((item) => addBomBuilderRow(item));
+            } else {
+                addBomBuilderRow();
+            }
         });
     </script>
 </body>
@@ -522,7 +573,7 @@ BOM_BUILDER_TEMPLATE = """
 """
 
 
-def render_bom_row(bom, depth=0, visited=None):
+def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
     visited = set(visited or set())
     children_id = f"bom-children-{bom.id}-{depth}"
     child_rows = []
@@ -533,23 +584,47 @@ def render_bom_row(bom, depth=0, visited=None):
 
     can_expand = bool(child_rows)
     expand_button = (
-        f'<button class="bom-expand-button" type="button" aria-expanded="false" aria-controls="{children_id}" onclick="toggleBomChildren(this)"></button>'
+        f'<button class="bom-expand-button" type="button" aria-expanded="false" aria-controls="{children_id}" aria-label="{escape(_("Expand BOM"))}"></button>'
         if can_expand
         else '<span class="d-inline-block" style="width:30px;"></span>'
     )
     number = escape(bom.number or "")
     kind = _("Part") if bom.is_part_wrapper else _("BOM")
-    details = f"{number} &middot; {kind}" if number else kind
+    number_label = f'<span class="bom-list-number">{number}</span>' if number else ""
+    quantity_label = escape(relation_quantity) if relation_quantity is not None else "-"
     children = f'<div id="{children_id}" class="bom-child-list">{"".join(child_rows)}</div>' if can_expand else ""
-    return f"""
-    <div class="bom-row">
-        <div class="bom-row-main bom-level-{depth % 6}" style="padding-left: {8 + (depth * 20)}px !important;">
-            {expand_button}
-            <div class="flex-grow-1">
-                <div class="fw-semibold">{escape(bom.name)}</div>
-                <div class="bom-kind">{details}</div>
+    row_click = f' onclick="toggleBomChildrenForRow(event, \'{children_id}\')"' if can_expand else ""
+    actions = ""
+    if bom.is_part_wrapper and bom.component:
+        actions = f"""
+            <div class="bom-list-actions">
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("component_view", uuid=bom.component.uuid)}" onclick="event.stopPropagation()" title="{escape(_("Part details"))}" aria-label="{escape(_("Part details"))}"><i class="bi bi-box-arrow-up-right"></i></a>
             </div>
-            <div class="text-end bom-kind">{escape(format_bom_cost(bom))}</div>
+        """
+    elif depth == 0 and not bom.is_part_wrapper:
+        actions = f"""
+            <div class="bom-list-actions">
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("bom_download", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Download"))}" aria-label="{escape(_("Download"))}"><i class="bi bi-download"></i></a>
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Modify BOM"))}" aria-label="{escape(_("Modify BOM"))}"><i class="bi bi-pencil-square"></i></a>
+                <form method="post" action="{url_for("admin_copy_bom", bom_id=bom.id)}" onclick="event.stopPropagation()">
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" title="{escape(_("Copy"))}" aria-label="{escape(_("Copy"))}"><i class="bi bi-copy"></i></button>
+                </form>
+            </div>
+        """
+    else:
+        actions = '<span></span>'
+    return f"""
+    <div class="bom-list-row">
+        <div class="bom-list-main {'bom-row-part' if bom.is_part_wrapper else 'bom-row-bom'} bom-level-{min(depth, 7)} {'is-expandable' if can_expand else ''}" style="padding-left: {12 + (depth * 22)}px !important;"{row_click}>
+            {expand_button}
+            <div class="bom-list-name">
+                {number_label}
+                <span class="fw-semibold">{escape(bom.name)}</span>
+                <span class="bom-list-meta">{escape(kind)}</span>
+            </div>
+            <div class="text-end bom-list-quantity">{quantity_label}</div>
+            <div class="text-end bom-list-cost">{escape(format_bom_cost(bom))}</div>
+            {actions}
         </div>
         {children}
     </div>
@@ -558,9 +633,35 @@ def render_bom_row(bom, depth=0, visited=None):
 
 def render_bom_item_row(item, depth, visited):
     quantity = item.quantity.normalize() if item.quantity else 1
-    child_row = render_bom_row(item.child_bom, depth, visited)
-    marker = f'<div class="bom-kind" style="margin-left: {8 + (depth * 20)}px;">{_("Quantity")}: {escape(quantity)}</div>'
-    return marker + child_row
+    return render_bom_row(item.child_bom, depth, visited, quantity)
+
+
+def bom_form_items_from_request():
+    item_ids = request.form.getlist("child_bom_id")
+    quantities = request.form.getlist("quantity")
+    notes = request.form.getlist("note")
+    return [
+        {
+            "child_bom_id": item_id,
+            "quantity": quantities[index] if index < len(quantities) else 1,
+            "note": notes[index] if index < len(notes) else "",
+        }
+        for index, item_id in enumerate(item_ids)
+        if item_id
+    ]
+
+
+def initial_bom_items(bom, bom_options):
+    labels_by_id = {option["id"]: option["display_label"] for option in bom_options}
+    return [
+        {
+            "child_bom_id": item.child_bom_id,
+            "display_label": labels_by_id.get(item.child_bom_id, ""),
+            "quantity": str(item.quantity.normalize() if item.quantity else 1),
+            "note": item.note or "",
+        }
+        for item in sorted(bom.children, key=lambda child: (child.position, child.id))
+    ]
 
 
 def register_bom_admin_routes(app, session):
@@ -571,18 +672,7 @@ def register_bom_admin_routes(app, session):
     def admin_bill_of_materials():
         ensure_part_boms(session)
         if request.method == "POST":
-            item_ids = request.form.getlist("child_bom_id")
-            quantities = request.form.getlist("quantity")
-            notes = request.form.getlist("note")
-            items = [
-                {
-                    "child_bom_id": item_id,
-                    "quantity": quantities[index] if index < len(quantities) else 1,
-                    "note": notes[index] if index < len(notes) else "",
-                }
-                for index, item_id in enumerate(item_ids)
-                if item_id
-            ]
+            items = bom_form_items_from_request()
             if request.form.get("name", "").strip():
                 create_bom(
                     session,
@@ -596,6 +686,49 @@ def register_bom_admin_routes(app, session):
             BOM_BUILDER_TEMPLATE,
             boms=get_created_boms(session),
             bom_options=get_bom_options(session),
+            edit_bom=None,
+            form_action=url_for("admin_bill_of_materials"),
+            initial_items=[],
+            render_bom_row=render_bom_row,
+        )
+
+    @app.route("/admin/bill-of-materials/<int:bom_id>/copy", methods=["POST"])
+    def admin_copy_bom(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+        copied_bom = copy_bom(session, bom)
+        return redirect(url_for("admin_edit_bom", bom_id=copied_bom.id))
+
+    @app.route("/admin/bill-of-materials/<int:bom_id>/edit", methods=["GET", "POST"])
+    def admin_edit_bom(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+        if request.method == "POST":
+            if request.form.get("name", "").strip():
+                update_bom(
+                    session,
+                    bom,
+                    request.form.get("name"),
+                    request.form.get("description", ""),
+                    bom_form_items_from_request(),
+                )
+            return redirect(url_for("admin_bill_of_materials"))
+
+        bom_options = [
+            option for option in get_bom_options(session)
+            if option["id"] != bom.id
+        ]
+        return render_template_string(
+            BOM_BUILDER_TEMPLATE,
+            boms=[],
+            bom_options=bom_options,
+            edit_bom=bom,
+            form_action=url_for("admin_edit_bom", bom_id=bom.id),
+            initial_items=initial_bom_items(bom, bom_options),
             render_bom_row=render_bom_row,
         )
 

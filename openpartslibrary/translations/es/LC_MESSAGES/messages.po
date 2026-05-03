@@ -245,3 +245,42 @@ msgstr "Buscar pieza o lista de materiales"
 
 msgid "Total cost"
 msgstr "Coste total"
+
+msgid "Actions"
+msgstr "Acciones"
+
+msgid "Download"
+msgstr "Descargar"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Edit BOM"
+msgstr "Editar lista de materiales"
+
+msgid "Update BOM"
+msgstr "Actualizar lista de materiales"
+
+msgid "Save BOM"
+msgstr "Guardar lista de materiales"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "Expand BOM"
+msgstr "Expandir lista de materiales"
+
+msgid "BOM not found."
+msgstr "Lista de materiales no encontrada."
+
+msgid "No CAD files found for this BOM."
+msgstr "No se encontraron archivos CAD para esta lista de materiales."
+
+msgid "Modify BOM"
+msgstr "Modificar lista de materiales"
+
+msgid "Part details"
+msgstr "Detalles de la pieza"
+
+msgid "No CAD file attached"
+msgstr "No hay archivo CAD adjunto"

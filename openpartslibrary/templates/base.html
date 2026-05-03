@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_locale.replace('_', '-') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -120,6 +120,25 @@
         white-space: nowrap;
     }
 
+    .language-select {
+        width: auto;
+        height: 32px;
+        background-color: #042c61;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+        color: white;
+        border-color: #0a3b7a;
+        cursor: pointer;
+    }
+
+    .language-select:hover {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+
+    .language-select option {
+        background-color: #042c61;
+        color: white;
+    }
+
     .app-main-shell {
         height: calc(100vh - 79px);
         position: relative;
@@ -158,6 +177,17 @@
     .parts-selection-clear-button:active {
         background-color: rgba(255, 255, 255, 0.28);
         transform: translateY(1px);
+    }
+
+    .parts-selection-card {
+        background-color: #042c61;
+        color: white;
+        border-color: #0a3b7a;
+    }
+
+    .parts-selection-card-no-cad {
+        opacity: 0.52;
+        filter: grayscale(0.8);
     }
 
     .parts-selection-delete-all-button img,
@@ -251,7 +281,7 @@
     <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
         <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="app-header d-flex align-items-center justify-content-center justify-content-md-between" >
             <!-- Application logo and name -->
-            <div class="app-logo-column col-md-3 mb-0" title="Go to home">
+            <div class="app-logo-column col-md-3 mb-0" title="{{ _('Go to home') }}">
                 <a href="{{ url_for('home') }}" class="app-logo-link d-inline-flex link-body-emphasis text-decoration-none">
                     <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
                     <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
@@ -260,16 +290,28 @@
             <!-- Search form -->
             <ul class="app-search-nav nav col-12 col-md-auto mb-0 justify-content-center">
                 <form id="search-form" role="search">
-                    <input title="Search for a part by its name or description" name="search_query" type="search" style="height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Search..." value="{{ search_query }}" id="site-search" aria-label="Search">
+                    <input title="{{ _('Search for a part by its name or description') }}" name="search_query" type="search" style="height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="{{ _('Search...') }}" value="{{ search_query }}" id="site-search" aria-label="{{ _('Search') }}">
                 </form>
             </ul>
             <!-- Right side alighed elements -->
             <div class="app-actions-column col-md-3 text-end">
+                <form method="get" class="me-2 d-inline-flex">
+                    {% for key, value in request.args.items() %}
+                        {% if key != 'lang' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <select class="form-select form-select-sm language-select" name="lang" title="{{ _('Language') }}" aria-label="{{ _('Language') }}" onchange="this.form.submit()">
+                        {% for locale, label in supported_locales.items() %}
+                        <option value="{{ locale }}" {% if locale == current_locale %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
                 <span class="selection-toggle-wrapper">
-                    <button title="Open and close the parts selection" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsSelection()">
+                    <button title="{{ _('Open and close the parts selection') }}" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsSelection()">
                         <img class="navbar-selection-icon" src="{{ url_for('static', filename='bootstrap-icons-1.11.3/clipboard-check.svg') }}" alt="" style="padding: 0;" height="26px" width="26px">
                     </button>
-                    <span id="selection-notification" class="selection-notification d-none">Added to selection</span>
+                    <span id="selection-notification" class="selection-notification d-none">{{ _('Added to selection') }}</span>
                 </span>
             </div>
         </header>
@@ -284,13 +326,13 @@
         <!-- New assembly column -->
         <aside id="parts-selection-div" class="parts-selection-column d-none d-flex flex-column">
             <div class="container-fluid d-flex align-items-center justify-content-between px-2" style="height: 40px; border-bottom: 1px solid #042c61;">
-                <span>My Selection</span>
+                <span>{{ _('My Selection') }}</span>
                 <div class="d-flex align-items-center gap-1">
-                    <button id="clear-parts-selection-button" type="button" class="parts-selection-delete-all-button" title="Delete all parts from selection" data-bs-toggle="modal" data-bs-target="#delete-selection-modal">
+                    <button id="clear-parts-selection-button" type="button" class="parts-selection-delete-all-button" title="{{ _('Delete all parts from selection') }}" data-bs-toggle="modal" data-bs-target="#delete-selection-modal">
                         <img src="{{ url_for('static', filename = 'bin.png') }}" width="15" height="15" alt="">
-                        <span>Delete all</span>
+                        <span>{{ _('Delete all') }}</span>
                     </button>
-                    <button type="button" class="parts-selection-clear-button" title="Close parts selection" onclick="closePartsSelection()">
+                    <button type="button" class="parts-selection-clear-button" title="{{ _('Close parts selection') }}" onclick="closePartsSelection()">
                         <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
                     </button>
                 </div>
@@ -300,9 +342,9 @@
                 </ul>
             </div>
             <div class="container-fluid px-2" style="height: 86px; flex: 0 0 86px; border-top: 1px solid #042c61; padding-top: 8px;">
-                <div id="parts-selection-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">Estimated total: 0</div>
+                <div id="parts-selection-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">{{ _('Estimated total') }}: -</div>
                 <div class="d-grid gap-2">
-                    <button class="btn btn-primary" type="button" onclick="downloadSelection()">Download all</button>
+                    <button class="btn btn-primary" type="button" onclick="downloadSelection()">{{ _('Download all') }}</button>
                 </div>
             </div>
         </aside>
@@ -310,7 +352,7 @@
     <!-- Bottom bar -->
     <div style="min-height: 27px; max-height: 27px; margin: 0px; background-color:#042c61; color: white; ">
         <span style="font-size: 11px; margin: 0px; padding-left: 8px;">
-            <span>Copyright (C) 2024 - 2025. OpenPartsLibrary by </span>
+            <span>{{ _('Copyright (C) 2024 - 2025. OpenPartsLibrary by') }} </span>
             <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
         </span>
     </div>
@@ -318,15 +360,15 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="delete-selection-modal-title">Delete all parts?</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="delete-selection-modal-title">{{ _('Delete all parts?') }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
                 </div>
                 <div class="modal-body">
-                    Are you sure you want to delete all parts from your selection?
+                    {{ _('Are you sure you want to delete all parts from your selection?') }}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="clearSessionList('partsSelectionList')">Delete all</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="clearSessionList('partsSelectionList')">{{ _('Delete all') }}</button>
                 </div>
             </div>
         </div>
@@ -338,6 +380,16 @@
         const partsSelectionTotal = document.getElementById("parts-selection-total");
         const selectionNotification = document.getElementById("selection-notification");
         let selectionNotificationTimeout = null;
+        const i18n = {
+            addedToSelection: {{ _('Added to selection')|tojson }},
+            addedToSelectionWithName: {{ _('<%(name)s> added to selection')|tojson }},
+            estimatedTotal: {{ _('Estimated total')|tojson }},
+            partNumber: {{ _('Part number')|tojson }},
+            quantity: {{ _('Quantity')|tojson }},
+            estimatedUnitPrice: {{ _('Estimated unit price')|tojson }},
+            noCadFileAvailable: {{ _('No CAD file available')|tojson }},
+            removeFromSelection: {{ _('Remove from selection')|tojson }}
+        };
 
         function getSelectionList() {
             const storedSelection = sessionStorage.getItem("partsSelectionList");
@@ -418,9 +470,9 @@
             const safeName = String(componentName || "").trim();
             if (safeName) {
                 const shortName = safeName.slice(0, 12) + "...";
-                showSelectionNotification("<" + shortName + "> added to selection");
+                showSelectionNotification(i18n.addedToSelectionWithName.replace("%(name)s", shortName));
             } else {
-                showSelectionNotification("Added to selection");
+                showSelectionNotification(i18n.addedToSelection);
             }
         }
 
@@ -507,7 +559,7 @@
                 .map(([currency, total]) => `${total.toFixed(2)} ${currency}`.trim())
                 .join(" + ");
 
-            partsSelectionTotal.textContent = `Estimated total: ${totalText || "0"}`;
+            partsSelectionTotal.textContent = `${i18n.estimatedTotal}: ${totalText || "-"}`;
         }
 
         function buildSelectionCards(components) {
@@ -518,18 +570,22 @@
                 const quantity = escapeHtml(component.quantity);
                 const price = escapeHtml(component.price_per_item);
                 const currency = escapeHtml(component.currency);
+                const hasCad = Boolean(component.has_cad);
+                const cardClass = hasCad ? "" : " parts-selection-card-no-cad";
+                const cadNote = hasCad ? "" : `<div style="font-size: 0.78rem; color: #c9d8ec;">${i18n.noCadFileAvailable}</div>`;
 
                 return `
-                <li class="card mb-2" style="background-color: #042c61; color: white; border-color: #0a3b7a;">
+                <li class="card mb-2 parts-selection-card${cardClass}">
                     <div class="card-body p-2">
                         <div class="d-flex align-items-start justify-content-between gap-2">
                             <div style="min-width: 0;">
                                 <div class="fw-semibold text-truncate" title="${name}">${name}</div>
-                                <div style="font-size: 0.78rem; color: #c9d8ec;">Part number: ${partNumber}</div>
-                                <div style="font-size: 0.78rem; color: #c9d8ec;">Quantity: ${quantity}</div>
-                                <div style="font-size: 0.78rem; color: #c9d8ec;">Price per item: ${price} ${currency}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">${i18n.partNumber}: ${partNumber}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">${i18n.quantity}: ${quantity}</div>
+                                <div style="font-size: 0.78rem; color: #c9d8ec;">${i18n.estimatedUnitPrice}: ${price} ${currency}</div>
+                                ${cadNote}
                             </div>
-                            <button type="button" class="parts-selection-clear-button" title="Remove from selection" onclick="removeComponentFromSelection('${uuid}')">
+                            <button type="button" class="parts-selection-clear-button" title="${i18n.removeFromSelection}" onclick="removeComponentFromSelection('${uuid}')">
                                 <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
                             </button>
                         </div>

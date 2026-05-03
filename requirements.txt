@@ -4,4 +4,5 @@ pandas
 pywebview
 flask-cors
 Flask-Admin
+Flask-Babel
 odfpy

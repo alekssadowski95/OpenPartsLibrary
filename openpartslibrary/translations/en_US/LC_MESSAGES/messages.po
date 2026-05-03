@@ -1,0 +1,297 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: OpenPartsLibrary\n"
+"Language: en_US\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Language"
+msgstr "Language"
+
+msgid "Parts"
+msgstr "Parts"
+
+msgid "Part"
+msgstr "Part"
+
+msgid "Part number"
+msgstr "Part number"
+
+msgid "Name"
+msgstr "Name"
+
+msgid "Description"
+msgstr "Description"
+
+msgid "Supplier"
+msgstr "Supplier"
+
+msgid "Suppliers"
+msgstr "Suppliers"
+
+msgid "All suppliers"
+msgstr "All suppliers"
+
+msgid "Estimated unit price"
+msgstr "Estimated unit price"
+
+msgid "Min price (EUR)"
+msgstr "Min price (EUR)"
+
+msgid "Max price (EUR)"
+msgstr "Max price (EUR)"
+
+msgid "Apply"
+msgstr "Apply"
+
+msgid "Reset"
+msgstr "Reset"
+
+msgid "My Selection"
+msgstr "My Selection"
+
+msgid "Add to selection"
+msgstr "Add to selection"
+
+msgid "Add part to selection"
+msgstr "Add part to selection"
+
+msgid "Added to selection"
+msgstr "Added to selection"
+
+msgid "<%(name)s> added to selection"
+msgstr "<%(name)s> added to selection"
+
+msgid "Remove from selection"
+msgstr "Remove from selection"
+
+msgid "Delete all"
+msgstr "Delete all"
+
+msgid "Delete all parts?"
+msgstr "Delete all parts?"
+
+msgid "Delete all parts from selection"
+msgstr "Delete all parts from selection"
+
+msgid "Are you sure you want to delete all parts from your selection?"
+msgstr "Are you sure you want to delete all parts from your selection?"
+
+msgid "Cancel"
+msgstr "Cancel"
+
+msgid "Close"
+msgstr "Close"
+
+msgid "Close parts selection"
+msgstr "Close parts selection"
+
+msgid "Open and close the parts selection"
+msgstr "Open and close the parts selection"
+
+msgid "Estimated total"
+msgstr "Estimated total"
+
+msgid "Download all"
+msgstr "Download all"
+
+msgid "Download CAD"
+msgstr "Download CAD"
+
+msgid "Download CAD file"
+msgstr "Download CAD file"
+
+msgid "No CAD file available"
+msgstr "No CAD file available"
+
+msgid "CAD file not found."
+msgstr "CAD file not found."
+
+msgid "No CAD files found for the current selection."
+msgstr "No CAD files found for the current selection."
+
+msgid "Open part details"
+msgstr "Open part details"
+
+msgid "All parts"
+msgstr "All parts"
+
+msgid "Attached Files"
+msgstr "Attached Files"
+
+msgid "Last modified"
+msgstr "Last modified"
+
+msgid "Search"
+msgstr "Search"
+
+msgid "Search..."
+msgstr "Search..."
+
+msgid "Search for a part by its name or description"
+msgstr "Search for a part by its name or description"
+
+msgid "Show parts results as list"
+msgstr "Show parts results as list"
+
+msgid "Show parts results in splitscreen with preview"
+msgstr "Show parts results in splitscreen with preview"
+
+msgid "Close preview"
+msgstr "Close preview"
+
+msgid "Select a part from the list to display it in the 3D view"
+msgstr "Select a part from the list to display it in the 3D view"
+
+msgid "3D Viewer"
+msgstr "3D Viewer"
+
+msgid "Go to home"
+msgstr "Go to home"
+
+msgid "Copyright (C) 2024 - 2025. OpenPartsLibrary by"
+msgstr "Copyright (C) 2024 - 2025. OpenPartsLibrary by"
+
+msgid "%(num)s part was found."
+msgid_plural "%(num)s parts were found."
+msgstr[0] "%(num)s part was found."
+msgstr[1] "%(num)s parts were found."
+
+msgid "%(num)s file found."
+msgid_plural "%(num)s files found."
+msgstr[0] "%(num)s file found."
+msgstr[1] "%(num)s files found."
+
+msgid "%(num)s total download"
+msgid_plural "%(num)s total downloads"
+msgstr[0] "%(num)s total download"
+msgstr[1] "%(num)s total downloads"
+
+msgid "OpenPartsLibrary Admin"
+msgstr "OpenPartsLibrary Admin"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Admin home"
+msgstr "Admin home"
+
+msgid "Admin navigation"
+msgstr "Admin navigation"
+
+msgid "Admin actions"
+msgstr "Admin actions"
+
+msgid "Back to app"
+msgstr "Back to app"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Downloads Dashboard"
+msgstr "Downloads Dashboard"
+
+msgid "Downloads dashboard"
+msgstr "Downloads dashboard"
+
+msgid "Downloads over time"
+msgstr "Downloads over time"
+
+msgid "Downloads"
+msgstr "Downloads"
+
+msgid "download"
+msgstr "download"
+
+msgid "downloads"
+msgstr "downloads"
+
+msgid "Daily totals"
+msgstr "Daily totals"
+
+msgid "Most downloaded parts"
+msgstr "Most downloaded parts"
+
+msgid "Top parts in descending order by download count."
+msgstr "Top parts in descending order by download count."
+
+msgid "Trending downloads"
+msgstr "Trending downloads"
+
+msgid "Ranks recent growth against the previous %(days)s days using absolute and percentage increase."
+msgstr "Ranks recent growth against the previous %(days)s days using absolute and percentage increase."
+
+msgid "Recent"
+msgstr "Recent"
+
+msgid "Previous"
+msgstr "Previous"
+
+msgid "Increase"
+msgstr "Increase"
+
+msgid "No part downloads in this timeframe."
+msgstr "No part downloads in this timeframe."
+
+msgid "No trending downloads in this timeframe yet."
+msgstr "No trending downloads in this timeframe yet."
+
+msgid "Last 7 days"
+msgstr "Last 7 days"
+
+msgid "Last 30 days"
+msgstr "Last 30 days"
+
+msgid "Last 90 days"
+msgstr "Last 90 days"
+
+msgid "Last 12 months"
+msgstr "Last 12 months"
+
+msgid "All time"
+msgstr "All time"
+
+msgid "Library"
+msgstr "Library"
+
+msgid "Files"
+msgstr "Files"
+
+msgid "Materials"
+msgstr "Materials"
+
+msgid "Part relations"
+msgstr "Part relations"
+
+msgid "Events"
+msgstr "Events"
+
+msgid "Download events"
+msgstr "Download events"
+
+msgid "Unknown part"
+msgstr "Unknown part"
+
+msgid "Flask-Admin is not installed in this Python environment, so this fallback admin is read-only."
+msgstr "Flask-Admin is not installed in this Python environment, so this fallback admin is read-only."
+
+msgid "Install Flask-Admin from requirements.txt for full editing features."
+msgstr "Install Flask-Admin from requirements.txt for full editing features."
+
+msgid "Admin model not found."
+msgstr "Admin model not found."
+
+msgid "Showing up to 200 rows."
+msgstr "Showing up to 200 rows."
+
+msgid "Part not found with UUID: %(uuid)s"
+msgstr "Part not found with UUID: %(uuid)s"
+
+msgid "Expected a list of selected parts."
+msgstr "Expected a list of selected parts."
+
+msgid "File not found with UUID: %(uuid)s"
+msgstr "File not found with UUID: %(uuid)s"
+
+msgid "File content not found."
+msgstr "File content not found."

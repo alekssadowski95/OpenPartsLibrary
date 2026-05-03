@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_locale.replace('_', '-') }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>{{ _('3D Viewer') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/images/3dviewer_net_favicon.ico') }}">
     <script type="text/javascript" src="{{ url_for('static', filename='o3dv-2/o3dv.min.js') }}"></script>
     

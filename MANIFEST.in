@@ -2,3 +2,5 @@ recursive-include openpartslibrary/sample *
 recursive-include openpartslibrary/images *
 recursive-include openpartslibrary/templates *
 recursive-include openpartslibrary/static *
+recursive-include openpartslibrary/translations *
+include openpartslibrary/search_synonyms.json

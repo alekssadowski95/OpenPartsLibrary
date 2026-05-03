@@ -66,13 +66,13 @@
     </div>
     <!-- Preview list item column -->
     <div id="main-view-preview-col" class="main-view-preview-col col-6 p-0 m-0">
-        <button type="button" class="btn btn-outline-secondary btn-sm preview-close-button" title="Close preview" onclick="switchToListView()">&#x2715;</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm preview-close-button" title="{{ _('Close preview') }}" onclick="switchToListView()">&#x2715;</button>
         <!-- Preview help -->
         <div style="width: 100%; height: 100%; background: #f5f5f5;">
             <div class="p-0 m-0 w-100 d-flex flex-column align-items-center justify-content-center" 
                 style="height: 100%;">
                 <img class="mb-3" src="{{ url_for('static', filename='cursor.png') }}" alt="" style="height: 128px; width: 128px; filter: opacity(50%);">
-                <span style="color: grey;">Select part from list to display in 3D view</span>
+                <span style="color: grey;">{{ _('Select a part from the list to display it in the 3D view') }}</span>
             </div>
         </div>
         <!-- Preview content -->

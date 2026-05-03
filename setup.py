@@ -24,6 +24,8 @@ setup(
             'images/*',
             'templates/**/*',
             'static/**/*',
+            'translations/**/*',
+            'search_synonyms.json',
         ],
     },
     install_requires=[
@@ -34,6 +36,7 @@ setup(
         'pywebview',
         'flask-cors',
         'Flask-Admin',
+        'Flask-Babel',
     ],
     python_requires='>=3.10',
 

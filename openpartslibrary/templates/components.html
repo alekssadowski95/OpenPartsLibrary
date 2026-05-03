@@ -111,59 +111,59 @@ tbody tr td {
 {% endblock function_buttons %}
 
 {% block view_buttons %}
-<a title="Show parts results as list" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
+<a title="{{ _('Show parts results as list') }}" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setListView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/list.svg') }}" width="16" height="16">
 </a>
-<a title="Show parts results in splitscreen with preview" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
+<a title="{{ _('Show parts results in splitscreen with preview') }}" type="button" class="btn btn-outline-secondary btn-sm " href="#" onclick="setPreviewView()">
     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/layout-split.svg') }}" width="16" height="16">
 </a>
 {% endblock view_buttons %}
 
 {% block main_view_content_list %}
 <form class="component-filter-bar px-3 py-2" method="get" action="{{ url_for('components') }}">
-    <h1 class="mb-0 mt-1" style="font-size: x-large;">Parts</h1>
+    <h1 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Parts') }}</h1>
     <input type="hidden" name="search_query" value="{{ search_query }}">
     <input type="hidden" name="sort" value="{{ sort_key }}">
     <input type="hidden" name="direction" value="{{ direction }}">
     <div class="row g-2 align-items-end">
         <div class="col-12 col-md-3">
-            <label class="form-label" for="supplier-filter">Supplier</label>
+            <label class="form-label" for="supplier-filter">{{ _('Supplier') }}</label>
             <select id="supplier-filter" class="form-select form-select-sm" name="supplier">
-                <option value="">All suppliers</option>
+                <option value="">{{ _('All suppliers') }}</option>
                 {% for supplier in suppliers %}
                 <option value="{{ supplier.id }}" {% if filters.supplier == supplier.id|string %}selected{% endif %}>{{ supplier.name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="col-6 col-md-2">
-            <label class="form-label" for="price-min-filter">Min price (EUR)</label>
+            <label class="form-label" for="price-min-filter">{{ _('Min price (EUR)') }}</label>
             <input id="price-min-filter" class="form-control form-control-sm" name="price_min" type="number" min="0" step="0.01" value="{{ filters.price_min }}">
         </div>
         <div class="col-6 col-md-2">
-            <label class="form-label" for="price-max-filter">Max price (EUR)</label>
+            <label class="form-label" for="price-max-filter">{{ _('Max price (EUR)') }}</label>
             <input id="price-max-filter" class="form-control form-control-sm" name="price_max" type="number" min="0" step="0.01" value="{{ filters.price_max }}">
         </div>
         <div class="col-12 col-md-5 d-flex gap-2 justify-content-md-end">
-            <button class="btn btn-primary btn-sm" type="submit">Apply</button>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">Reset</a>
+            <button class="btn btn-primary btn-sm" type="submit">{{ _('Apply') }}</button>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">{{ _('Reset') }}</a>
         </div>
     </div>
 </form>
-<p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ len(components) }} parts were found.</p>
+<p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s part was found.', '%(num)s parts were found.', len(components)) }}</p>
 <table class="table table-striped table-hover component-table" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
     <thead>
         <tr>
             <th class="component-actions-col"></th>
             {% set next_direction = 'desc' if sort_key == 'number' and direction == 'asc' else 'asc' %}
-            <th class="part-number-col"><a class="component-sort-link text-nowrap" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">Part number{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th class="part-number-col"><a class="component-sort-link text-nowrap" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">{{ _('Part number') }}{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'name' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'name', 'direction': next_direction}) }}">Name{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'name', 'direction': next_direction}) }}">{{ _('Name') }}{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'unit_price' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'unit_price', 'direction': next_direction}) }}">Unit price{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'unit_price', 'direction': next_direction}) }}">{{ _('Estimated unit price') }}{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'supplier' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">Supplier{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">{{ _('Supplier') }}{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'description' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'description', 'direction': next_direction}) }}">Description{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ components_url({'sort': 'description', 'direction': next_direction}) }}">{{ _('Description') }}{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
         </tr>
     </thead>
     <tbody>
@@ -172,15 +172,15 @@ tbody tr td {
         <tr class="part-row" data-model="{{ cad_filename or '' }}" data-component-uuid="{{ component.uuid }}" data-component-name="{{ component.name }}" data-component-url="{{ url_for('component_view', uuid = component.uuid ) }}" data-download-url="{{ url_for('component_download_cad', uuid = component.uuid) if cad_filename else '' }}">
             <td class="component-actions-col">
                 <div class="component-actions">
-                <a title="Open part details" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_view', uuid = component.uuid ) }}">
+                <a title="{{ _('Open part details') }}" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_view', uuid = component.uuid ) }}">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18">
                 </a>
                 {% if cad_filename %}
-                <a title="Download CAD file" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_download_cad', uuid = component.uuid) }}">
+                <a title="{{ _('Download CAD file') }}" type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('component_download_cad', uuid = component.uuid) }}">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/download.svg') }}" width="18" height="18">
                 </a>
                 {% endif %}
-                <a title="Add part to selection" type="button" data-uuid="{{ component.uuid }}" data-name="{{ component.name }}" class="btn btn-outline-secondary btn-sm add-part-to-selection-button">
+                <a title="{{ _('Add part to selection') }}" type="button" data-uuid="{{ component.uuid }}" data-name="{{ component.name }}" class="btn btn-outline-secondary btn-sm add-part-to-selection-button">
                     <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="20" height="20">
                 </a>
                 </div>
@@ -200,18 +200,18 @@ tbody tr td {
 <div style="position: relative; width: 100%; height: 100%; overflow: hidden;">
     <div id="main-view-preview-empty" class="d-none flex-column align-items-center justify-content-center" style="position: absolute; inset: 0; background: #f5f5f5;">
         <img src="{{ url_for('static', filename='cube.png') }}" alt="" width="72" height="72" style="opacity: 0.65;">
-        <span class="mt-2" style="color: #6b7280;">No CAD file available</span>
+        <span class="mt-2" style="color: #6b7280;">{{ _('No CAD file available') }}</span>
     </div>
     <iframe id="main-view-iframe" src="" frameborder="0" style="position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; display: none;"></iframe>
     <div id="main-view-preview-name" class="component-preview-name d-none">
         <span id="main-view-preview-name-text" class="component-preview-name-text"></span>
-        <a id="main-view-preview-detail-button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="Open part details" href="#">
+        <a id="main-view-preview-detail-button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="{{ _('Open part details') }}" href="#">
             <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/eye.svg') }}" width="18" height="18" alt="">
         </a>
-        <a id="main-view-preview-download-button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="Download CAD file" href="#">
+        <a id="main-view-preview-download-button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="{{ _('Download CAD file') }}" href="#">
             <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/download.svg') }}" width="18" height="18" alt="">
         </a>
-        <button id="main-view-preview-add-button" type="button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="Add part to selection">
+        <button id="main-view-preview-add-button" type="button" class="component-preview-action-button btn btn-outline-secondary btn-sm" title="{{ _('Add part to selection') }}">
             <img class="pb-1" src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/plus.svg') }}" width="18" height="18" alt="">
         </button>
     </div>

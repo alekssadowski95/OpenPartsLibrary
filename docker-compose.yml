@@ -1,0 +1,15 @@
+services:
+  openpartslibrary:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: 5000
+      FLASK_DEBUG: "0"
+      OPENPARTSLIBRARY_DATA_DIR: /app/data
+    volumes:
+      - openpartslibrary-data:/app/data
+
+volumes:
+  openpartslibrary-data:

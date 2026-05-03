@@ -1,0 +1,188 @@
+{
+  "groups": [
+    {
+      "name": "aluminum",
+      "terms": ["alu", "aluminium", "aluminum", "al"]
+    },
+    {
+      "name": "aluminum_profiles",
+      "terms": [
+        "profile",
+        "aluminium profile",
+        "aluminum profile",
+        "alu profile",
+        "extrusion",
+        "aluminium extrusion",
+        "aluminum extrusion",
+        "t slot",
+        "t slot profile",
+        "t slot extrusion",
+        "slot profile",
+        "framing profile",
+        "machine frame profile",
+        "structural profile"
+      ]
+    },
+    {
+      "name": "linear_guides",
+      "terms": [
+        "rail",
+        "linear rail",
+        "guide",
+        "guides",
+        "guide rail",
+        "linear guide",
+        "linear guide rail",
+        "motion rail",
+        "supported rail",
+        "support rail",
+        "shaft rail",
+        "linear shaft"
+      ]
+    },
+    {
+      "name": "linear_carriages",
+      "terms": [
+        "sliding block",
+        "linear block",
+        "linear bearing block",
+        "runner block",
+        "carriage",
+        "guide carriage",
+        "linear carriage",
+        "slider",
+        "slide block"
+      ]
+    },
+    {
+      "name": "bearing_blocks",
+      "terms": [
+        "bearing block",
+        "fixed bearing block",
+        "loose bearing block",
+        "end bearing block",
+        "shaft support block",
+        "pillow block",
+        "bearing support"
+      ]
+    },
+    {
+      "name": "bearings",
+      "terms": [
+        "bearing",
+        "ball bearing",
+        "linear bearing",
+        "bushing",
+        "bush",
+        "sleeve bearing",
+        "plain bearing",
+        "bearing sleeve"
+      ]
+    },
+    {
+      "name": "socket_head_fasteners",
+      "terms": [
+        "bolt",
+        "screw",
+        "fastener",
+        "machine screw",
+        "cap screw",
+        "socket head",
+        "socket head screw",
+        "socket head cap screw",
+        "shcs",
+        "allen screw",
+        "allen bolt",
+        "hex socket",
+        "hex socket screw",
+        "cylinder head screw",
+        "cylindrical head screw"
+      ]
+    },
+    {
+      "name": "set_screws",
+      "terms": ["set screw", "grub screw", "threaded pin", "headless screw"]
+    },
+    {
+      "name": "countersunk_screws",
+      "terms": ["countersunk screw", "flat head screw", "csk screw", "countersink screw"]
+    },
+    {
+      "name": "rounded_head_screws",
+      "terms": ["button head screw", "pan head screw", "round head screw", "flanged screw"]
+    },
+    {
+      "name": "nuts",
+      "terms": [
+        "nut",
+        "hex nut",
+        "hexagon nut",
+        "lock nut",
+        "locknut",
+        "nyloc",
+        "nylon lock nut",
+        "self locking nut",
+        "jam nut",
+        "thin nut"
+      ]
+    },
+    {
+      "name": "slot_nuts",
+      "terms": ["slot nut", "t nut", "tee nut", "t slot nut", "hammer nut", "sliding nut", "profile nut"]
+    },
+    {
+      "name": "washers_and_shims",
+      "terms": ["washer", "flat washer", "shim", "spacer", "distance washer", "shim washer", "packing washer"]
+    },
+    {
+      "name": "spacers_and_standoffs",
+      "terms": ["spacer", "standoff", "stand off", "distance sleeve", "sleeve", "spacer sleeve", "separator"]
+    },
+    {
+      "name": "brackets_and_connectors",
+      "terms": [
+        "bracket",
+        "angle bracket",
+        "corner bracket",
+        "corner connector",
+        "angle connector",
+        "gusset",
+        "joining plate",
+        "connector plate",
+        "mounting plate",
+        "adapter plate",
+        "lasche"
+      ]
+    },
+    {
+      "name": "plates_and_panels",
+      "terms": ["plate", "sheet", "panel", "mounting plate", "base plate", "cover plate", "adapter plate"]
+    },
+    {
+      "name": "stainless_steel",
+      "terms": ["steel", "stainless", "stainless steel", "inox", "ss", "va"]
+    },
+    {
+      "name": "engineering_plastics",
+      "terms": ["plastic", "polymer", "nylon", "pa", "pom", "acetal", "delrin"]
+    }
+  ],
+  "ranking_rules": [
+    {
+      "name": "linear_guides_over_profiles",
+      "query_terms": ["guide", "guides", "linear guide"],
+      "boost_name_terms": ["linear rail", "guide rail", "rail"],
+      "boost_score": 124,
+      "demote_name_terms": ["aluminum profile", "aluminium profile", "alu profile", "profile", "extrusion"],
+      "demote_score": 86
+    },
+    {
+      "name": "linear_carriages_over_bearing_blocks",
+      "query_terms": ["runner block", "sliding block", "slide block", "slider", "carriage", "linear carriage", "guide carriage"],
+      "boost_name_terms": ["sliding block", "runner block", "linear block", "linear bearing block", "carriage", "slider"],
+      "boost_score": 124,
+      "demote_name_terms": ["fixed bearing block", "loose bearing block", "end bearing block", "nut block", "pillow block"],
+      "demote_score": 90
+    }
+  ]
+}

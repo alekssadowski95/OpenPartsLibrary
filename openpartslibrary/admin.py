@@ -13,6 +13,7 @@ except ImportError:
 
 from flask import render_template_string, request, url_for
 
+from openpartslibrary.i18n import gettext as _, lazy_gettext
 from openpartslibrary.models import Component, ComponentComponent, DownloadEvent, File, Material, Supplier
 
 
@@ -35,7 +36,7 @@ def download_part_key(event):
     return (
         event.component_uuid,
         event.component_number or "",
-        event.component_name or "Unknown part",
+        event.component_name or _("Unknown part"),
     )
 
 
@@ -126,6 +127,10 @@ def get_download_dashboard_data(session, timeframe_key):
         "timeframe_key": timeframe_key,
         "timeframe_label": timeframe_label,
         "timeframes": DOWNLOAD_DASHBOARD_TIMEFRAMES,
+        "translated_timeframes": {
+            key: (_(label), days)
+            for key, (label, days) in DOWNLOAD_DASHBOARD_TIMEFRAMES.items()
+        },
         "total_downloads": sum(chart_values),
         "total_part_downloads": sum(row["count"] for row in part_counts.values()),
         "chart_labels": chart_labels,
@@ -139,11 +144,11 @@ def get_download_dashboard_data(session, timeframe_key):
 DOWNLOAD_DASHBOARD_TEMPLATE = """
 {% import 'admin/layout.html' as layout with context %}
 <!doctype html>
-<html lang="en">
+<html lang="{{ current_locale.replace('_', '-') }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Downloads Dashboard | OpenPartsLibrary Admin</title>
+    <title>{{ _('Downloads Dashboard') }} | {{ _('OpenPartsLibrary Admin') }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
     <style>
         body { background: #f8f9fa; }
@@ -182,21 +187,21 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
     <main class="container-fluid py-4">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-                <h1 class="h3 mb-1">Downloads Dashboard</h1>
-                <div class="metric">{{ data.timeframe_label }} · {{ data.total_downloads }} total downloads</div>
+                <h1 class="h3 mb-1">{{ _('Downloads Dashboard') }}</h1>
+                <div class="metric">{{ _(data.timeframe_label) }} · {{ ngettext('%(num)s total download', '%(num)s total downloads', data.total_downloads) }}</div>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                {% for key, timeframe in data.timeframes.items() %}
+                {% for key, timeframe in data.translated_timeframes.items() %}
                 <a class="btn btn-sm {{ 'btn-primary' if key == data.timeframe_key else 'btn-outline-secondary' }}" href="{{ dashboard_url }}?timeframe={{ key }}">{{ timeframe[0] }}</a>
                 {% endfor %}
-                <a class="btn btn-sm btn-outline-secondary" href="{{ admin_home_url }}">Admin home</a>
+                <a class="btn btn-sm btn-outline-secondary" href="{{ admin_home_url }}">{{ _('Admin home') }}</a>
             </div>
         </div>
 
         <section class="dashboard-card p-3 mb-3">
             <div class="d-flex align-items-center justify-content-between mb-2">
-                <h2 class="h5 mb-0">Downloads over time</h2>
-                <span class="metric">Daily totals</span>
+                <h2 class="h5 mb-0">{{ _('Downloads over time') }}</h2>
+                <span class="metric">{{ _('Daily totals') }}</span>
             </div>
             <div class="chart-wrap">
                 <canvas id="downloads-chart" width="1200" height="300"></canvas>
@@ -207,15 +212,15 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
         <div class="row g-3">
             <section class="col-12 col-lg-6">
                 <div class="dashboard-card p-3 h-100">
-                    <h2 class="h5 mb-1">Most downloaded parts</h2>
-                    <p class="metric mb-3">Top parts in descending order by download count.</p>
+                    <h2 class="h5 mb-1">{{ _('Most downloaded parts') }}</h2>
+                    <p class="metric mb-3">{{ _('Top parts in descending order by download count.') }}</p>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th>Part number</th>
-                                    <th>Name</th>
-                                    <th class="text-end">Downloads</th>
+                                    <th>{{ _('Part number') }}</th>
+                                    <th>{{ _('Name') }}</th>
+                                    <th class="text-end">{{ _('Downloads') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -226,7 +231,7 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
                                     <td class="text-end">{{ row.count }}</td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="3" class="text-muted">No part downloads in this timeframe.</td></tr>
+                                <tr><td colspan="3" class="text-muted">{{ _('No part downloads in this timeframe.') }}</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -235,16 +240,16 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
             </section>
             <section class="col-12 col-lg-6">
                 <div class="dashboard-card p-3 h-100">
-                    <h2 class="h5 mb-1">Trending downloads</h2>
-                    <p class="metric mb-3">Ranks recent growth against the previous {{ data.recent_window_days }} days using absolute and percentage increase.</p>
+                    <h2 class="h5 mb-1">{{ _('Trending downloads') }}</h2>
+                    <p class="metric mb-3">{{ _('Ranks recent growth against the previous %(days)s days using absolute and percentage increase.', days=data.recent_window_days) }}</p>
                     <div class="table-responsive">
                         <table class="table table-sm align-middle">
                             <thead>
                                 <tr>
-                                    <th>Part</th>
-                                    <th class="text-end">Recent</th>
-                                    <th class="text-end">Previous</th>
-                                    <th class="text-end">Increase</th>
+                                    <th>{{ _('Part') }}</th>
+                                    <th class="text-end">{{ _('Recent') }}</th>
+                                    <th class="text-end">{{ _('Previous') }}</th>
+                                    <th class="text-end">{{ _('Increase') }}</th>
                                     <th class="text-end">%</th>
                                 </tr>
                             </thead>
@@ -261,7 +266,7 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
                                     <td class="text-end">+{{ "%.0f"|format(row.percent_increase) }}%</td>
                                 </tr>
                                 {% else %}
-                                <tr><td colspan="5" class="text-muted">No trending downloads in this timeframe yet.</td></tr>
+                                <tr><td colspan="5" class="text-muted">{{ _('No trending downloads in this timeframe yet.') }}</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
@@ -349,7 +354,8 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
                 return;
             }
 
-            tooltip.textContent = `${nearest.point.label}: ${nearest.point.value} downloads`;
+            const downloadLabel = nearest.point.value === 1 ? {{ _('download')|tojson }} : {{ _('downloads')|tojson }};
+            tooltip.textContent = `${nearest.point.label}: ${nearest.point.value} ${downloadLabel}`;
             tooltip.style.left = `${nearest.point.x / scaleX}px`;
             tooltip.style.top = `${nearest.point.y / scaleY}px`;
             tooltip.style.display = "block";
@@ -393,6 +399,11 @@ def setup_admin(app, session):
         )
         column_filters = ("download_type", "date_downloaded", "component_number")
 
+    class ComponentAdminView(ModelView):
+        column_labels = {
+            "unit_price": lazy_gettext("Estimated unit price"),
+        }
+
     class DownloadsDashboardIndexView(AdminIndexView):
         @expose("/")
         def index(self):
@@ -405,15 +416,15 @@ def setup_admin(app, session):
             )
 
     try:
-        admin = Admin(app, name="OpenPartsLibrary Admin", template_mode="bootstrap4", url="/admin", index_view=DownloadsDashboardIndexView(name="Downloads Dashboard", endpoint="admin", url="/admin"))
+        admin = Admin(app, name=lazy_gettext("OpenPartsLibrary Admin"), template_mode="bootstrap4", url="/admin", index_view=DownloadsDashboardIndexView(name=lazy_gettext("Downloads Dashboard"), endpoint="admin", url="/admin"))
     except TypeError:
-        admin = Admin(app, name="OpenPartsLibrary Admin", url="/admin", index_view=DownloadsDashboardIndexView(name="Downloads Dashboard", endpoint="admin", url="/admin"))
-    admin.add_view(ModelView(Component, session, category="Library"))
-    admin.add_view(ModelView(File, session, category="Library"))
-    admin.add_view(ModelView(Supplier, session, category="Library"))
-    admin.add_view(ModelView(Material, session, category="Library"))
-    admin.add_view(ModelView(ComponentComponent, session, category="Library"))
-    admin.add_view(DownloadEventAdminView(DownloadEvent, session, category="Analytics"))
+        admin = Admin(app, name=lazy_gettext("OpenPartsLibrary Admin"), url="/admin", index_view=DownloadsDashboardIndexView(name=lazy_gettext("Downloads Dashboard"), endpoint="admin", url="/admin"))
+    admin.add_view(ComponentAdminView(Component, session, name=lazy_gettext("Parts"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(File, session, name=lazy_gettext("Files"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(Supplier, session, name=lazy_gettext("Suppliers"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(Material, session, name=lazy_gettext("Materials"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(ComponentComponent, session, name=lazy_gettext("Part relations"), category=lazy_gettext("Library")))
+    admin.add_view(DownloadEventAdminView(DownloadEvent, session, name=lazy_gettext("Download events"), category=lazy_gettext("Events")))
     return admin
 
 
@@ -432,7 +443,7 @@ def setup_fallback_admin(app, session):
     def fallback_admin_index():
         rows = [
             {
-                "name": name,
+                "name": _(name),
                 "count": session.query(model).count() if model is not None else None,
                 "url": url_for("fallback_admin_downloads_dashboard") if model is None else url_for("fallback_admin_model", model_name=model.__tablename__),
             }
@@ -441,11 +452,11 @@ def setup_fallback_admin(app, session):
         return render_template_string(
             """
             <!doctype html>
-            <html lang="en">
+            <html lang="{{ current_locale.replace('_', '-') }}">
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Admin | OpenPartsLibrary</title>
+                <title>{{ _('Admin') }} | OpenPartsLibrary</title>
                 <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
                 <style>
                     .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
@@ -460,12 +471,12 @@ def setup_fallback_admin(app, session):
                 {% include 'admin/_header.html' %}
                 <main class="container-fluid py-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h1 class="h3 mb-0">OpenPartsLibrary Admin</h1>
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">Back to app</a>
+                        <h1 class="h3 mb-0">{{ _('OpenPartsLibrary Admin') }}</h1>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">{{ _('Back to app') }}</a>
                     </div>
                     <div class="alert alert-warning">
-                        Flask-Admin is not installed in this Python environment, so this fallback admin is read-only.
-                        Install <code>Flask-Admin</code> from <code>requirements.txt</code> for full editing features.
+                        {{ _('Flask-Admin is not installed in this Python environment, so this fallback admin is read-only.') }}
+                        {{ _('Install Flask-Admin from requirements.txt for full editing features.') }}
                     </div>
                     <div class="list-group">
                         {% for row in rows %}
@@ -503,15 +514,18 @@ def setup_fallback_admin(app, session):
         }
         model_info = models_by_table.get(model_name)
         if model_info is None:
-            return "Admin model not found.", 404
+            return _("Admin model not found."), 404
 
         name, model = model_info
         columns = [column.name for column in model.__table__.columns]
+        column_labels = {
+            "unit_price": _("Estimated unit price"),
+        }
         records = session.query(model).limit(200).all()
         return render_template_string(
             """
             <!doctype html>
-            <html lang="en">
+            <html lang="{{ current_locale.replace('_', '-') }}">
             <head>
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -531,14 +545,14 @@ def setup_fallback_admin(app, session):
                 <main class="container-fluid py-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h1 class="h3 mb-0">{{ name }}</h1>
-                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fallback_admin_index') }}">Admin home</a>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fallback_admin_index') }}">{{ _('Admin home') }}</a>
                     </div>
                     <div class="table-responsive bg-white border">
                         <table class="table table-sm table-striped mb-0">
                             <thead>
                                 <tr>
                                     {% for column in columns %}
-                                    <th>{{ column }}</th>
+                                    <th>{{ column_labels.get(column, column) }}</th>
                                     {% endfor %}
                                 </tr>
                             </thead>
@@ -553,13 +567,14 @@ def setup_fallback_admin(app, session):
                             </tbody>
                         </table>
                     </div>
-                    <p class="text-muted mt-2 mb-0">Showing up to 200 rows.</p>
+                    <p class="text-muted mt-2 mb-0">{{ _('Showing up to 200 rows.') }}</p>
                 </main>
             </body>
             </html>
             """,
             name=name,
             columns=columns,
+            column_labels=column_labels,
             records=records,
         )
 

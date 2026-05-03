@@ -4,11 +4,12 @@ import zipfile
 from urllib.parse import urlencode
 
 from flask import jsonify, redirect, render_template, request, send_file, send_from_directory, url_for
-from sqlalchemy import asc, desc
+from sqlalchemy import asc, desc, func
 
 from openpartslibrary.desktop import open_with_default_application
 from openpartslibrary.downloads import branded_library_filename, branded_part_filename, record_download_event
 from openpartslibrary.hbom import build_spdx_hardware_bom
+from openpartslibrary.i18n import gettext as _
 from openpartslibrary.models import Component, File, Supplier
 from openpartslibrary.search import search_parts
 
@@ -111,7 +112,16 @@ def register_routes(app, parts_library):
         else:
             component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
 
-        suppliers = session.query(Supplier).order_by(Supplier.name).all()
+        suppliers = (
+            session.query(Supplier)
+            .filter(
+                Supplier.name.isnot(None),
+                func.trim(Supplier.name) != "",
+                func.lower(func.trim(Supplier.name)) != "unknown supplier",
+            )
+            .order_by(Supplier.name)
+            .all()
+        )
         materials = [
             value[0]
             for value in session.query(Component.material)
@@ -162,7 +172,7 @@ def register_routes(app, parts_library):
     def component_view(uuid):
         component = session.query(Component).filter_by(uuid=uuid).first()
         if component is None:
-            return f"Part not found with UUID: {uuid}", 404
+            return _("Part not found with UUID: %(uuid)s", uuid=uuid), 404
 
         component_cad_filepath = None
         component_cad_filename = None
@@ -186,12 +196,12 @@ def register_routes(app, parts_library):
     def component_download_cad(uuid):
         component = session.query(Component).filter_by(uuid=uuid).first()
         if component is None or component.cad_file is None:
-            return "CAD file not found.", 404
+            return _("CAD file not found."), 404
 
         cad_filename = f"{component.cad_file.uuid}.FCStd"
         cad_path = cad_dir / cad_filename
         if not cad_path.exists():
-            return "CAD file not found.", 404
+            return _("CAD file not found."), 404
 
         part_number = component.number or component.uuid
         original_name = component.cad_file.name or cad_filename
@@ -211,7 +221,7 @@ def register_routes(app, parts_library):
     def selection_download():
         selection_items = request.get_json(silent=True) or []
         if not isinstance(selection_items, list):
-            return "Expected a list of selected parts.", 400
+            return _("Expected a list of selected parts."), 400
 
         selected_quantities = {}
         for item in selection_items:
@@ -274,7 +284,7 @@ def register_routes(app, parts_library):
                 )
 
         if files_added == 0 and not bom_components:
-            return "No CAD files found for the current selection.", 404
+            return _("No CAD files found for the current selection."), 404
 
         zip_buffer.seek(0)
         zip_download_name = branded_library_filename("selection.zip")
@@ -305,6 +315,11 @@ def register_routes(app, parts_library):
             if component is None:
                 continue
 
+            has_cad = False
+            if component.cad_file is not None:
+                cad_filename = f"{component.cad_file.uuid}.FCStd"
+                has_cad = (cad_dir / cad_filename).exists()
+
             components.append({
                 "uuid": component.uuid,
                 "name": component.name,
@@ -312,7 +327,16 @@ def register_routes(app, parts_library):
                 "quantity": quantity,
                 "price_per_item": str(component.unit_price or ""),
                 "currency": component.currency or "",
+                "has_cad": has_cad,
             })
+
+        def selection_sort_value(component):
+            try:
+                return float(component["price_per_item"] or 0)
+            except (TypeError, ValueError):
+                return 0
+
+        components.sort(key=selection_sort_value, reverse=True)
 
         return jsonify(components)
 
@@ -320,11 +344,11 @@ def register_routes(app, parts_library):
     def download_file(file_uuid):
         file = session.query(File).filter_by(uuid=file_uuid).first()
         if file is None:
-            return f"File not found with UUID: {file_uuid}", 404
+            return _("File not found with UUID: %(uuid)s", uuid=file_uuid), 404
 
         matching_files = sorted(file_dir.glob(f"{file.uuid}.*"))
         if not matching_files:
-            return "File content not found.", 404
+            return _("File content not found."), 404
 
         source_file = matching_files[0]
         downloaded_filename = branded_library_filename(file.name or source_file.name)
@@ -340,7 +364,7 @@ def register_routes(app, parts_library):
     @app.route("/viewer/<filename>")
     def viewer(filename):
         if not (cad_dir / filename).exists():
-            return "CAD file not found.", 404
+            return _("CAD file not found."), 404
         filepath = url_for("serve_model_file", filename=filename)
         return render_template("viewer.html", filepath=filepath)
 

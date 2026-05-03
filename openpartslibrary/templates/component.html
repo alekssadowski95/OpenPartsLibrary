@@ -37,7 +37,7 @@
 <div class="container p-3 m-0 component-detail-scroll" style="background-color: white; width: 100%; min-width: 100%; overflow-y: auto;">
    <div class="container-fluid p-3">
     <div class="mb-3">
-        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">&larr; All parts</a>
+        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">&larr; {{ _('All parts') }}</a>
     </div>
     <div class="row mb-4">
         <!-- 3D View -->
@@ -48,70 +48,72 @@
         </div>
         <!-- Properties -->
         <div class="col-12 col-md-8">
-            <p>Part</p>
+            <p>{{ _('Part') }}</p>
             <h1 class="mb-3">{{ component.name }}</h1>
             <div class="mb-2">
-                <button title="Add part to selection" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
-                    <i class="bi-plus-lg" style="padding-right: 6px;"></i>Add to selection
+                <button title="{{ _('Add part to selection') }}" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
+                    <i class="bi-plus-lg" style="padding-right: 6px;"></i>{{ _('Add to selection') }}
                 </button>
             </div>
             {% if component_cad_filename %}
             <div class="mb-2">
-                <a title="Download CAD file" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('component_download_cad', uuid = component.uuid) }}">
-                    <i class="bi-download" style="padding-right: 6px;"></i>Download CAD
+                <a title="{{ _('Download CAD file') }}" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('component_download_cad', uuid = component.uuid) }}">
+                    <i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download CAD') }}
                 </a>
             </div>
             {% endif %}
             <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
                 <tbody>
                     <tr>
-                        <th>Name</th>
+                        <th>{{ _('Name') }}</th>
                         <td>{{ component.name }}</td>
                     </tr>
                     <tr>
-                        <th>Description</th>
+                        <th>{{ _('Description') }}</th>
                         <td>{{ component.description }}</td>
                     </tr>
                     <tr>
-                        <th>Part number</th>
+                        <th>{{ _('Part number') }}</th>
                         <td>{{ component.number }}</td>
                     </tr>
                     <tr>
-                        <th>Supplier</th>
+                        <th>{{ _('Supplier') }}</th>
                         <td>{{ component.supplier.name }}</td>
                     </tr>
                     <tr>
-                        <th>Unit price</th>
+                        <th>{{ _('Estimated unit price') }}</th>
                         <td>{{ component.unit_price }} {{ component.currency }}</td>
                     </tr>
                 </tbody>
             </table>  
         </div>
     </div>
-    <h2>Attached Files</h2>
-    <p class="mb-2">{{ component.files|length }} files found.</p>
-    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Last modified</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for file in files %}
-            <tr>
-                <td>{{ file.name }}</td>
-                <td>{{ file.date_modified }}</td>
-                <td>
-                    <nobr>
-                        <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('download_file', file_uuid = file.uuid) }}"><i class="bi-download"></i></a>
-                    </nobr>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    {% if files %}
+        <h2>{{ _('Attached Files') }}</h2>
+        <p class="mb-2">{{ ngettext('%(num)s file found.', '%(num)s files found.', component.files|length) }}</p>
+        <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+            <thead>
+                <tr>
+                    <th>{{ _('Name') }}</th>
+                    <th>{{ _('Last modified') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td>{{ file.name }}</td>
+                    <td>{{ file.date_modified }}</td>
+                    <td>
+                        <nobr>
+                            <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('download_file', file_uuid = file.uuid) }}"><i class="bi-download"></i></a>
+                        </nobr>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 </div>
 </div>
 

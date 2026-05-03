@@ -1,29 +1,15 @@
+import json
 import re
 import unicodedata
 from difflib import SequenceMatcher
+from functools import lru_cache
+from pathlib import Path
 
 
-SYNONYMS = {
-    "alu": {"aluminium", "aluminum"},
-    "aluminium": {"alu", "aluminum"},
-    "aluminum": {"alu", "aluminium"},
-    "bolt": {"screw", "fastener"},
-    "fastener": {"bolt", "screw"},
-    "guide": {"linear rail", "rail"},
-    "guides": {"linear rail", "rail"},
-    "hex": {"hexagon"},
-    "hexagon": {"hex"},
-    "linear guide": {"linear rail", "rail"},
-    "nut": {"hex nut", "fastener"},
-    "profile": {"extrusion", "rail"},
-    "rail": {"profile", "extrusion"},
-    "screw": {"bolt", "fastener"},
-    "shim": {"spacer", "washer"},
-    "spacer": {"shim", "washer"},
-    "washer": {"shim", "spacer"},
-}
+SYNONYM_GROUPS_PATH = Path(__file__).with_name("search_synonyms.json")
 
 
+@lru_cache(maxsize=50000)
 def normalize_search_text(value):
     value = unicodedata.normalize("NFKD", str(value or ""))
     value = "".join(char for char in value if not unicodedata.combining(char))
@@ -34,14 +20,126 @@ def normalize_search_text(value):
     return re.sub(r"\s+", " ", value).strip()
 
 
+def build_synonyms(groups):
+    synonyms = {}
+    for group in groups:
+        normalized_group = {normalize_search_text(term) for term in group if term}
+        for term in normalized_group:
+            synonyms.setdefault(term, set()).update(normalized_group - {term})
+    return synonyms
+
+
+def normalize_synonym_group(raw_group):
+    if isinstance(raw_group, dict):
+        raw_terms = raw_group.get("terms", [])
+    else:
+        raw_terms = raw_group
+
+    if not isinstance(raw_terms, list):
+        return set()
+
+    return {
+        str(term).strip()
+        for term in raw_terms
+        if str(term).strip()
+    }
+
+
+def normalize_term_list(value):
+    if not isinstance(value, list):
+        return set()
+
+    return {
+        normalize_search_text(term)
+        for term in value
+        if normalize_search_text(term)
+    }
+
+
+def normalize_ranking_rule(rule):
+    return {
+        "name": str(rule.get("name", "")),
+        "query_terms": normalize_term_list(rule.get("query_terms", [])),
+        "boost_name_terms": normalize_term_list(rule.get("boost_name_terms", [])),
+        "demote_name_terms": normalize_term_list(rule.get("demote_name_terms", [])),
+        "boost_score": int(rule.get("boost_score", 124)),
+        "demote_score": int(rule.get("demote_score", 90)),
+    }
+
+
+def load_search_config():
+    try:
+        with SYNONYM_GROUPS_PATH.open("r", encoding="utf-8") as synonyms_file:
+            data = json.load(synonyms_file)
+    except (OSError, json.JSONDecodeError):
+        return {"groups": (), "ranking_rules": ()}
+
+    if not isinstance(data, dict):
+        data = {"groups": data}
+
+    raw_groups = data.get("groups", [])
+    if not isinstance(raw_groups, list):
+        raw_groups = []
+
+    groups = tuple(
+        group
+        for group in (normalize_synonym_group(raw_group) for raw_group in raw_groups)
+        if group
+    )
+
+    raw_rules = data.get("ranking_rules", [])
+    if not isinstance(raw_rules, list):
+        raw_rules = []
+
+    return {
+        "groups": groups,
+        "ranking_rules": tuple(
+            normalize_ranking_rule(rule)
+            for rule in raw_rules
+            if isinstance(rule, dict)
+        ),
+    }
+
+
+def synonym_groups_signature():
+    try:
+        return SYNONYM_GROUPS_PATH.stat().st_mtime_ns
+    except OSError:
+        return 0
+
+
+@lru_cache(maxsize=8)
+def get_search_config(_signature):
+    return load_search_config()
+
+
+def get_synonyms(signature):
+    return build_synonyms(get_search_config(signature)["groups"])
+
+
+def get_ranking_rules(signature):
+    return get_search_config(signature)["ranking_rules"]
+
+
+def query_phrases(normalized_query, max_words=4):
+    tokens = normalized_query.split()
+    phrases = {normalized_query} if normalized_query else set()
+    for start_index in range(len(tokens)):
+        for end_index in range(start_index + 1, min(len(tokens), start_index + max_words) + 1):
+            phrase = " ".join(tokens[start_index:end_index])
+            if len(phrase) > 1 or phrase.isdigit():
+                phrases.add(phrase)
+    return {phrase for phrase in phrases if phrase and (len(phrase) > 1 or phrase.isdigit())}
+
+
 def expand_query_terms(query):
     normalized_query = normalize_search_text(query)
     direct_terms = {normalized_query} if normalized_query else set()
     synonym_terms = set()
 
-    for token in normalized_query.split():
-        direct_terms.add(token)
-        synonym_terms.update(SYNONYMS.get(token, set()))
+    for phrase in query_phrases(normalized_query):
+        direct_terms.add(phrase)
+        synonym_terms.update(get_synonyms(synonym_groups_signature()).get(phrase, set()))
 
     return (
         {term for term in direct_terms if term},
@@ -64,6 +162,7 @@ def searchable_part_fields(part):
     }
 
 
+@lru_cache(maxsize=50000)
 def fuzzy_ratio(query, text):
     query = normalize_search_text(query)
     text = normalize_search_text(text)
@@ -73,6 +172,7 @@ def fuzzy_ratio(query, text):
     return int(SequenceMatcher(None, query, text).ratio() * 100)
 
 
+@lru_cache(maxsize=50000)
 def partial_fuzzy_ratio(query, text):
     query = normalize_search_text(query)
     text = normalize_search_text(text)
@@ -100,6 +200,7 @@ def partial_fuzzy_ratio(query, text):
     return best_ratio
 
 
+@lru_cache(maxsize=50000)
 def token_overlap_score(query, text):
     query_tokens = set(normalize_search_text(query).split())
     text_tokens = set(normalize_search_text(text).split())
@@ -113,6 +214,12 @@ def is_numeric_term(term):
     return bool(re.fullmatch(r"\d+", normalize_search_text(term)))
 
 
+def has_search_phrase(text, phrases):
+    normalized_text = normalize_search_text(text)
+    return any(phrase in normalized_text for phrase in phrases)
+
+
+@lru_cache(maxsize=50000)
 def term_matches_text(term, text, threshold=88):
     term = normalize_search_text(term)
     text = normalize_search_text(text)
@@ -230,6 +337,15 @@ def score_part(query, part):
         partial_fuzzy_ratio(query, combined_text),
         token_overlap_score(all_query_text, combined_text),
     )
+
+    for rule in get_ranking_rules(synonym_groups_signature()):
+        if not (rule["query_terms"] & direct_terms):
+            continue
+
+        if has_search_phrase(name_text, rule["boost_name_terms"]):
+            best_score = max(best_score, rule["boost_score"])
+        elif has_search_phrase(name_text, rule["demote_name_terms"]):
+            best_score = min(best_score, rule["demote_score"])
 
     return min(best_score, 125)
 

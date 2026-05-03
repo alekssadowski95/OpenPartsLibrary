@@ -2,34 +2,34 @@
     <div class="opl-admin-header-inner">
         <a class="opl-admin-brand" href="{{ url_for('admin.index') if admin_available else url_for('fallback_admin_index') }}">
             <img src="{{ url_for('static', filename='nut-bolt.png') }}" alt="" width="28" height="28">
-            <span>OpenPartsLibrary Admin</span>
+            <span>{{ _('OpenPartsLibrary Admin') }}</span>
         </a>
         <div class="opl-admin-header-right">
             {% if admin_available %}
-            <nav class="opl-admin-navigation" aria-label="Admin navigation">
-                <a class="opl-admin-nav-link" href="{{ url_for('admin.index') }}">Dashboard</a>
+            <nav class="opl-admin-navigation" aria-label="{{ _('Admin navigation') }}">
+                <a class="opl-admin-nav-link" href="{{ url_for('admin.index') }}">{{ _('Dashboard') }}</a>
                 <div class="dropdown">
-                    <button class="opl-admin-nav-link dropdown-toggle" type="button" aria-expanded="false">Library</button>
+                    <button class="opl-admin-nav-link dropdown-toggle" type="button" aria-expanded="false">{{ _('Library') }}</button>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ url_for('component.index_view') }}">Parts</a>
-                        <a class="dropdown-item" href="{{ url_for('file.index_view') }}">Files</a>
-                        <a class="dropdown-item" href="{{ url_for('supplier.index_view') }}">Suppliers</a>
-                        <a class="dropdown-item" href="{{ url_for('material.index_view') }}">Materials</a>
-                        <a class="dropdown-item" href="{{ url_for('componentcomponent.index_view') }}">Part relations</a>
+                        <a class="dropdown-item" href="{{ url_for('component.index_view') }}">{{ _('Parts') }}</a>
+                        <a class="dropdown-item" href="{{ url_for('file.index_view') }}">{{ _('Files') }}</a>
+                        <a class="dropdown-item" href="{{ url_for('supplier.index_view') }}">{{ _('Suppliers') }}</a>
+                        <a class="dropdown-item" href="{{ url_for('material.index_view') }}">{{ _('Materials') }}</a>
+                        <a class="dropdown-item" href="{{ url_for('componentcomponent.index_view') }}">{{ _('Part relations') }}</a>
                     </div>
                 </div>
                 <div class="dropdown">
-                    <button class="opl-admin-nav-link dropdown-toggle" type="button" aria-expanded="false">Events</button>
+                    <button class="opl-admin-nav-link dropdown-toggle" type="button" aria-expanded="false">{{ _('Events') }}</button>
                     <div class="dropdown-menu">
-                        <a class="dropdown-item" href="{{ url_for('downloadevent.index_view') }}">Download events</a>
+                        <a class="dropdown-item" href="{{ url_for('downloadevent.index_view') }}">{{ _('Download events') }}</a>
                     </div>
                 </div>
             </nav>
             {% endif %}
-            <nav class="opl-admin-header-actions" aria-label="Admin actions">
-                <a href="{{ url_for('components') }}">Back to app</a>
+            <nav class="opl-admin-header-actions" aria-label="{{ _('Admin actions') }}">
+                <a href="{{ url_for('components') }}">{{ _('Back to app') }}</a>
                 {% if not admin_available %}
-                <a href="{{ url_for('fallback_admin_downloads_dashboard') }}">Downloads dashboard</a>
+                <a href="{{ url_for('fallback_admin_downloads_dashboard') }}">{{ _('Downloads dashboard') }}</a>
                 {% endif %}
             </nav>
         </div>

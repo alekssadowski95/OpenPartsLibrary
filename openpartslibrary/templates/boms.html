@@ -1,0 +1,180 @@
+{% extends "page.html" %}
+
+{% macro bom_row(bom, depth=0, relation_quantity=None, visited=[]) %}
+{% set child_id = 'bom-public-children-' ~ bom.id ~ '-' ~ depth %}
+{% set can_expand = bom.children and bom.id not in visited %}
+<div class="bom-list-row">
+    <div class="bom-list-main bom-level-{{ depth % 6 }}" style="padding-left: {{ 12 + (depth * 22) }}px;">
+        {% if can_expand %}
+        <button class="bom-expand-button" type="button" aria-expanded="false" aria-controls="{{ child_id }}" onclick="toggleBomChildren(this)"></button>
+        {% else %}
+        <span class="bom-expand-spacer"></span>
+        {% endif %}
+        <div class="bom-list-name">
+            <div class="fw-semibold">{{ bom.name }}</div>
+            <div class="bom-list-meta">
+                {% if bom.number %}{{ bom.number }} · {% endif %}
+                {% if bom.is_part_wrapper %}{{ _('Part') }}{% else %}{{ _('BOM') }}{% endif %}
+                {% if relation_quantity is not none %} · {{ _('Quantity') }}: {{ relation_quantity.normalize() }}{% endif %}
+            </div>
+        </div>
+        <div class="bom-list-count text-end">
+            {% if bom.children %}{{ bom.children|length }}{% else %}-{% endif %}
+        </div>
+        <div class="bom-list-cost text-end">
+            {{ format_bom_cost(bom) }}
+        </div>
+    </div>
+    {% if can_expand %}
+    <div id="{{ child_id }}" class="bom-child-list">
+        {% set next_visited = visited + [bom.id] %}
+        {% for item in bom.children|sort(attribute='position') %}
+            {{ bom_row(item.child_bom, depth + 1, item.quantity, next_visited) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block style %}
+<style>
+.bom-list-scroll {
+    min-height: 0;
+    overflow: auto;
+    background: white;
+}
+
+.bom-list-header {
+    border-top: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.bom-list-table {
+    border-top: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+}
+
+.bom-list-row {
+    border-bottom: 1px solid #edf0f4;
+}
+
+.bom-list-main {
+    display: grid;
+    grid-template-columns: 34px minmax(260px, 1fr) 120px 150px;
+    align-items: center;
+    min-height: 52px;
+    gap: 8px;
+    padding-top: 8px;
+    padding-right: 12px;
+    padding-bottom: 8px;
+}
+
+.bom-list-main:hover {
+    background-color: #f5f7fa;
+}
+
+.bom-level-0 { background: #ffffff; }
+.bom-level-1 { background: #f5f9ff; }
+.bom-level-2 { background: #f4faf6; }
+.bom-level-3 { background: #fff8ef; }
+.bom-level-4 { background: #f8f6ff; }
+.bom-level-5 { background: #f7fbfb; }
+
+.bom-list-meta {
+    color: #6c757d;
+    font-size: 0.82rem;
+}
+
+.bom-list-count {
+    color: #5f6b7a;
+    font-size: 0.9rem;
+}
+
+.bom-list-cost {
+    color: #273648;
+    font-size: 0.9rem;
+}
+
+.bom-expand-button,
+.bom-expand-spacer {
+    width: 30px;
+    height: 30px;
+}
+
+.bom-expand-button {
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #042c61;
+}
+
+.bom-expand-button:hover {
+    background-color: rgba(4, 44, 97, 0.08);
+}
+
+.bom-expand-button::before {
+    content: "▸";
+    display: inline-block;
+    transition: transform 120ms ease;
+}
+
+.bom-expand-button[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.bom-child-list {
+    display: none;
+}
+
+.bom-child-list.is-open {
+    display: block;
+}
+
+@media (max-width: 767.98px) {
+    .bom-list-main {
+        grid-template-columns: 34px minmax(0, 1fr) 80px;
+    }
+
+    .bom-list-cost {
+        grid-column: 2 / -1;
+        text-align: left !important;
+    }
+}
+</style>
+{% endblock style %}
+
+{% block main_view_content %}
+<div class="container-fluid p-0 m-0 d-flex flex-column bom-list-scroll">
+    <div class="bom-list-header px-3 py-2">
+        <h1 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Bill of Materials') }}</h1>
+    </div>
+    <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', boms|length) }}</p>
+    <div class="bom-list-table">
+        <div class="bom-list-main fw-semibold" style="background: #ffffff;">
+            <span></span>
+            <span>{{ _('Name') }}</span>
+            <span class="text-end">{{ _('Items') }}</span>
+            <span class="text-end">{{ _('Total cost') }}</span>
+        </div>
+        {% for bom in boms %}
+            {{ bom_row(bom)|safe }}
+        {% else %}
+        <div class="p-3 text-muted">{{ _('No BOMs have been created yet.') }}</div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock main_view_content %}
+
+{% block script %}
+<script>
+function toggleBomChildren(button) {
+    const target = document.getElementById(button.getAttribute("aria-controls"));
+    if (!target) {
+        return;
+    }
+    const isOpen = target.classList.toggle("is-open");
+    button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+</script>
+{% endblock script %}

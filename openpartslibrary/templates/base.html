@@ -113,6 +113,29 @@
         max-width: 380px;
     }
 
+    .app-primary-nav {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .app-primary-nav a,
+    .app-primary-nav a:hover {
+        display: inline-flex;
+        align-items: center;
+        min-height: 32px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: white;
+        text-decoration: none;
+        font-size: 0.92rem;
+    }
+
+    .app-primary-nav a:hover,
+    .app-primary-nav a.active {
+        background-color: rgba(255, 255, 255, 0.14);
+    }
+
     .app-actions-column {
         display: flex;
         align-items: center;
@@ -251,6 +274,12 @@
             display: none;
         }
 
+        .app-primary-nav a {
+            padding-left: 6px;
+            padding-right: 6px;
+            font-size: 0.86rem;
+        }
+
         .app-actions-column {
             margin-left: 0;
         }
@@ -295,6 +324,10 @@
             </ul>
             <!-- Right side alighed elements -->
             <div class="app-actions-column col-md-3 text-end">
+                <nav class="app-primary-nav me-2" aria-label="{{ _('Main navigation') }}">
+                    <a href="{{ url_for('components') }}" class="{% if request.endpoint == 'components' %}active{% endif %}">{{ _('Parts') }}</a>
+                    <a href="{{ url_for('boms') }}" class="{% if request.endpoint == 'boms' %}active{% endif %}">{{ _('BOMs') }}</a>
+                </nav>
                 <form method="get" class="me-2 d-inline-flex">
                     {% for key, value in request.args.items() %}
                         {% if key != 'lang' %}

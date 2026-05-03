@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 
 from openpartslibrary.admin import setup_admin
+from openpartslibrary.boms import ensure_part_boms
 from openpartslibrary.db import PartsLibrary
 from openpartslibrary.i18n import init_i18n
 from openpartslibrary.models import Component, ComponentComponent, DownloadEvent, File, Material, Supplier
@@ -20,6 +21,7 @@ migrate_legacy_database_schema(app.config["DB_PATH"])
 
 pl = PartsLibrary(db_path=app.config["DB_PATH"], data_dir_path=data_dir)
 bootstrap_sample_data(pl)
+ensure_part_boms(pl.session)
 
 admin = setup_admin(app, pl.session)
 

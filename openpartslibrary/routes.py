@@ -6,6 +6,7 @@ from urllib.parse import urlencode
 from flask import jsonify, redirect, render_template, request, send_file, send_from_directory, url_for
 from sqlalchemy import asc, desc, func
 
+from openpartslibrary.boms import ensure_part_boms, format_bom_cost, get_created_boms
 from openpartslibrary.desktop import open_with_default_application
 from openpartslibrary.downloads import branded_library_filename, branded_part_filename, record_download_event
 from openpartslibrary.hbom import build_spdx_hardware_bom
@@ -169,6 +170,16 @@ def register_routes(app, parts_library):
             sort_key=sort_key,
             direction=direction,
             components_url=build_components_url,
+        )
+
+    @app.route("/boms")
+    def boms():
+        ensure_part_boms(session)
+        return render_template(
+            "boms.html",
+            boms=get_created_boms(session),
+            search_query=request.args.get("search_query", ""),
+            format_bom_cost=format_bom_cost,
         )
 
     @app.route("/component_view/<uuid>")

@@ -11,10 +11,12 @@ except ImportError:
     expose = None
     ModelView = None
 
-from flask import render_template_string, request, url_for
+from flask import redirect, render_template_string, request, url_for
+from markupsafe import escape
 
+from openpartslibrary.boms import create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms
 from openpartslibrary.i18n import gettext as _, lazy_gettext
-from openpartslibrary.models import Component, ComponentComponent, DownloadEvent, File, Material, Supplier
+from openpartslibrary.models import BillOfMaterials, BillOfMaterialsItem, Component, ComponentComponent, DownloadEvent, File, Material, Supplier
 
 
 DOWNLOAD_DASHBOARD_TIMEFRAMES = {
@@ -370,7 +372,237 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
 """
 
 
+BOM_BUILDER_TEMPLATE = """
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ _('Bill of Materials') }} | {{ _('OpenPartsLibrary Admin') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .bom-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
+        .bom-row { border-top: 1px solid #edf0f4; }
+        .bom-row:first-child { border-top: 0; }
+        .bom-row-main { display: grid; grid-template-columns: 30px minmax(0, 1fr) 150px; align-items: center; gap: 8px; padding: 8px; }
+        .bom-level-0 { background: #ffffff; }
+        .bom-level-1 { background: #f5f9ff; }
+        .bom-level-2 { background: #f4faf6; }
+        .bom-level-3 { background: #fff8ef; }
+        .bom-level-4 { background: #f8f6ff; }
+        .bom-level-5 { background: #f7fbfb; }
+        .bom-row-main:hover { background-color: #edf3fb; }
+        .bom-expand-button { width: 30px; height: 30px; border: 0; background: transparent; color: #042c61; }
+        .bom-expand-button::before { content: "▸"; display: inline-block; transition: transform 120ms ease; }
+        .bom-expand-button[aria-expanded="true"]::before { transform: rotate(90deg); }
+        .bom-child-list { display: none; margin-left: 30px; border-left: 2px solid #dce4ef; }
+        .bom-child-list.is-open { display: block; }
+        .bom-kind { color: #6c757d; font-size: 0.82rem; }
+        .bom-builder-row { display: grid; grid-template-columns: minmax(180px, 1fr) 110px minmax(120px, 0.6fr) 36px; gap: 8px; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .opl-admin-navigation .dropdown-menu { margin-top: 8px; z-index: 1000; }
+        .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+        @media (max-width: 767.98px) {
+            .bom-builder-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h1 class="h3 mb-1">{{ _('Bill of Materials') }}</h1>
+                <div class="text-muted">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
+            </div>
+        </div>
+
+        <section class="bom-card p-3 mb-3">
+            <h2 class="h5 mb-3">{{ _('Create BOM') }}</h2>
+            <form method="post" action="{{ url_for('admin_bill_of_materials') }}">
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input class="form-control" name="name" required>
+                    </div>
+                    <div class="col-12 col-md-7">
+                        <label class="form-label">{{ _('Description') }}</label>
+                        <input class="form-control" name="description">
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="h6 mb-0">{{ _('Items') }}</h3>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addBomBuilderRow()">{{ _('Add row') }}</button>
+                </div>
+                <div id="bom-builder-items" class="d-flex flex-column gap-2"></div>
+                <datalist id="bom-option-list">
+                    {% for option in bom_options %}
+                    <option value="{{ option.display_label }}"></option>
+                    {% endfor %}
+                </datalist>
+                <template id="bom-builder-row-template">
+                    <div class="bom-builder-row">
+                        <div>
+                            <input class="form-control form-control-sm bom-item-search" list="bom-option-list" placeholder="{{ _('Search part or BOM') }}" oninput="syncBomSearch(this)">
+                            <input type="hidden" name="child_bom_id">
+                        </div>
+                        <input class="form-control form-control-sm" name="quantity" type="number" min="1" step="1" value="1">
+                        <input class="form-control form-control-sm" name="note" placeholder="{{ _('Note') }}">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('.bom-builder-row').remove()">×</button>
+                    </div>
+                </template>
+                <div class="mt-3">
+                    <button class="btn btn-primary" type="submit">{{ _('Create BOM') }}</button>
+                </div>
+            </form>
+        </section>
+
+        <section class="bom-card">
+            <div class="p-3 border-bottom">
+                <h2 class="h5 mb-0">{{ _('All BOMs') }}</h2>
+            </div>
+            <div>
+                <div class="bom-row-main fw-semibold">
+                    <span></span>
+                    <span>{{ _('Name') }}</span>
+                    <span class="text-end">{{ _('Total cost') }}</span>
+                </div>
+                {% for bom in boms %}
+                    {{ render_bom_row(bom, 0)|safe }}
+                {% else %}
+                <div class="p-3 text-muted">{{ _('No BOMs have been created yet.') }}</div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+    <script>
+        const bomOptions = {{ bom_options|tojson }};
+
+        function addBomBuilderRow() {
+            const template = document.getElementById("bom-builder-row-template");
+            const target = document.getElementById("bom-builder-items");
+            target.appendChild(template.content.cloneNode(true));
+        }
+
+        function syncBomSearch(input) {
+            const row = input.closest(".bom-builder-row");
+            const hiddenInput = row ? row.querySelector("input[name='child_bom_id']") : null;
+            if (!hiddenInput) {
+                return;
+            }
+            const match = bomOptions.find((option) => option.display_label === input.value);
+            hiddenInput.value = match ? match.id : "";
+        }
+
+        function toggleBomChildren(button) {
+            const target = document.getElementById(button.getAttribute("aria-controls"));
+            if (!target) {
+                return;
+            }
+            const isOpen = target.classList.toggle("is-open");
+            button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            addBomBuilderRow();
+        });
+    </script>
+</body>
+</html>
+"""
+
+
+def render_bom_row(bom, depth=0, visited=None):
+    visited = set(visited or set())
+    children_id = f"bom-children-{bom.id}-{depth}"
+    child_rows = []
+    if bom.id not in visited:
+        next_visited = visited | {bom.id}
+        for item in sorted(bom.children, key=lambda child: (child.position, child.id)):
+            child_rows.append(render_bom_item_row(item, depth + 1, next_visited))
+
+    can_expand = bool(child_rows)
+    expand_button = (
+        f'<button class="bom-expand-button" type="button" aria-expanded="false" aria-controls="{children_id}" onclick="toggleBomChildren(this)"></button>'
+        if can_expand
+        else '<span class="d-inline-block" style="width:30px;"></span>'
+    )
+    number = escape(bom.number or "")
+    kind = _("Part") if bom.is_part_wrapper else _("BOM")
+    details = f"{number} &middot; {kind}" if number else kind
+    children = f'<div id="{children_id}" class="bom-child-list">{"".join(child_rows)}</div>' if can_expand else ""
+    return f"""
+    <div class="bom-row">
+        <div class="bom-row-main bom-level-{depth % 6}" style="padding-left: {8 + (depth * 20)}px !important;">
+            {expand_button}
+            <div class="flex-grow-1">
+                <div class="fw-semibold">{escape(bom.name)}</div>
+                <div class="bom-kind">{details}</div>
+            </div>
+            <div class="text-end bom-kind">{escape(format_bom_cost(bom))}</div>
+        </div>
+        {children}
+    </div>
+    """
+
+
+def render_bom_item_row(item, depth, visited):
+    quantity = item.quantity.normalize() if item.quantity else 1
+    child_row = render_bom_row(item.child_bom, depth, visited)
+    marker = f'<div class="bom-kind" style="margin-left: {8 + (depth * 20)}px;">{_("Quantity")}: {escape(quantity)}</div>'
+    return marker + child_row
+
+
+def register_bom_admin_routes(app, session):
+    if "admin_bill_of_materials" in app.view_functions:
+        return
+
+    @app.route("/admin/bill-of-materials", methods=["GET", "POST"])
+    def admin_bill_of_materials():
+        ensure_part_boms(session)
+        if request.method == "POST":
+            item_ids = request.form.getlist("child_bom_id")
+            quantities = request.form.getlist("quantity")
+            notes = request.form.getlist("note")
+            items = [
+                {
+                    "child_bom_id": item_id,
+                    "quantity": quantities[index] if index < len(quantities) else 1,
+                    "note": notes[index] if index < len(notes) else "",
+                }
+                for index, item_id in enumerate(item_ids)
+                if item_id
+            ]
+            if request.form.get("name", "").strip():
+                create_bom(
+                    session,
+                    request.form.get("name"),
+                    request.form.get("description", ""),
+                    items,
+                )
+            return redirect(url_for("admin_bill_of_materials"))
+
+        return render_template_string(
+            BOM_BUILDER_TEMPLATE,
+            boms=get_created_boms(session),
+            bom_options=get_bom_options(session),
+            render_bom_row=render_bom_row,
+        )
+
+
 def setup_admin(app, session):
+    register_bom_admin_routes(app, session)
+
     if Admin is None or ModelView is None:
         return setup_fallback_admin(app, session)
 
@@ -424,6 +656,8 @@ def setup_admin(app, session):
     admin.add_view(ModelView(Supplier, session, name=lazy_gettext("Suppliers"), category=lazy_gettext("Library")))
     admin.add_view(ModelView(Material, session, name=lazy_gettext("Materials"), category=lazy_gettext("Library")))
     admin.add_view(ModelView(ComponentComponent, session, name=lazy_gettext("Part relations"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(BillOfMaterials, session, name=lazy_gettext("BOM records"), category=lazy_gettext("Library")))
+    admin.add_view(ModelView(BillOfMaterialsItem, session, name=lazy_gettext("BOM relations"), category=lazy_gettext("Library")))
     admin.add_view(DownloadEventAdminView(DownloadEvent, session, name=lazy_gettext("Download events"), category=lazy_gettext("Events")))
     return admin
 
@@ -431,6 +665,7 @@ def setup_admin(app, session):
 def setup_fallback_admin(app, session):
     model_links = (
         ("Downloads dashboard", None),
+        ("Bill of Materials", None),
         ("Parts", Component),
         ("Files", File),
         ("Suppliers", Supplier),
@@ -445,7 +680,13 @@ def setup_fallback_admin(app, session):
             {
                 "name": _(name),
                 "count": session.query(model).count() if model is not None else None,
-                "url": url_for("fallback_admin_downloads_dashboard") if model is None else url_for("fallback_admin_model", model_name=model.__tablename__),
+                "url": (
+                    url_for("fallback_admin_downloads_dashboard")
+                    if name == "Downloads dashboard"
+                    else url_for("admin_bill_of_materials")
+                    if name == "Bill of Materials"
+                    else url_for("fallback_admin_model", model_name=model.__tablename__)
+                ),
             }
             for name, model in model_links
         ]

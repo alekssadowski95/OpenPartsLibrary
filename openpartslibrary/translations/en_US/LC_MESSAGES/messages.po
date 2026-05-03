@@ -287,6 +287,59 @@ msgstr "Admin model not found."
 msgid "Showing up to 200 rows."
 msgstr "Showing up to 200 rows."
 
+msgid "Bill of Materials"
+msgstr "Bill of Materials"
+
+msgid "Create nested BOMs from library parts and existing BOMs."
+msgstr "Create nested BOMs from library parts and existing BOMs."
+
+msgid "Create BOM"
+msgstr "Create BOM"
+
+msgid "BOM number"
+msgstr "BOM number"
+
+msgid "Items"
+msgstr "Items"
+
+msgid "Add row"
+msgstr "Add row"
+
+msgid "Select part or BOM"
+msgstr "Select part or BOM"
+
+msgid "BOM"
+msgstr "BOM"
+
+msgid "Note"
+msgstr "Note"
+
+msgid "All BOMs"
+msgstr "All BOMs"
+
+msgid "No BOMs have been created yet."
+msgstr "No BOMs have been created yet."
+
+msgid "Quantity"
+msgstr "Quantity"
+
+msgid "BOM records"
+msgstr "BOM records"
+
+msgid "BOM relations"
+msgstr "BOM relations"
+
+msgid "BOMs"
+msgstr "BOMs"
+
+msgid "Main navigation"
+msgstr "Main navigation"
+
+msgid "%(num)s BOM was found."
+msgid_plural "%(num)s BOMs were found."
+msgstr[0] "%(num)s BOM was found."
+msgstr[1] "%(num)s BOMs were found."
+
 msgid "Part not found with UUID: %(uuid)s"
 msgstr "Part not found with UUID: %(uuid)s"
 
@@ -298,3 +351,9 @@ msgstr "File not found with UUID: %(uuid)s"
 
 msgid "File content not found."
 msgstr "File content not found."
+
+msgid "Search part or BOM"
+msgstr "Search part or BOM"
+
+msgid "Total cost"
+msgstr "Total cost"

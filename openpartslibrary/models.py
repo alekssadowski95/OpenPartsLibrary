@@ -83,6 +83,59 @@ class Component(Base):
 
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
+
+
+class BillOfMaterials(Base):
+    __tablename__ = "bill_of_materials"
+
+    id = Column(Integer, primary_key=True)
+    uuid = Column(String(32), unique=True, nullable=False)
+    number = Column(String(50))
+    name = Column(String(200), nullable=False)
+    description = Column(Text)
+    component_id = Column(Integer, ForeignKey("components.id"), unique=True)
+    is_part_wrapper = Column(Boolean, default=False, nullable=False)
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    component = relationship("Component")
+    children = relationship(
+        "BillOfMaterialsItem",
+        foreign_keys="BillOfMaterialsItem.parent_bom_id",
+        back_populates="parent_bom",
+        cascade="all, delete-orphan",
+    )
+    parents = relationship(
+        "BillOfMaterialsItem",
+        foreign_keys="BillOfMaterialsItem.child_bom_id",
+        back_populates="child_bom",
+    )
+
+    def __repr__(self):
+        return f"<BillOfMaterials(id={self.id}, name={self.name})>"
+
+
+class BillOfMaterialsItem(Base):
+    __tablename__ = "bill_of_materials_items"
+
+    id = Column(Integer, primary_key=True)
+    parent_bom_id = Column(Integer, ForeignKey("bill_of_materials.id"), nullable=False)
+    child_bom_id = Column(Integer, ForeignKey("bill_of_materials.id"), nullable=False)
+    quantity = Column(Numeric(12, 3), default=1, nullable=False)
+    position = Column(Integer, default=0, nullable=False)
+    note = Column(Text)
+    date_created = Column(DateTime, default=datetime.utcnow)
+    date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    parent_bom = relationship("BillOfMaterials", foreign_keys=[parent_bom_id], back_populates="children")
+    child_bom = relationship("BillOfMaterials", foreign_keys=[child_bom_id], back_populates="parents")
+
+    __table_args__ = (
+        UniqueConstraint("parent_bom_id", "child_bom_id", "position", name="uq_bom_child_position"),
+    )
+
+    def __repr__(self):
+        return f"<BillOfMaterialsItem(parent_bom_id={self.parent_bom_id}, child_bom_id={self.child_bom_id}, quantity={self.quantity})>"
     
 class Supplier(Base):
     __tablename__ = 'suppliers'

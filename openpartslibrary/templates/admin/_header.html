@@ -16,6 +16,7 @@
                         <a class="dropdown-item" href="{{ url_for('supplier.index_view') }}">{{ _('Suppliers') }}</a>
                         <a class="dropdown-item" href="{{ url_for('material.index_view') }}">{{ _('Materials') }}</a>
                         <a class="dropdown-item" href="{{ url_for('componentcomponent.index_view') }}">{{ _('Part relations') }}</a>
+                        <a class="dropdown-item" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                     </div>
                 </div>
                 <div class="dropdown">
@@ -30,6 +31,7 @@
                 <a href="{{ url_for('components') }}">{{ _('Back to app') }}</a>
                 {% if not admin_available %}
                 <a href="{{ url_for('fallback_admin_downloads_dashboard') }}">{{ _('Downloads dashboard') }}</a>
+                <a href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                 {% endif %}
             </nav>
         </div>

@@ -11,6 +11,46 @@
     height: 30px;
     z-index: 25;
 }
+
+.main-view-split {
+    flex: 1;
+    height: 100%;
+    width: 100%;
+    background-color: #f5f5f5;
+}
+
+.main-view-list-col {
+    height: 100%;
+    background: #f5f5f5;
+    border-right: 1px solid lightgray;
+    overflow: scroll;
+}
+
+.main-view-preview-col {
+    height: 100%;
+    background: #f5f5f5;
+    display: none;
+    position: relative;
+}
+
+@media (max-width: 767.98px) {
+    .main-view-split.preview-active {
+        flex-direction: column;
+    }
+
+    .main-view-split.preview-active .main-view-list-col,
+    .main-view-split.preview-active .main-view-preview-col {
+        width: 100% !important;
+        max-width: 100%;
+        flex: 0 0 50%;
+        height: 50% !important;
+    }
+
+    .main-view-split.preview-active .main-view-list-col {
+        border-right: 0;
+        border-bottom: 1px solid lightgray;
+    }
+}
 </style>
 {% endblock style %}
 
@@ -19,13 +59,13 @@
 {% block view_buttons %}{% endblock view_buttons %}
 
 {% block main_view_content %}
-<div class="row prevent-select flex-grow-1 p-0 m-0 d-flex align-items-stretch" style="flex: 1; height: 100%; width: 100%; background-color: aqua;">
+<div id="main-view-split" class="main-view-split row prevent-select flex-grow-1 p-0 m-0 d-flex align-items-stretch">
     <!-- List column -->
-    <div id="main-view-list-col" class="col-12 p-0 m-0" style="height: 100%; background: #f5f5f5; border-right: 1px solid lightgray; overflow: scroll;">
+    <div id="main-view-list-col" class="main-view-list-col col-12 p-0 m-0">
     {% block main_view_content_list %}{% endblock main_view_content_list %}
     </div>
     <!-- Preview list item column -->
-    <div id="main-view-preview-col" class="col-6 p-0 m-0" style="height: 100%; background: #f5f5f5; display: none; position: relative;">
+    <div id="main-view-preview-col" class="main-view-preview-col col-6 p-0 m-0">
         <button type="button" class="btn btn-outline-secondary btn-sm preview-close-button" title="Close preview" onclick="switchToListView()">&#x2715;</button>
         <!-- Preview help -->
         <div style="width: 100%; height: 100%; background: #f5f5f5;">
@@ -48,7 +88,12 @@
 function switchToListView() {
     var mainViewListCol = document.getElementById('main-view-list-col');
     var mainViewPreviewCol = document.getElementById('main-view-preview-col');
+    var mainViewSplit = document.getElementById('main-view-split');
     var iframe = document.getElementById('main-view-iframe');
+    var previewName = document.getElementById('main-view-preview-name');
+    var previewNameText = document.getElementById('main-view-preview-name-text');
+    var previewDetailButton = document.getElementById('main-view-preview-detail-button');
+    var previewDownloadButton = document.getElementById('main-view-preview-download-button');
 
     if (!mainViewListCol || !mainViewPreviewCol) {
         return;
@@ -61,6 +106,9 @@ function switchToListView() {
     mainViewListCol.classList.add('col-12');
     mainViewPreviewCol.style.display = "none";
     mainViewListCol.style.overflow = "scroll";
+    if (mainViewSplit) {
+        mainViewSplit.classList.remove('preview-active');
+    }
 
     document.querySelectorAll('.part-row').forEach(function (row) {
         row.classList.remove('selected-row');
@@ -68,6 +116,19 @@ function switchToListView() {
 
     if (iframe) {
         iframe.src = "";
+    }
+
+    if (previewName) {
+        if (previewNameText) {
+            previewNameText.textContent = "";
+        }
+        if (previewDetailButton) {
+            previewDetailButton.href = "#";
+        }
+        if (previewDownloadButton) {
+            previewDownloadButton.href = "#";
+        }
+        previewName.classList.add("d-none");
     }
 }
 </script>

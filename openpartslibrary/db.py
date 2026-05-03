@@ -105,6 +105,41 @@ class PartsLibrary:
 
         self.session.commit()
 
+    def sync_suppliers_from_spreadsheet(
+        self,
+        spreadsheet_file_path,
+        components_sheet_name="components",
+        suppliers_sheet_name="suppliers",
+    ):
+        components_df = self._read_spreadsheet(spreadsheet_file_path, components_sheet_name, dtype={"number": str})
+        suppliers_df = self._read_spreadsheet(spreadsheet_file_path, suppliers_sheet_name)
+        suppliers_by_uuid = self._import_suppliers(suppliers_df)
+        suppliers_by_name = {
+            supplier.name.strip().lower(): supplier
+            for supplier in suppliers_by_uuid.values()
+            if supplier.name
+        }
+
+        for _, row in components_df.iterrows():
+            component_uuid = self._clean_value(row.get("uuid"))
+            if not component_uuid:
+                continue
+
+            component = self.session.query(Component).filter_by(uuid=component_uuid).first()
+            if component is None:
+                continue
+
+            supplier_uuid = self._clean_value(row.get("supplier_uuid"))
+            supplier_name = self._clean_value(row.get("supplier_name"))
+            supplier = suppliers_by_uuid.get(supplier_uuid)
+            if supplier is None and supplier_name:
+                supplier = suppliers_by_name.get(str(supplier_name).strip().lower())
+
+            if supplier is not None:
+                component.supplier = supplier
+
+        self.session.commit()
+
     def _import_suppliers(self, suppliers_df):
         suppliers_by_uuid = {}
 
@@ -178,4 +213,9 @@ class PartsLibrary:
     def _clean_value(self, value):
         if pd.isna(value):
             return None
-        return str(value) if isinstance(value, float) and value.is_integer() else value
+        if isinstance(value, float) and value.is_integer():
+            return str(int(value))
+        if isinstance(value, str):
+            cleaned_value = value.strip()
+            return cleaned_value or None
+        return value

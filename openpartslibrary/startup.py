@@ -9,6 +9,8 @@ def migrate_legacy_database_schema(db_path):
 
     component_column_definitions = {
         "material": "VARCHAR(200)",
+        "supplier_id": "INTEGER",
+        "manufacturer_number": "VARCHAR(100)",
     }
 
     with sqlite3.connect(str(db_path)) as connection:
@@ -34,5 +36,7 @@ def bootstrap_sample_data(parts_library):
             sample_spreadsheet_path,
             components_cad_dir_path=parts_library.sample_data_dir_path / "components-cad",
         )
+    else:
+        parts_library.sync_suppliers_from_spreadsheet(sample_spreadsheet_path)
 
     parts_library.sync_cad_files_from_spreadsheet(sample_spreadsheet_path)

@@ -13,6 +13,16 @@
     height: 400px;
     border: 1px solid #dadada;
 }
+
+@media (max-width: 767.98px) {
+    .component-detail-scroll {
+        padding: 0.75rem !important;
+    }
+
+    .component-viewer-frame {
+        height: 320px;
+    }
+}
 </style>
 {% endblock style %}
 
@@ -27,21 +37,21 @@
 <div class="container p-3 m-0 component-detail-scroll" style="background-color: white; width: 100%; min-width: 100%; overflow-y: auto;">
    <div class="container-fluid p-3">
     <div class="mb-3">
-        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">&larr; All components</a>
+        <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">&larr; All parts</a>
     </div>
     <div class="row mb-4">
         <!-- 3D View -->
-        <div class="col-4">
+        <div class="col-12 col-md-4">
             {% if component_cad_filename %}
             <iframe class="component-viewer-frame" src="{{ url_for('viewer', filename = component_cad_filename) }}"></iframe>
             {% endif %}
         </div>
         <!-- Properties -->
-        <div class="col-8">
-            <p>Component</p>
+        <div class="col-12 col-md-8">
+            <p>Part</p>
             <h1 class="mb-3">{{ component.name }}</h1>
             <div class="mb-2">
-                <button title="Add component to selection" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
+                <button title="Add part to selection" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
                     <i class="bi-plus-lg" style="padding-right: 6px;"></i>Add to selection
                 </button>
             </div>

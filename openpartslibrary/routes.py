@@ -4,12 +4,13 @@ import zipfile
 from urllib.parse import urlencode
 
 from flask import jsonify, redirect, render_template, request, send_file, send_from_directory, url_for
-from sqlalchemy import asc, desc, or_
+from sqlalchemy import asc, desc
 
 from openpartslibrary.desktop import open_with_default_application
-from openpartslibrary.downloads import record_download_event, with_openpartslibrary_suffix
+from openpartslibrary.downloads import branded_library_filename, branded_part_filename, record_download_event
 from openpartslibrary.hbom import build_spdx_hardware_bom
 from openpartslibrary.models import Component, File, Supplier
+from openpartslibrary.search import search_parts
 
 
 def build_components_url(overrides=None):
@@ -26,6 +27,22 @@ def build_components_url(overrides=None):
     return f"{url_for('components')}?{query_string}"
 
 
+def component_sort_value(component, sort_key):
+    if sort_key == "number":
+        return str(component.number or "").lower()
+    if sort_key == "supplier":
+        return str(component.supplier.name if component.supplier else "").lower()
+    if sort_key == "unit_price":
+        try:
+            return float(component.unit_price)
+        except (TypeError, ValueError):
+            return 0
+    if sort_key == "description":
+        return str(component.description or "").lower()
+
+    return str(component.name or "").lower()
+
+
 def register_routes(app, parts_library):
     session = parts_library.session
     cad_dir = app.config["CAD_DIR"]
@@ -37,7 +54,7 @@ def register_routes(app, parts_library):
 
     @app.route("/components", defaults={"search_query": None})
     def components(search_query):
-        search_query = request.args.get("search_query", "")
+        search_query = request.args.get("search_query", "").strip()
         supplier_filter = request.args.get("supplier", "")
         material_filter = request.args.get("material", "")
         currency_filter = request.args.get("currency", "")
@@ -45,16 +62,9 @@ def register_routes(app, parts_library):
         price_max = request.args.get("price_max", "")
         sort_key = request.args.get("sort", "name")
         direction = request.args.get("direction", "asc")
-        like_pattern = f"%{search_query}%"
+        explicit_sort = "sort" in request.args
 
         query = session.query(Component).outerjoin(Component.supplier)
-
-        if search_query:
-            query = query.filter(or_(
-                Component.name.ilike(like_pattern),
-                Component.description.ilike(like_pattern),
-                Component.number.ilike(like_pattern),
-            ))
 
         if supplier_filter and supplier_filter.isdigit():
             query = query.filter(Component.supplier_id == int(supplier_filter))
@@ -86,7 +96,20 @@ def register_routes(app, parts_library):
         }
         sort_column = sort_columns.get(sort_key, Component.name)
         sort_direction = desc if direction == "desc" else asc
-        component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
+
+        if search_query:
+            matching_components = search_parts(search_query, query.all(), limit=1000)
+            if explicit_sort:
+                reverse_sort = direction == "desc"
+                component_results = sorted(
+                    matching_components,
+                    key=lambda component: component_sort_value(component, sort_key),
+                    reverse=reverse_sort,
+                )
+            else:
+                component_results = matching_components
+        else:
+            component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
 
         suppliers = session.query(Supplier).order_by(Supplier.name).all()
         materials = [
@@ -139,7 +162,7 @@ def register_routes(app, parts_library):
     def component_view(uuid):
         component = session.query(Component).filter_by(uuid=uuid).first()
         if component is None:
-            return f"Component not found with UUID: {uuid}", 404
+            return f"Part not found with UUID: {uuid}", 404
 
         component_cad_filepath = None
         component_cad_filename = None
@@ -170,9 +193,9 @@ def register_routes(app, parts_library):
         if not cad_path.exists():
             return "CAD file not found.", 404
 
-        part_number = str(component.number or component.uuid).replace("/", "-").replace("\\", "-")
+        part_number = component.number or component.uuid
         original_name = component.cad_file.name or cad_filename
-        downloaded_filename = with_openpartslibrary_suffix(f"{part_number}_{original_name}")
+        downloaded_filename = branded_part_filename(part_number, original_name)
         record_download_event(
             session,
             "component_cad",
@@ -188,7 +211,7 @@ def register_routes(app, parts_library):
     def selection_download():
         selection_items = request.get_json(silent=True) or []
         if not isinstance(selection_items, list):
-            return "Expected a list of selected components.", 400
+            return "Expected a list of selected parts.", 400
 
         selected_quantities = {}
         for item in selection_items:
@@ -212,7 +235,7 @@ def register_routes(app, parts_library):
                 if component is None:
                     continue
 
-                part_number = str(component.number or component.uuid).replace("/", "-").replace("\\", "-")
+                part_number = component.number or component.uuid
                 archive_name = None
 
                 if component.cad_file is not None:
@@ -220,7 +243,7 @@ def register_routes(app, parts_library):
                     cad_path = cad_dir / cad_filename
                     if cad_path.exists():
                         original_name = component.cad_file.name or cad_filename
-                        archive_name = with_openpartslibrary_suffix(f"{part_number}_{original_name}")
+                        archive_name = branded_part_filename(part_number, original_name)
                         zip_file.write(cad_path, archive_name)
                         files_added += 1
                         record_download_event(
@@ -229,7 +252,7 @@ def register_routes(app, parts_library):
                             archive_name,
                             component=component,
                             file=component.cad_file,
-                            quantity=quantity,
+                            quantity=1,
                         )
 
                 bom_components.append({
@@ -246,7 +269,7 @@ def register_routes(app, parts_library):
 
             if bom_components:
                 zip_file.writestr(
-                    with_openpartslibrary_suffix("hardware-bom.spdx.jsonld"),
+                    branded_library_filename("hardware-bom.spdx.jsonld"),
                     json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
                 )
 
@@ -254,8 +277,8 @@ def register_routes(app, parts_library):
             return "No CAD files found for the current selection.", 404
 
         zip_buffer.seek(0)
-        zip_download_name = with_openpartslibrary_suffix("openpartslibrary-selection.zip")
-        record_download_event(session, "selection_zip", zip_download_name, quantity=sum(selected_quantities.values()))
+        zip_download_name = branded_library_filename("selection.zip")
+        record_download_event(session, "selection_zip", zip_download_name, quantity=1)
         return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
 
     @app.route("/selection/components", methods=["POST"])
@@ -304,7 +327,7 @@ def register_routes(app, parts_library):
             return "File content not found.", 404
 
         source_file = matching_files[0]
-        downloaded_filename = with_openpartslibrary_suffix(file.name or source_file.name)
+        downloaded_filename = branded_library_filename(file.name or source_file.name)
         record_download_event(
             session,
             "component_file",

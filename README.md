@@ -2,7 +2,7 @@
 
 OpenPartsLibrary is a small Flask application and Python data layer for browsing a hardware component library, previewing CAD files, collecting parts into a selection, and downloading selected CAD files with a SPDX 3.x hardware BOM.
 
-The public app is intentionally simple: component list, component detail, CAD preview, file detail, selection bucket, and tracked downloads. Data management is handled through Flask-Admin when `Flask-Admin` is installed.
+The public app is intentionally simple: component list, component detail, CAD preview, file detail, parts selection, and tracked downloads. Data management is handled through Flask-Admin when `Flask-Admin` is installed.
 
 ## Quickstart
 

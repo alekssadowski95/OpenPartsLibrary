@@ -99,7 +99,7 @@ class Supplier(Base):
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    components = relationship(Component)
+    components = relationship('Component', back_populates='supplier')
     
     def to_dict(self):
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}

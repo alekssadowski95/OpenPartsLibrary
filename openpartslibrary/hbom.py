@@ -67,7 +67,7 @@ def build_spdx_hardware_bom(components):
         "type": "Bom",
         "creationInfo": creation_info,
         "name": "OpenPartsLibrary Hardware BOM",
-        "summary": "Hardware bill of materials for selected OpenPartsLibrary components.",
+        "summary": "Hardware bill of materials for selected OpenPartsLibrary parts.",
         "profileConformance": ["core", "software"],
         "rootElement": component_ids,
         "element": component_ids + relationship_ids,

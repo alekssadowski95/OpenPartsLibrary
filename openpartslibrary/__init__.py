@@ -24,7 +24,7 @@ admin = setup_admin(app, pl.session)
 
 @app.context_processor
 def inject_admin():
-    return {"admin_available": admin is not None}
+    return {"admin_available": admin is not None and not isinstance(admin, dict)}
 
 
 register_routes(app, pl)

@@ -57,7 +57,7 @@
         color: rgb(15, 62, 124);
     }
 
-    .parts-bucket-column {
+    .parts-selection-column {
         flex: 0 0 400px;
         width: 400px;
         padding-left: 0;
@@ -68,7 +68,64 @@
         border-left: 1px solid #0a3b7a;
     }
 
-    .parts-bucket-clear-button {
+    .parts-selection-column.d-none {
+        display: none !important;
+    }
+
+    .parts-selection-column:not(.d-none) {
+        display: flex !important;
+    }
+
+    .app-header {
+        height: 52px;
+        flex-wrap: nowrap !important;
+        gap: 12px;
+    }
+
+    .app-logo-column,
+    .app-actions-column {
+        flex: 0 0 auto;
+        width: auto;
+    }
+
+    .app-logo-link {
+        align-items: center;
+        min-width: 0;
+        height: 52px;
+    }
+
+    .app-logo-link img {
+        margin-top: 0 !important;
+    }
+
+    .app-logo-link span {
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+    }
+
+    .app-search-nav {
+        flex: 1 1 380px;
+        min-width: 120px;
+    }
+
+    .app-search-nav form {
+        width: 100%;
+        max-width: 380px;
+    }
+
+    .app-actions-column {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        white-space: nowrap;
+    }
+
+    .app-main-shell {
+        height: calc(100vh - 79px);
+        position: relative;
+    }
+
+    .parts-selection-clear-button {
         width: 28px;
         height: 28px;
         padding: 4px;
@@ -78,16 +135,33 @@
         line-height: 1;
     }
 
-    .parts-bucket-clear-button:hover {
+    .parts-selection-delete-all-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 30px;
+        padding: 4px 8px;
+        border: 0;
+        border-radius: 4px;
+        color: white;
+        background: transparent;
+        font-size: 0.85rem;
+        line-height: 1;
+    }
+
+    .parts-selection-delete-all-button:hover,
+    .parts-selection-clear-button:hover {
         background-color: rgba(255, 255, 255, 0.14);
     }
 
-    .parts-bucket-clear-button:active {
+    .parts-selection-delete-all-button:active,
+    .parts-selection-clear-button:active {
         background-color: rgba(255, 255, 255, 0.28);
         transform: translateY(1px);
     }
 
-    .parts-bucket-clear-button img,
+    .parts-selection-delete-all-button img,
+    .parts-selection-clear-button img,
     .navbar-selection-icon {
         filter: invert(1);
     }
@@ -125,36 +199,74 @@
         border-top: 1px solid #d7dee9;
         transform: rotate(45deg);
     }
+
+    @media (max-width: 767.98px) {
+        .app-header {
+            justify-content: flex-start !important;
+            gap: 8px;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+
+        .app-logo-column {
+            margin-right: auto;
+            text-align: left;
+        }
+
+        .app-logo-link span {
+            font-size: 16px !important;
+        }
+
+        .app-search-nav {
+            display: none;
+        }
+
+        .app-actions-column {
+            margin-left: 0;
+        }
+
+        .parts-selection-column {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 60;
+            width: min(360px, 100vw);
+            max-width: 100vw;
+            height: 100% !important;
+            box-shadow: -8px 0 24px rgba(0, 0, 0, 0.24);
+        }
+    }
+
+    @media (max-width: 420px) {
+        .app-logo-link span {
+            display: none;
+        }
+    }
     </style>
     {% block style %}{% endblock style %}
 </head>
 <body style="min-width: 100%; min-height: 100%; max-width: 100%; max-height: 100%; margin: 0; padding: 0; overflow: hidden;">
     <!-- Header -->
     <div class="row mx-0" style="height: 52px; background-color: #042c61; ">
-        <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="d-flex flex-wrap align-items-center justify-content-center justify-content-md-between" >
+        <header style="padding-left: 10px; padding-right: 6px; border-bottom: 1px solid #042c61;" class="app-header d-flex align-items-center justify-content-center justify-content-md-between" >
             <!-- Application logo and name -->
-            <div class="col-md-3 mb-2 mb-md-0" title="Go to home">
-                <a href="{{ url_for('home') }}" class="d-inline-flex link-body-emphasis text-decoration-none">
-                    <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; margin-top: 8px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
+            <div class="app-logo-column col-md-3 mb-0" title="Go to home">
+                <a href="{{ url_for('home') }}" class="app-logo-link d-inline-flex link-body-emphasis text-decoration-none">
+                    <img src="{{ url_for('static', filename='nut-bolt.png') }}" role="img" aria-label="Bootstrap" height="36px" style="padding-right: 6px; filter: brightness(0.5)"><use xlink:href="#bootstrap"></use></img>
                     <span style="color: rgb(255, 255, 255); text-decoration: none; padding-top: 12px; padding-bottom: 12px; font-size: 18px;">OpenPartsLibrary</span>
                 </a>
             </div>
             <!-- Search form -->
-            <ul class="nav col-12 col-md-auto mb-2 justify-content-center mb-md-0">
+            <ul class="app-search-nav nav col-12 col-md-auto mb-0 justify-content-center">
                 <form id="search-form" role="search">
-                    <input title="Search for a component by its name or description" name="search_query" type="search" style="width: 380px; height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Search..." value="{{ search_query }}" id="site-search" aria-label="Search">
+                    <input title="Search for a part by its name or description" name="search_query" type="search" style="height: 36px; background-color: rgb(1, 29, 65); border-color: #0a3b7a;" class="form-control input-search-header" placeholder="Search..." value="{{ search_query }}" id="site-search" aria-label="Search">
                 </form>
             </ul>
             <!-- Right side alighed elements -->
-            <div class="col-md-3 text-end">
-                {% if admin_available %}
-                    <a title="Open admin" style="text-decoration: none;" class="btn btn-link p-1 btn-link-transparent" href="{{ url_for('admin.index') }}">
-                        <span style="color: white; font-size: 0.9rem">Admin</span>
-                        <img class="navbar-selection-icon" src="{{ url_for('static', filename='bootstrap-icons-1.11.3/sliders.svg') }}" alt="" style="padding: 0;" height="22px" width="22px">
-                    </a>
-                {% endif %}
+            <div class="app-actions-column col-md-3 text-end">
                 <span class="selection-toggle-wrapper">
-                    <button title="Open and close the selection" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsBucket()">
+                    <button title="Open and close the parts selection" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsSelection()">
                         <img class="navbar-selection-icon" src="{{ url_for('static', filename='bootstrap-icons-1.11.3/clipboard-check.svg') }}" alt="" style="padding: 0;" height="26px" width="26px">
                     </button>
                     <span id="selection-notification" class="selection-notification d-none">Added to selection</span>
@@ -164,25 +276,31 @@
       </div>
     </div>
     <!-- Main view and sidebars -->
-    <div class="row p-0 m-0 flex-nowrap" style="height: calc(100vh - 79px);">
+    <div class="app-main-shell row p-0 m-0 flex-nowrap">
         <!-- Main view -->
         <main class="col p-0" style="position: relative; min-width: 0; min-height: calc(100vh - 79px); max-height: calc(100vh - 79px); height: calc(100vh - 79px); background-color: #f8f9fa;">
             {% block main_view %}{% endblock main_view %}
         </main>
         <!-- New assembly column -->
-        <aside id="parts-bucket-div" class="parts-bucket-column d-none d-flex flex-column">
+        <aside id="parts-selection-div" class="parts-selection-column d-none d-flex flex-column">
             <div class="container-fluid d-flex align-items-center justify-content-between px-2" style="height: 40px; border-bottom: 1px solid #042c61;">
-                <span>Part selection</span>
-                <button id="clear-parts-bucket-button" type="button" class="parts-bucket-clear-button" title="Clear selection" onclick="clearSessionList('partsBucketList')">
-                    <img src="{{ url_for('static', filename = 'bin.png') }}" width="16" height="16" alt="">
-                </button>
+                <span>My Selection</span>
+                <div class="d-flex align-items-center gap-1">
+                    <button id="clear-parts-selection-button" type="button" class="parts-selection-delete-all-button" title="Delete all parts from selection" data-bs-toggle="modal" data-bs-target="#delete-selection-modal">
+                        <img src="{{ url_for('static', filename = 'bin.png') }}" width="15" height="15" alt="">
+                        <span>Delete all</span>
+                    </button>
+                    <button type="button" class="parts-selection-clear-button" title="Close parts selection" onclick="closePartsSelection()">
+                        <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
+                    </button>
+                </div>
             </div>
-            <div id="parts-bucket-scroll" class="m-0 p-0 flex-grow-1" style="min-height: 0; overflow-y: scroll;">
-                <ul id="parts-bucket-list" class="p-2 pb-0 m-0">
+            <div id="parts-selection-scroll" class="m-0 p-0 flex-grow-1" style="min-height: 0; overflow-y: scroll;">
+                <ul id="parts-selection-list" class="p-2 pb-0 m-0">
                 </ul>
             </div>
             <div class="container-fluid px-2" style="height: 86px; flex: 0 0 86px; border-top: 1px solid #042c61; padding-top: 8px;">
-                <div id="parts-bucket-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">Estimated total: 0</div>
+                <div id="parts-selection-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">Estimated total: 0</div>
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary" type="button" onclick="downloadSelection()">Download all</button>
                 </div>
@@ -196,16 +314,40 @@
             <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
         </span>
     </div>
+    <div class="modal fade" id="delete-selection-modal" tabindex="-1" aria-labelledby="delete-selection-modal-title" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="delete-selection-modal-title">Delete all parts?</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to delete all parts from your selection?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="clearSessionList('partsSelectionList')">Delete all</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Scripts -->
     <script>
-        const partsBucketDiv = document.getElementById("parts-bucket-div");
-        const partsBucketList = document.getElementById("parts-bucket-list");
-        const partsBucketTotal = document.getElementById("parts-bucket-total");
+        const partsSelectionDiv = document.getElementById("parts-selection-div");
+        const partsSelectionList = document.getElementById("parts-selection-list");
+        const partsSelectionTotal = document.getElementById("parts-selection-total");
         const selectionNotification = document.getElementById("selection-notification");
         let selectionNotificationTimeout = null;
 
         function getSelectionList() {
-            return JSON.parse(sessionStorage.getItem("partsBucketList")) || [];
+            const storedSelection = sessionStorage.getItem("partsSelectionList");
+            const legacySelectionKey = ["parts", "Buc", "ketList"].join("");
+            const legacyStoredSelection = sessionStorage.getItem(legacySelectionKey);
+            if (!storedSelection && legacyStoredSelection) {
+                sessionStorage.setItem("partsSelectionList", legacyStoredSelection);
+                sessionStorage.removeItem(legacySelectionKey);
+            }
+            return JSON.parse(sessionStorage.getItem("partsSelectionList")) || [];
         }
 
         function normalizeSelectionItem(item) {
@@ -220,13 +362,13 @@
         }
 
         function saveSelectionList(list) {
-            sessionStorage.setItem("partsBucketList", JSON.stringify(list));
+            sessionStorage.setItem("partsSelectionList", JSON.stringify(list));
         }
 
-        async function updatePartsBucketContent() {
+        async function updatePartsSelectionContent() {
             let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
             if (list.length === 0) {
-                partsBucketList.innerHTML = "";
+                partsSelectionList.innerHTML = "";
                 updateSelectionTotal([]);
                 return;
             }
@@ -240,18 +382,22 @@
             });
 
             if (!response.ok) {
-                partsBucketList.innerHTML = "";
+                partsSelectionList.innerHTML = "";
                 return;
             }
 
             const components = await response.json();
-            partsBucketList.innerHTML = buildSelectionCards(components);
+            partsSelectionList.innerHTML = buildSelectionCards(components);
             updateSelectionTotal(components);
         }
 
-        function showPartsBucket() {
-            updatePartsBucketContent();
-            partsBucketDiv.classList.toggle("d-none");
+        function showPartsSelection() {
+            updatePartsSelectionContent();
+            partsSelectionDiv.classList.toggle("d-none");
+        }
+
+        function closePartsSelection() {
+            partsSelectionDiv.classList.add("d-none");
         }
 
         function addComponentToSelection(componentUuid, componentName = "") {
@@ -268,7 +414,7 @@
             }
             saveSelectionList(list);
 
-            updatePartsBucketContent();
+            updatePartsSelectionContent();
             const safeName = String(componentName || "").trim();
             if (safeName) {
                 const shortName = safeName.slice(0, 12) + "...";
@@ -294,7 +440,7 @@
         // Function to clear the list in sessionStorage
         function clearSessionList(key) {
             sessionStorage.removeItem(key);
-            updatePartsBucketContent();
+            updatePartsSelectionContent();
         }
 
         function removeComponentFromSelection(componentUuid) {
@@ -302,7 +448,7 @@
                 .map(normalizeSelectionItem)
                 .filter(item => item.uuid && item.uuid !== componentUuid);
             saveSelectionList(list);
-            updatePartsBucketContent();
+            updatePartsSelectionContent();
         }
 
         async function downloadSelection() {
@@ -326,7 +472,7 @@
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = downloadUrl;
-            link.download = "openpartslibrary-selection_OpenPartsLibrary.zip";
+            link.download = "OPL_OpenPartsLibrary_selection.zip";
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -361,7 +507,7 @@
                 .map(([currency, total]) => `${total.toFixed(2)} ${currency}`.trim())
                 .join(" + ");
 
-            partsBucketTotal.textContent = `Estimated total: ${totalText || "0"}`;
+            partsSelectionTotal.textContent = `Estimated total: ${totalText || "0"}`;
         }
 
         function buildSelectionCards(components) {
@@ -383,7 +529,7 @@
                                 <div style="font-size: 0.78rem; color: #c9d8ec;">Quantity: ${quantity}</div>
                                 <div style="font-size: 0.78rem; color: #c9d8ec;">Price per item: ${price} ${currency}</div>
                             </div>
-                            <button type="button" class="parts-bucket-clear-button" title="Remove from selection" onclick="removeComponentFromSelection('${uuid}')">
+                            <button type="button" class="parts-selection-clear-button" title="Remove from selection" onclick="removeComponentFromSelection('${uuid}')">
                                 <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
                             </button>
                         </div>

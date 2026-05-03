@@ -1,16 +1,372 @@
+import math
+from collections import defaultdict
+from datetime import datetime, timedelta
+
 try:
-    from flask_admin import Admin
+    from flask_admin import Admin, AdminIndexView, expose
     from flask_admin.contrib.sqla import ModelView
 except ImportError:
     Admin = None
+    AdminIndexView = None
+    expose = None
     ModelView = None
+
+from flask import render_template_string, request, url_for
 
 from openpartslibrary.models import Component, ComponentComponent, DownloadEvent, File, Material, Supplier
 
 
+DOWNLOAD_DASHBOARD_TIMEFRAMES = {
+    "7d": ("Last 7 days", 7),
+    "30d": ("Last 30 days", 30),
+    "90d": ("Last 90 days", 90),
+    "365d": ("Last 12 months", 365),
+    "all": ("All time", None),
+}
+
+
+def download_event_quantity(event):
+    return 1
+
+
+def download_part_key(event):
+    if not event.component_uuid:
+        return None
+    return (
+        event.component_uuid,
+        event.component_number or "",
+        event.component_name or "Unknown part",
+    )
+
+
+def get_download_dashboard_data(session, timeframe_key):
+    timeframe_key = timeframe_key if timeframe_key in DOWNLOAD_DASHBOARD_TIMEFRAMES else "30d"
+    timeframe_label, timeframe_days = DOWNLOAD_DASHBOARD_TIMEFRAMES[timeframe_key]
+    now = datetime.utcnow()
+    start_date = now - timedelta(days=timeframe_days) if timeframe_days else None
+
+    query = session.query(DownloadEvent)
+    if start_date is not None:
+        query = query.filter(DownloadEvent.date_downloaded >= start_date)
+    events = query.order_by(DownloadEvent.date_downloaded.asc()).all()
+
+    chart_counts = defaultdict(int)
+    part_counts = defaultdict(lambda: {"part_number": "", "part_name": "", "count": 0})
+    recent_counts = defaultdict(lambda: {"part_number": "", "part_name": "", "count": 0})
+    previous_counts = defaultdict(lambda: {"part_number": "", "part_name": "", "count": 0})
+
+    if timeframe_days:
+        recent_window_days = max(1, min(14, timeframe_days // 2))
+    else:
+        recent_window_days = 30
+    recent_start = now - timedelta(days=recent_window_days)
+    previous_start = recent_start - timedelta(days=recent_window_days)
+
+    for event in events:
+        quantity = download_event_quantity(event)
+        chart_counts[event.date_downloaded.date().isoformat()] += quantity
+
+        part_key = download_part_key(event)
+        if part_key is None:
+            continue
+
+        component_uuid, part_number, part_name = part_key
+        part_counts[component_uuid]["part_number"] = part_number
+        part_counts[component_uuid]["part_name"] = part_name
+        part_counts[component_uuid]["count"] += quantity
+
+        if event.date_downloaded >= recent_start:
+            recent_counts[component_uuid]["part_number"] = part_number
+            recent_counts[component_uuid]["part_name"] = part_name
+            recent_counts[component_uuid]["count"] += quantity
+        elif event.date_downloaded >= previous_start:
+            previous_counts[component_uuid]["part_number"] = part_number
+            previous_counts[component_uuid]["part_name"] = part_name
+            previous_counts[component_uuid]["count"] += quantity
+
+    if timeframe_days:
+        chart_start = start_date.date()
+        chart_labels = [
+            (chart_start + timedelta(days=day_offset)).isoformat()
+            for day_offset in range(timeframe_days + 1)
+        ]
+    else:
+        chart_labels = sorted(chart_counts)
+
+    chart_values = [chart_counts[label] for label in chart_labels]
+
+    most_downloaded = sorted(
+        part_counts.values(),
+        key=lambda row: (-row["count"], row["part_name"].lower()),
+    )[:10]
+
+    trending_rows = []
+    for component_uuid, recent_row in recent_counts.items():
+        recent_count = recent_row["count"]
+        previous_count = previous_counts[component_uuid]["count"]
+        absolute_increase = recent_count - previous_count
+        if recent_count <= 0 or absolute_increase <= 0:
+            continue
+
+        percent_increase = (absolute_increase / max(previous_count, 1)) * 100
+        trend_score = absolute_increase * math.log1p(recent_count) + percent_increase
+        trending_rows.append({
+            "part_number": recent_row["part_number"],
+            "part_name": recent_row["part_name"],
+            "recent_count": recent_count,
+            "previous_count": previous_count,
+            "absolute_increase": absolute_increase,
+            "percent_increase": percent_increase,
+            "trend_score": trend_score,
+        })
+
+    trending_rows.sort(key=lambda row: (-row["trend_score"], -row["absolute_increase"], row["part_name"].lower()))
+
+    return {
+        "timeframe_key": timeframe_key,
+        "timeframe_label": timeframe_label,
+        "timeframes": DOWNLOAD_DASHBOARD_TIMEFRAMES,
+        "total_downloads": sum(chart_values),
+        "total_part_downloads": sum(row["count"] for row in part_counts.values()),
+        "chart_labels": chart_labels,
+        "chart_values": chart_values,
+        "most_downloaded": most_downloaded,
+        "trending": trending_rows[:10],
+        "recent_window_days": recent_window_days,
+    }
+
+
+DOWNLOAD_DASHBOARD_TEMPLATE = """
+{% import 'admin/layout.html' as layout with context %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Downloads Dashboard | OpenPartsLibrary Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .dashboard-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
+        .chart-wrap { height: 300px; position: relative; }
+        .chart-tooltip {
+            position: absolute;
+            display: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            background: rgba(4, 44, 97, 0.94);
+            color: white;
+            font-size: 0.8rem;
+            pointer-events: none;
+            transform: translate(-50%, -110%);
+            white-space: nowrap;
+            z-index: 5;
+        }
+        .metric { color: #6c757d; font-size: 0.85rem; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .opl-admin-navigation .dropdown-menu { margin-top: 8px; z-index: 1000; }
+        .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h1 class="h3 mb-1">Downloads Dashboard</h1>
+                <div class="metric">{{ data.timeframe_label }} · {{ data.total_downloads }} total downloads</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for key, timeframe in data.timeframes.items() %}
+                <a class="btn btn-sm {{ 'btn-primary' if key == data.timeframe_key else 'btn-outline-secondary' }}" href="{{ dashboard_url }}?timeframe={{ key }}">{{ timeframe[0] }}</a>
+                {% endfor %}
+                <a class="btn btn-sm btn-outline-secondary" href="{{ admin_home_url }}">Admin home</a>
+            </div>
+        </div>
+
+        <section class="dashboard-card p-3 mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h2 class="h5 mb-0">Downloads over time</h2>
+                <span class="metric">Daily totals</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="downloads-chart" width="1200" height="300"></canvas>
+                <div id="downloads-chart-tooltip" class="chart-tooltip"></div>
+            </div>
+        </section>
+
+        <div class="row g-3">
+            <section class="col-12 col-lg-6">
+                <div class="dashboard-card p-3 h-100">
+                    <h2 class="h5 mb-1">Most downloaded parts</h2>
+                    <p class="metric mb-3">Top parts in descending order by download count.</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Part number</th>
+                                    <th>Name</th>
+                                    <th class="text-end">Downloads</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data.most_downloaded %}
+                                <tr>
+                                    <td>{{ row.part_number }}</td>
+                                    <td>{{ row.part_name }}</td>
+                                    <td class="text-end">{{ row.count }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-muted">No part downloads in this timeframe.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section class="col-12 col-lg-6">
+                <div class="dashboard-card p-3 h-100">
+                    <h2 class="h5 mb-1">Trending downloads</h2>
+                    <p class="metric mb-3">Ranks recent growth against the previous {{ data.recent_window_days }} days using absolute and percentage increase.</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Part</th>
+                                    <th class="text-end">Recent</th>
+                                    <th class="text-end">Previous</th>
+                                    <th class="text-end">Increase</th>
+                                    <th class="text-end">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data.trending %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ row.part_name }}</div>
+                                        <div class="metric">{{ row.part_number }}</div>
+                                    </td>
+                                    <td class="text-end">{{ row.recent_count }}</td>
+                                    <td class="text-end">{{ row.previous_count }}</td>
+                                    <td class="text-end">+{{ row.absolute_increase }}</td>
+                                    <td class="text-end">+{{ "%.0f"|format(row.percent_increase) }}%</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">No trending downloads in this timeframe yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>
+        const labels = {{ data.chart_labels|tojson }};
+        const values = {{ data.chart_values|tojson }};
+        const canvas = document.getElementById("downloads-chart");
+        const tooltip = document.getElementById("downloads-chart-tooltip");
+        const ctx = canvas.getContext("2d");
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 32;
+        const maxValue = Math.max(...values, 1);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = "#dee2e6";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        const usableWidth = width - (padding * 2);
+        const usableHeight = height - (padding * 2);
+        const step = values.length > 1 ? usableWidth / (values.length - 1) : usableWidth;
+        const points = values.map((value, index) => ({
+            label: labels[index],
+            value,
+            x: padding + (index * step),
+            y: height - padding - ((value / maxValue) * usableHeight)
+        }));
+
+        ctx.strokeStyle = "#0d6efd";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x, point.y);
+            } else {
+                ctx.lineTo(point.x, point.y);
+            }
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = "#0d6efd";
+        points.forEach((point) => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = "#6c757d";
+        ctx.font = "12px system-ui, sans-serif";
+        ctx.fillText("0", 8, height - padding + 4);
+        ctx.fillText(String(maxValue), 8, padding + 4);
+        if (labels.length) {
+            ctx.fillText(labels[0], padding, height - 8);
+            const endLabel = labels[labels.length - 1];
+            ctx.fillText(endLabel, width - padding - ctx.measureText(endLabel).width, height - 8);
+        }
+
+        canvas.addEventListener("mousemove", (event) => {
+            if (!points.length) {
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (event.clientX - rect.left) * scaleX;
+            const mouseY = (event.clientY - rect.top) * scaleY;
+            const nearest = points.reduce((closest, point) => {
+                const distance = Math.hypot(point.x - mouseX, point.y - mouseY);
+                return distance < closest.distance ? { point, distance } : closest;
+            }, { point: null, distance: Number.POSITIVE_INFINITY });
+
+            if (!nearest.point || nearest.distance > 18) {
+                tooltip.style.display = "none";
+                return;
+            }
+
+            tooltip.textContent = `${nearest.point.label}: ${nearest.point.value} downloads`;
+            tooltip.style.left = `${nearest.point.x / scaleX}px`;
+            tooltip.style.top = `${nearest.point.y / scaleY}px`;
+            tooltip.style.display = "block";
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+            tooltip.style.display = "none";
+        });
+    </script>
+</body>
+</html>
+"""
+
+
 def setup_admin(app, session):
     if Admin is None or ModelView is None:
-        return None
+        return setup_fallback_admin(app, session)
 
     class DownloadEventAdminView(ModelView):
         can_create = False
@@ -37,7 +393,21 @@ def setup_admin(app, session):
         )
         column_filters = ("download_type", "date_downloaded", "component_number")
 
-    admin = Admin(app, name="OpenPartsLibrary Admin", template_mode="bootstrap4", url="/admin")
+    class DownloadsDashboardIndexView(AdminIndexView):
+        @expose("/")
+        def index(self):
+            data = get_download_dashboard_data(session, request.args.get("timeframe", "30d"))
+            return render_template_string(
+                DOWNLOAD_DASHBOARD_TEMPLATE,
+                data=data,
+                dashboard_url=url_for(".index"),
+                admin_home_url=url_for("admin.index"),
+            )
+
+    try:
+        admin = Admin(app, name="OpenPartsLibrary Admin", template_mode="bootstrap4", url="/admin", index_view=DownloadsDashboardIndexView(name="Downloads Dashboard", endpoint="admin", url="/admin"))
+    except TypeError:
+        admin = Admin(app, name="OpenPartsLibrary Admin", url="/admin", index_view=DownloadsDashboardIndexView(name="Downloads Dashboard", endpoint="admin", url="/admin"))
     admin.add_view(ModelView(Component, session, category="Library"))
     admin.add_view(ModelView(File, session, category="Library"))
     admin.add_view(ModelView(Supplier, session, category="Library"))
@@ -45,3 +415,152 @@ def setup_admin(app, session):
     admin.add_view(ModelView(ComponentComponent, session, category="Library"))
     admin.add_view(DownloadEventAdminView(DownloadEvent, session, category="Analytics"))
     return admin
+
+
+def setup_fallback_admin(app, session):
+    model_links = (
+        ("Downloads dashboard", None),
+        ("Parts", Component),
+        ("Files", File),
+        ("Suppliers", Supplier),
+        ("Materials", Material),
+        ("Part relations", ComponentComponent),
+        ("Download events", DownloadEvent),
+    )
+
+    @app.route("/admin")
+    def fallback_admin_index():
+        rows = [
+            {
+                "name": name,
+                "count": session.query(model).count() if model is not None else None,
+                "url": url_for("fallback_admin_downloads_dashboard") if model is None else url_for("fallback_admin_model", model_name=model.__tablename__),
+            }
+            for name, model in model_links
+        ]
+        return render_template_string(
+            """
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>Admin | OpenPartsLibrary</title>
+                <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+                <style>
+                    .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+                    .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+                    .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+                    .opl-admin-brand img { filter: brightness(0.5); }
+                    .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+                    .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+                </style>
+            </head>
+            <body class="bg-light">
+                {% include 'admin/_header.html' %}
+                <main class="container-fluid py-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h1 class="h3 mb-0">OpenPartsLibrary Admin</h1>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('components') }}">Back to app</a>
+                    </div>
+                    <div class="alert alert-warning">
+                        Flask-Admin is not installed in this Python environment, so this fallback admin is read-only.
+                        Install <code>Flask-Admin</code> from <code>requirements.txt</code> for full editing features.
+                    </div>
+                    <div class="list-group">
+                        {% for row in rows %}
+                        <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ row.url }}">
+                            <span>{{ row.name }}</span>
+                            {% if row.count is not none %}
+                            <span class="badge text-bg-primary rounded-pill">{{ row.count }}</span>
+                            {% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </main>
+            </body>
+            </html>
+            """,
+            rows=rows,
+        )
+
+    @app.route("/admin/downloads-dashboard")
+    def fallback_admin_downloads_dashboard():
+        data = get_download_dashboard_data(session, request.args.get("timeframe", "30d"))
+        return render_template_string(
+            DOWNLOAD_DASHBOARD_TEMPLATE,
+            data=data,
+            dashboard_url=url_for("fallback_admin_downloads_dashboard"),
+            admin_home_url=url_for("fallback_admin_index"),
+        )
+
+    @app.route("/admin/<model_name>")
+    def fallback_admin_model(model_name):
+        models_by_table = {
+            model.__tablename__: (name, model)
+            for name, model in model_links
+            if model is not None
+        }
+        model_info = models_by_table.get(model_name)
+        if model_info is None:
+            return "Admin model not found.", 404
+
+        name, model = model_info
+        columns = [column.name for column in model.__table__.columns]
+        records = session.query(model).limit(200).all()
+        return render_template_string(
+            """
+            <!doctype html>
+            <html lang="en">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <title>{{ name }} | OpenPartsLibrary Admin</title>
+                <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+                <style>
+                    .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+                    .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+                    .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+                    .opl-admin-brand img { filter: brightness(0.5); }
+                    .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+                    .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+                </style>
+            </head>
+            <body class="bg-light">
+                {% include 'admin/_header.html' %}
+                <main class="container-fluid py-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h1 class="h3 mb-0">{{ name }}</h1>
+                        <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fallback_admin_index') }}">Admin home</a>
+                    </div>
+                    <div class="table-responsive bg-white border">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    {% for column in columns %}
+                                    <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in records %}
+                                <tr>
+                                    {% for column in columns %}
+                                    <td>{{ record|attr(column) }}</td>
+                                    {% endfor %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted mt-2 mb-0">Showing up to 200 rows.</p>
+                </main>
+            </body>
+            </html>
+            """,
+            name=name,
+            columns=columns,
+            records=records,
+        )
+
+    return {"fallback": True}

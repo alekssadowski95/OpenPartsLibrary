@@ -8,6 +8,8 @@ services:
       PORT: 5000
       FLASK_DEBUG: "0"
       OPENPARTSLIBRARY_DATA_DIR: /app/data
+      FREECAD_3MF_EXPORT_COMMAND: ""
+      BLENDER_THUMBNAIL_COMMAND: ""
     volumes:
       - openpartslibrary-data:/app/data
 

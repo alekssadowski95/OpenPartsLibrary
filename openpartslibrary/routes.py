@@ -12,6 +12,7 @@ from openpartslibrary.hbom import build_spdx_hardware_bom
 from openpartslibrary.i18n import gettext as _
 from openpartslibrary.models import Component, File, Supplier
 from openpartslibrary.search import search_parts
+from openpartslibrary.thumbnails import ensure_cad_thumbnail, placeholder_thumbnail_svg
 
 
 def build_components_url(overrides=None):
@@ -48,6 +49,8 @@ def register_routes(app, parts_library):
     session = parts_library.session
     cad_dir = app.config["CAD_DIR"]
     file_dir = app.config["FILE_DIR"]
+    mesh_dir = app.config["MESH_DIR"]
+    thumbnail_dir = app.config["THUMBNAIL_DIR"]
 
     @app.route("/")
     def home():
@@ -216,6 +219,40 @@ def register_routes(app, parts_library):
         )
 
         return send_file(cad_path, as_attachment=True, download_name=downloaded_filename)
+
+    @app.route("/component/<uuid>/thumbnail")
+    def component_thumbnail(uuid):
+        component = session.query(Component).filter_by(uuid=uuid).first()
+        if component is None or component.cad_file is None:
+            return placeholder_thumbnail_response()
+
+        return cad_thumbnail(component.cad_file.uuid)
+
+    @app.route("/thumbnail/cad/<cad_file_uuid>.png")
+    def cad_thumbnail(cad_file_uuid):
+        result = ensure_cad_thumbnail(
+            cad_file_uuid,
+            cad_dir,
+            mesh_dir,
+            thumbnail_dir,
+            app.config.get("FREECAD_3MF_EXPORT_COMMAND", ""),
+            app.config.get("BLENDER_THUMBNAIL_COMMAND", ""),
+        )
+        if result.ready:
+            return send_file(result.thumbnail_path, mimetype="image/png")
+
+        return placeholder_thumbnail_response(result.message)
+
+    def placeholder_thumbnail_response(message=None):
+        label = _("No preview")
+        response = app.response_class(
+            placeholder_thumbnail_svg(label),
+            mimetype="image/svg+xml",
+        )
+        response.headers["Cache-Control"] = "no-store"
+        if message:
+            response.headers["X-OpenPartsLibrary-Thumbnail-Status"] = message[:500]
+        return response
 
     @app.route("/selection/download", methods=["POST"])
     def selection_download():

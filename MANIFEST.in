@@ -4,3 +4,4 @@ recursive-include openpartslibrary/templates *
 recursive-include openpartslibrary/static *
 recursive-include openpartslibrary/translations *
 include openpartslibrary/search_synonyms.json
+recursive-include openpartslibrary/tools *.py

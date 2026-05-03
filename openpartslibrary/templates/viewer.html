@@ -6,23 +6,123 @@
     <title>{{ _('3D Viewer') }}</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='assets/images/3dviewer_net_favicon.ico') }}">
     <script type="text/javascript" src="{{ url_for('static', filename='o3dv-2/o3dv.min.js') }}"></script>
-    
+    <style>
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .viewer-shell {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: rgb(245, 245, 245);
+        }
+
+        .viewer-loading-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            background: rgb(245, 245, 245);
+            color: #042c61;
+            transition: opacity 180ms ease;
+        }
+
+        .viewer-loading-overlay.is-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .viewer-loading-logo {
+            width: 64px;
+            height: 64px;
+            animation: viewer-logo-spin 1.1s linear infinite;
+            filter: brightness(0.5);
+        }
+
+        .viewer-loading-brand {
+            font: 600 18px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            line-height: 1;
+        }
+
+        .viewer-loading-message {
+            min-height: 20px;
+            color: #5f6b7a;
+            font: 14px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        @keyframes viewer-logo-spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 
 </head>
-<body style="height: 100vh; width: 100vw; margin: 0;">
-    <div id="viewer" class="online_3d_viewer" style="width: 100%; height: 100%;"></div>
+<body>
+    <div class="viewer-shell">
+        <div id="viewer" class="online_3d_viewer" style="width: 100%; height: 100%;"></div>
+        <div id="viewer-loading-overlay" class="viewer-loading-overlay" aria-live="polite">
+            <img class="viewer-loading-logo" src="{{ url_for('static', filename='nut-bolt.png') }}" alt="">
+            <div class="viewer-loading-brand">OpenPartsLibrary</div>
+            <div id="viewer-loading-message" class="viewer-loading-message">Loading model...</div>
+        </div>
+    </div>
 </body>
 <script>
 window.addEventListener ('load', () => {
     // get the parent element of the viewer
     let parentDiv = document.getElementById ('viewer');
+    let loadingOverlay = document.getElementById('viewer-loading-overlay');
+    let loadingMessage = document.getElementById('viewer-loading-message');
+
+    function updateLoadingMessage() {
+        let statusText = Array.from(parentDiv.childNodes)
+            .filter((node) => node.nodeType === Node.ELEMENT_NODE && node.tagName !== 'CANVAS')
+            .map((node) => node.textContent.trim())
+            .find((text) => text.length > 0);
+
+        if (statusText) {
+            loadingMessage.textContent = statusText;
+        }
+    }
+
+    function hideLoadingOverlay() {
+        updateLoadingMessage();
+        loadingOverlay.classList.add('is-hidden');
+        window.setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+        }, 220);
+    }
+
+    let loadingObserver = new MutationObserver(updateLoadingMessage);
+    loadingObserver.observe(parentDiv, {
+        childList: true,
+        subtree: true,
+        characterData: true
+    });
 
     // initialize the viewer with the parent element and some parameters
     let viewer = new OV.EmbeddedViewer (parentDiv, {
         projectionMode: OV.ProjectionMode.Orthographic,
         backgroundColor : new OV.RGBAColor(245, 245, 245, 255),
         // defaultColor : new OV.RGBColor (200, 200, 205),
-        edgeSettings : new OV.EdgeSettings(false, new OV.RGBColor (58, 58, 58), 1)
+        edgeSettings : new OV.EdgeSettings(false, new OV.RGBColor (58, 58, 58), 1),
+        onModelLoaded: () => {
+            loadingObserver.disconnect();
+            hideLoadingOverlay();
+        }
     });
 
     // load a model providing model urls

@@ -26,6 +26,7 @@ setup(
             'static/**/*',
             'translations/**/*',
             'search_synonyms.json',
+            'tools/*.py',
         ],
     },
     install_requires=[

@@ -104,6 +104,9 @@ msgstr "Download CAD file"
 msgid "No CAD file available"
 msgstr "No CAD file available"
 
+msgid "No preview"
+msgstr "No preview"
+
 msgid "CAD file not found."
 msgstr "CAD file not found."
 

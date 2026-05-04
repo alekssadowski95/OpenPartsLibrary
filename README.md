@@ -32,22 +32,6 @@ Search is tuned for mechanical part discovery. Engineers can use familiar terms 
 
 For users, the result is simple: searches return practical engineering matches, including useful standard-size alternatives when the exact requested dimension is not available.
 
-## FreeCAD CAD Reuse
-
-The library is focused on assemblies created with FreeCAD.
-
-Many low-cost AliExpress components are good enough for prototypes and early machines, but the development workflow becomes slow when CAD files are scattered across supplier downloads, old projects, and local folders.
-
-OpenPartsLibrary keeps reusable CAD files close to the part information so engineers can quickly insert known components into FreeCAD assemblies.
-
-Typical part families include:
-
-- Linear rails and sliding blocks
-- Aluminum profiles and brackets
-- Fasteners, nuts, washers, and spacers
-- Plates, panels, adapters, and mounting parts
-- Purchased standard components used in machine frames and mechanisms
-
 ## Reusable BOM Modules
 
 Precreated BOMs represent frequently combined parts that are often reused as machine modules.
@@ -67,6 +51,22 @@ This makes it faster to move from a reusable module in the library to a working 
 My Bill of Materials is a temporary collection for parts selected during design work.
 
 Users can review quantities, estimated cost, CAD availability, and download the selected package.
+
+## FreeCAD Focused
+
+The library is focused on assemblies created with FreeCAD.
+
+Many low-cost AliExpress components are good enough for prototypes and early machines, but the development workflow becomes slow when CAD files are scattered across supplier downloads, old projects, and local folders.
+
+OpenPartsLibrary keeps reusable CAD files close to the part information so engineers can quickly insert known components into FreeCAD assemblies.
+
+Typical part families include:
+
+- Linear rails and sliding blocks
+- Aluminum profiles and brackets
+- Fasteners, nuts, washers, and spacers
+- Plates, panels, adapters, and mounting parts
+- Purchased standard components used in machine frames and mechanisms
 
 ## Multiple Languages
 

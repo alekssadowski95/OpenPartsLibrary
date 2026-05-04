@@ -4,8 +4,6 @@ Build machines faster with cheap standard components and ready-to-use CAD files.
 
 OpenPartsLibrary is for hardware startups, small manufacturing teams, and mechanical engineers who build prototypes, fixtures, automation equipment, test rigs, and early production machines. It is used during concept design, FreeCAD assembly work, BOM preparation, and procurement handoff.
 
-Benefits:
-
 - Shorter design cycles for prototypes and early production machines.
 - Less repeated supplier research and CAD file hunting.
 - Faster FreeCAD assembly work with reusable, prepared components.

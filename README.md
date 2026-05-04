@@ -104,6 +104,20 @@ Runtime data is stored in:
 instance/data/
 ```
 
+Windows desktop ZIP build:
+
+```console
+powershell -ExecutionPolicy Bypass -File scripts/build_windows_desktop.ps1
+```
+
+The build output is created at:
+
+```text
+dist/OpenPartsLibrary-Windows-10-11.zip
+```
+
+After extraction, start the app with `OpenPartsLibrary.exe`. The desktop build stores its runtime database, copied CAD files, and generated files in the `data` folder beside the executable.
+
 ## Contributing
 
 This section is for software developers and technical contributors.

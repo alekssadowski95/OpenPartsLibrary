@@ -1,3 +1,18 @@
+import os
+import sys
+from pathlib import Path
+
+
+def configure_desktop_data_dir():
+    if "OPENPARTSLIBRARY_DATA_DIR" in os.environ:
+        return
+
+    if getattr(sys, "frozen", False):
+        os.environ["OPENPARTSLIBRARY_DATA_DIR"] = str(Path(sys.executable).resolve().parent / "data")
+
+
+configure_desktop_data_dir()
+
 from openpartslibrary import app
 
 import webview

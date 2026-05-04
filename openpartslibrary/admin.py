@@ -447,6 +447,7 @@ BOM_BUILDER_TEMPLATE = """
                 <h1 class="h3 mb-1">{{ _('Edit BOM') if edit_bom else _('Bill of Materials') }}</h1>
                 <div class="text-muted">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
             </div>
+            <a class="btn btn-outline-secondary" href="{{ node_editor_url }}"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>{{ _('Node editor') }}</a>
         </div>
 
         <section class="bom-card p-3 mb-3">
@@ -461,7 +462,7 @@ BOM_BUILDER_TEMPLATE = """
                     {% endif %}
                     <div class="col-12 {{ 'col-md-4' if edit_bom else 'col-md-5' }}">
                         <label class="form-label">{{ _('Name') }}</label>
-                        <input class="form-control" name="name" value="{{ edit_bom.name if edit_bom else '' }}" required>
+                        <input id="bom-root-name-input" class="form-control" name="name" value="{{ edit_bom.name if edit_bom else '' }}" required>
                     </div>
                     <div class="col-12 {{ 'col-md-5' if edit_bom else 'col-md-7' }}">
                         <label class="form-label">{{ _('Description') }}</label>
@@ -493,7 +494,7 @@ BOM_BUILDER_TEMPLATE = """
                         </div>
                         <input class="form-control form-control-sm" name="quantity" type="number" min="1" step="1" value="1">
                         <input class="form-control form-control-sm" name="note" placeholder="{{ _('Note') }}">
-                        <button type="button" class="btn btn-outline-secondary bom-builder-remove-button" onclick="this.closest('.bom-builder-row').remove()" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
+                        <button type="button" class="btn btn-outline-secondary bom-builder-remove-button" onclick="removeBomBuilderRow(this.closest('.bom-builder-row'))" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
                     </div>
                 </template>
                 <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
@@ -557,6 +558,12 @@ BOM_BUILDER_TEMPLATE = """
             hiddenInput.value = match ? match.id : "";
         }
 
+        function removeBomBuilderRow(row) {
+            if (row) {
+                row.remove();
+            }
+        }
+
         function toggleBomChildren(button) {
             const row = button.closest(".bom-list-main");
             const target = row ? row.nextElementSibling : null;
@@ -583,6 +590,331 @@ BOM_BUILDER_TEMPLATE = """
             } else {
                 addBomBuilderRow();
             }
+        });
+    </script>
+</body>
+</html>
+"""
+
+
+BOM_NODE_EDITOR_TEMPLATE = """
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ _('BOM Node Editor') }} | {{ _('OpenPartsLibrary Admin') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
+    <style>
+        html, body { height: 100%; }
+        body { min-height: 100%; background: #eef2f6; overflow: hidden; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .opl-admin-navigation .dropdown-menu { margin-top: 0; z-index: 1000; }
+        .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+        .bom-node-page { height: calc(100vh - 52px); display: flex; flex-direction: column; min-height: 0; }
+        .bom-node-toolbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: white; border-bottom: 1px solid #d7dde5; }
+        .bom-node-toolbar-title { min-width: 0; }
+        .bom-node-toolbar h1 { font-size: 1.25rem; margin: 0; }
+        .bom-node-toolbar-subtitle { color: #667085; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-node-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+        .bom-node-canvas { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background-color: #eef2f6; background-image: radial-gradient(#cbd5df 1px, transparent 1px); background-size: 20px 20px; cursor: grab; touch-action: none; }
+        .bom-node-canvas.is-panning { cursor: grabbing; }
+        .bom-node-world { position: absolute; left: 0; top: 0; width: 1600px; min-height: 900px; transform-origin: 0 0; }
+        .bom-node-links { position: absolute; inset: 0; width: 1600px; height: 900px; overflow: visible; pointer-events: none; }
+        .bom-node-link { stroke: #6b7f97; stroke-width: 2; fill: none; }
+        .bom-node-card { position: absolute; width: 220px; background: white; border: 1px solid #cfd7e2; border-radius: 6px; box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12); font-size: 0.82rem; cursor: default; }
+        .bom-node-card-root { width: 250px; border-color: #8fb4dc; }
+        .bom-node-header { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 7px 9px; border-bottom: 1px solid #e1e7ef; background: #f8fafc; color: #1f2937; }
+        .bom-node-header i { flex: 0 0 auto; color: #042c61; }
+        .bom-node-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+        .bom-node-body { padding: 9px; }
+        .bom-node-body .form-label { margin-bottom: 3px; color: #5f6b7a; font-size: 0.72rem; }
+        .bom-node-note { margin-top: 8px; border-top: 1px solid #eef1f5; padding-top: 6px; }
+        .bom-node-note summary { cursor: pointer; color: #5f6b7a; font-size: 0.78rem; }
+        .bom-node-actions { display: flex; justify-content: flex-end; }
+        .bom-node-delete { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+        .bom-node-empty { position: absolute; left: 380px; top: 165px; color: #667085; background: rgba(255, 255, 255, 0.86); border: 1px dashed #aab8c7; border-radius: 6px; padding: 12px 14px; }
+        .bom-node-zoom { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 6px; padding: 6px; background: rgba(255, 255, 255, 0.92); border: 1px solid #d7dde5; border-radius: 6px; box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12); }
+        .bom-node-zoom .btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+        @media (max-width: 767.98px) {
+            body { overflow: auto; }
+            .bom-node-page { height: auto; min-height: calc(100vh - 52px); }
+            .bom-node-toolbar { align-items: flex-start; flex-direction: column; }
+            .bom-node-toolbar-actions { justify-content: flex-start; }
+            .bom-node-canvas { min-height: 720px; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <form id="bom-node-form" class="bom-node-page" method="post" action="{{ form_action }}">
+        <div class="bom-node-toolbar">
+            <div class="bom-node-toolbar-title">
+                <h1>{{ _('BOM Node Editor') }}</h1>
+                <div class="bom-node-toolbar-subtitle">
+                    {% if edit_bom %}{{ edit_bom.number }} - {{ edit_bom.name }}{% else %}{{ _('Create a BOM from existing BOMs and parts.') }}{% endif %}
+                </div>
+            </div>
+            <div class="bom-node-toolbar-actions">
+                <button type="button" class="btn btn-outline-secondary" onclick="addBomNode()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('Add node') }}</button>
+                <a class="btn btn-outline-secondary" href="{{ table_editor_url }}"><i class="bi bi-table me-1" aria-hidden="true"></i>{{ _('Table editor') }}</a>
+                <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
+                <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
+            </div>
+        </div>
+        <div id="node-hidden-inputs"></div>
+        <datalist id="bom-option-list">
+            {% for option in bom_options %}
+            <option value="{{ option.display_label }}"></option>
+            {% endfor %}
+        </datalist>
+        <div id="bom-node-canvas" class="bom-node-canvas">
+            <div id="bom-node-world" class="bom-node-world"></div>
+            <div class="bom-node-zoom" aria-label="{{ _('Zoom controls') }}">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(1.15)" title="{{ _('Zoom in') }}" aria-label="{{ _('Zoom in') }}"><i class="bi bi-plus-lg"></i></button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(0.87)" title="{{ _('Zoom out') }}" aria-label="{{ _('Zoom out') }}"><i class="bi bi-dash-lg"></i></button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetView()" title="{{ _('Reset view') }}" aria-label="{{ _('Reset view') }}"><i class="bi bi-aspect-ratio"></i></button>
+            </div>
+        </div>
+    </form>
+    <script>
+        const bomOptions = {{ bom_options|tojson }};
+        const initialItems = {{ initial_items|tojson }};
+        const newBomLabel = {{ _('New BOM')|tojson }};
+        const selectItemLabel = {{ _('Select part or BOM')|tojson }};
+        const noNodesLabel = {{ _('Add existing BOMs or parts as child nodes.')|tojson }};
+        let rootName = {{ (edit_bom.name if edit_bom else '')|tojson }};
+        let rootDescription = {{ (edit_bom.description if edit_bom and edit_bom.description else '')|tojson }};
+        let nodes = initialItems.length ? initialItems.map((item) => ({ ...item })) : [];
+        let scale = 1;
+        let panX = 30;
+        let panY = 30;
+        let isPanning = false;
+        let panStart = { x: 0, y: 0, panX: 0, panY: 0 };
+
+        function addBomNode() {
+            nodes.push({ child_bom_id: "", display_label: "", quantity: "1", note: "" });
+            renderNodes();
+        }
+
+        function removeBomNode(index) {
+            nodes.splice(index, 1);
+            renderNodes();
+        }
+
+        function updateRoot(field, value) {
+            if (field === "name") {
+                rootName = value;
+            } else if (field === "description") {
+                rootDescription = value;
+            }
+            syncHiddenInputs();
+        }
+
+        function updateNode(index, field, value) {
+            const node = nodes[index];
+            if (!node) {
+                return;
+            }
+            node[field] = value;
+            if (field === "display_label") {
+                const match = bomOptions.find((option) => option.display_label === value);
+                node.child_bom_id = match ? match.id : "";
+            }
+            syncHiddenInputs();
+        }
+
+        function updateRootTitle(value) {
+            const title = document.querySelector(".bom-node-card-root .bom-node-title");
+            if (title) {
+                const text = value.trim() || newBomLabel;
+                title.textContent = text;
+                title.title = text;
+            }
+        }
+
+        function updateNodeHeader(input, index) {
+            const card = input.closest(".bom-node-card");
+            const title = card ? card.querySelector(".bom-node-title") : null;
+            const icon = card ? card.querySelector(".bom-node-header i") : null;
+            const node = nodes[index];
+            const text = input.value || selectItemLabel;
+            if (title) {
+                title.textContent = text;
+                title.title = text;
+            }
+            if (icon && node) {
+                icon.className = `bi ${iconForNode(node)}`;
+            }
+        }
+
+        function optionForNode(node) {
+            return bomOptions.find((option) => String(option.id) === String(node.child_bom_id)) || null;
+        }
+
+        function iconForNode(node) {
+            const option = optionForNode(node);
+            return option && option.is_part_wrapper ? "bi-box-fill text-primary" : "bi-table";
+        }
+
+        function syncHiddenInputs() {
+            const target = document.getElementById("node-hidden-inputs");
+            const itemInputs = nodes.map((node) => `
+                <input type="hidden" name="child_bom_id" value="${escapeHtml(node.child_bom_id || "")}">
+                <input type="hidden" name="quantity" value="${escapeHtml(node.quantity || "1")}">
+                <input type="hidden" name="note" value="${escapeHtml(node.note || "")}">
+            `).join("");
+            target.innerHTML = `
+                <input type="hidden" name="name" value="${escapeHtml(rootName)}">
+                <input type="hidden" name="description" value="${escapeHtml(rootDescription)}">
+                ${itemInputs}
+            `;
+        }
+
+        function nodeCard(node, index, x, y) {
+            const title = node.display_label || selectItemLabel;
+            const icon = iconForNode(node);
+            return `
+                <div class="bom-node-card" style="left:${x}px; top:${y}px;">
+                    <div class="bom-node-header">
+                        <i class="bi ${icon}" aria-hidden="true"></i>
+                        <span class="bom-node-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                    </div>
+                    <div class="bom-node-body">
+                        <label class="form-label">{{ _('Item') }}</label>
+                        <input class="form-control form-control-sm mb-2" list="bom-option-list" value="${escapeHtml(node.display_label || "")}" placeholder="{{ _('Search part or BOM') }}" oninput="updateNode(${index}, 'display_label', this.value); updateNodeHeader(this, ${index});">
+                        <label class="form-label">{{ _('Quantity') }}</label>
+                        <input class="form-control form-control-sm" name="node_quantity_${index}" type="number" min="1" step="1" value="${escapeHtml(node.quantity || "1")}" oninput="updateNode(${index}, 'quantity', this.value)">
+                        <details class="bom-node-note">
+                            <summary>{{ _('Note') }}</summary>
+                            <input class="form-control form-control-sm mt-2" value="${escapeHtml(node.note || "")}" placeholder="{{ _('Note') }}" oninput="updateNode(${index}, 'note', this.value)">
+                        </details>
+                        <div class="bom-node-actions mt-2">
+                            <button type="button" class="btn btn-outline-secondary bom-node-delete" onclick="removeBomNode(${index})" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderNodes() {
+            const world = document.getElementById("bom-node-world");
+            const rootTitle = rootName.trim() || newBomLabel;
+            const rootX = 70;
+            const rootY = Math.max(130, 80 + Math.floor(nodes.length * 60));
+            let contentHeight = Math.max(900, rootY + 260, 120 + nodes.length * 150);
+            let links = "";
+            let childCards = "";
+            nodes.forEach((node, index) => {
+                const x = 390;
+                const y = 70 + (index * 150);
+                links += `<path class="bom-node-link" d="M ${rootX + 250} ${rootY + 72} C ${rootX + 310} ${rootY + 72}, ${x - 70} ${y + 72}, ${x} ${y + 72}"></path>`;
+                childCards += nodeCard(node, index, x, y);
+            });
+            world.style.minHeight = `${contentHeight}px`;
+            world.innerHTML = `
+                <svg class="bom-node-links" style="height:${contentHeight}px;" aria-hidden="true">${links}</svg>
+                <div class="bom-node-card bom-node-card-root" style="left:${rootX}px; top:${rootY}px;">
+                    <div class="bom-node-header">
+                        <i class="bi bi-table" aria-hidden="true"></i>
+                        <span class="bom-node-title" title="${escapeHtml(rootTitle)}">${escapeHtml(rootTitle)}</span>
+                    </div>
+                    <div class="bom-node-body">
+                        {% if edit_bom %}
+                        <label class="form-label">{{ _('BOM number') }}</label>
+                        <div class="form-control-plaintext py-0 mb-2 fw-semibold">{{ edit_bom.number }}</div>
+                        {% endif %}
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input id="root-name" class="form-control form-control-sm mb-2" value="${escapeHtml(rootName)}" required oninput="updateRoot('name', this.value); updateRootTitle(this.value);">
+                        <label class="form-label">{{ _('Description') }}</label>
+                        <input id="root-description" class="form-control form-control-sm" value="${escapeHtml(rootDescription)}" oninput="updateRoot('description', this.value)">
+                    </div>
+                </div>
+                ${childCards || `<div class="bom-node-empty">${escapeHtml(noNodesLabel)}</div>`}
+            `;
+            applyTransform();
+            syncHiddenInputs();
+        }
+
+        function applyTransform() {
+            const world = document.getElementById("bom-node-world");
+            world.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        }
+
+        function zoomBy(factor, origin = null) {
+            const canvas = document.getElementById("bom-node-canvas");
+            const rect = canvas.getBoundingClientRect();
+            const oldScale = scale;
+            const nextScale = Math.min(2.2, Math.max(0.35, scale * factor));
+            const point = origin || { x: rect.width / 2, y: rect.height / 2 };
+            const worldX = (point.x - panX) / oldScale;
+            const worldY = (point.y - panY) / oldScale;
+            scale = nextScale;
+            panX = point.x - (worldX * scale);
+            panY = point.y - (worldY * scale);
+            applyTransform();
+        }
+
+        function resetView() {
+            scale = 1;
+            panX = 30;
+            panY = 30;
+            applyTransform();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? "")
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderNodes();
+            const canvas = document.getElementById("bom-node-canvas");
+            canvas.addEventListener("wheel", (event) => {
+                event.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                zoomBy(event.deltaY < 0 ? 1.08 : 0.92, { x: event.clientX - rect.left, y: event.clientY - rect.top });
+            }, { passive: false });
+            canvas.addEventListener("pointerdown", (event) => {
+                if (event.target.closest(".bom-node-card, .bom-node-zoom")) {
+                    return;
+                }
+                isPanning = true;
+                canvas.classList.add("is-panning");
+                canvas.setPointerCapture(event.pointerId);
+                panStart = { x: event.clientX, y: event.clientY, panX, panY };
+            });
+            canvas.addEventListener("pointermove", (event) => {
+                if (!isPanning) {
+                    return;
+                }
+                panX = panStart.panX + event.clientX - panStart.x;
+                panY = panStart.panY + event.clientY - panStart.y;
+                applyTransform();
+            });
+            canvas.addEventListener("pointerup", () => {
+                isPanning = false;
+                canvas.classList.remove("is-panning");
+            });
+            canvas.addEventListener("pointercancel", () => {
+                isPanning = false;
+                canvas.classList.remove("is-panning");
+            });
+            document.getElementById("bom-node-form").addEventListener("submit", syncHiddenInputs);
         });
     </script>
 </body>
@@ -631,6 +963,7 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
         )
         edit_actions = (
             f"""
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom_node_editor", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Node editor"))}" aria-label="{escape(_("Node editor"))}"><i class="bi bi-diagram-3"></i></a>
                 <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Modify BOM"))}" aria-label="{escape(_("Modify BOM"))}"><i class="bi bi-pencil-square"></i></a>
                 <form method="post" action="{url_for("admin_copy_bom", bom_id=bom.id)}" onclick="event.stopPropagation()">
                     <button class="btn btn-sm btn-outline-secondary" type="submit" title="{escape(_("Copy"))}" aria-label="{escape(_("Copy"))}"><i class="bi bi-copy"></i></button>
@@ -724,8 +1057,31 @@ def register_bom_admin_routes(app, session):
             bom_options=get_bom_options(session),
             edit_bom=None,
             form_action=url_for("admin_bill_of_materials"),
+            node_editor_url=url_for("admin_bom_node_editor"),
             initial_items=[],
             render_bom_row=render_bom_row,
+        )
+
+    @app.route("/admin/bill-of-materials/node-editor", methods=["GET", "POST"])
+    def admin_bom_node_editor():
+        ensure_part_boms(session)
+        if request.method == "POST":
+            if request.form.get("name", "").strip():
+                create_bom(
+                    session,
+                    request.form.get("name"),
+                    request.form.get("description", ""),
+                    bom_form_items_from_request(),
+                )
+            return redirect(url_for("admin_bill_of_materials"))
+
+        return render_template_string(
+            BOM_NODE_EDITOR_TEMPLATE,
+            bom_options=get_bom_options(session),
+            edit_bom=None,
+            form_action=url_for("admin_bom_node_editor"),
+            table_editor_url=url_for("admin_bill_of_materials"),
+            initial_items=[],
         )
 
     @app.route("/admin/bill-of-materials/<int:bom_id>/copy", methods=["POST"])
@@ -736,6 +1092,36 @@ def register_bom_admin_routes(app, session):
             return _("BOM not found."), 404
         copied_bom = copy_bom(session, bom)
         return redirect(url_for("admin_edit_bom", bom_id=copied_bom.id))
+
+    @app.route("/admin/bill-of-materials/<int:bom_id>/node-editor", methods=["GET", "POST"])
+    def admin_edit_bom_node_editor(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+        if request.method == "POST":
+            if request.form.get("name", "").strip():
+                update_bom(
+                    session,
+                    bom,
+                    request.form.get("name"),
+                    request.form.get("description", ""),
+                    bom_form_items_from_request(),
+                )
+            return redirect(url_for("admin_bill_of_materials"))
+
+        bom_options = [
+            option for option in get_bom_options(session)
+            if option["id"] != bom.id
+        ]
+        return render_template_string(
+            BOM_NODE_EDITOR_TEMPLATE,
+            bom_options=bom_options,
+            edit_bom=bom,
+            form_action=url_for("admin_edit_bom_node_editor", bom_id=bom.id),
+            table_editor_url=url_for("admin_edit_bom", bom_id=bom.id),
+            initial_items=initial_bom_items(bom, bom_options),
+        )
 
     @app.route("/admin/bill-of-materials/<int:bom_id>/edit", methods=["GET", "POST"])
     def admin_edit_bom(bom_id):
@@ -764,6 +1150,7 @@ def register_bom_admin_routes(app, session):
             bom_options=bom_options,
             edit_bom=bom,
             form_action=url_for("admin_edit_bom", bom_id=bom.id),
+            node_editor_url=url_for("admin_edit_bom_node_editor", bom_id=bom.id),
             initial_items=initial_bom_items(bom, bom_options),
             render_bom_row=render_bom_row,
         )

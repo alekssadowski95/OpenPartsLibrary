@@ -40,6 +40,7 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+!OpenPartsLibrary-Windows.spec
 
 # Installer logs
 pip-log.txt
@@ -147,6 +148,7 @@ celerybeat.pid
 .env
 .envrc
 .venv
+.venv-desktop-build/
 env/
 venv/
 ENV/

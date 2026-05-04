@@ -4,6 +4,8 @@ OpenPartsLibrary helps hardware startups and small manufacturing teams develop m
 
 The focus is practical mechanical engineering: find a standard part, preview or download its CAD model, use it in a FreeCAD assembly, and keep track of how that part is used across bills of materials.
 
+![OpenPartsLibrary interface](openpartslibrary/images/openpartslibrary-2026_05_04.png)
+
 ## Purpose
 
 Early-stage machine development is often slowed down by repeated component searches, missing CAD files, inconsistent part names, and unclear reuse across assemblies.

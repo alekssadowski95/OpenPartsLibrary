@@ -2,7 +2,7 @@
 
 OpenPartsLibrary helps hardware startups and small manufacturing teams develop machines faster by reusing cheap standard components from AliExpress.com together with ready-to-use CAD files.
 
-The focus is practical mechanical engineering: find a standard part, preview or download its CAD model, use it in a FreeCAD assembly, and keep track of how that part is used across bills of materials.
+The focus is practical mechanical engineering: find a standard part, preview or download its CAD model and use it in a FreeCAD assembly. With the available BOMs, a collection of FreeCAD parts can be downloaded with a single click.
 
 ![OpenPartsLibrary interface](openpartslibrary/images/openpartslibrary-2026_05_04.png)
 

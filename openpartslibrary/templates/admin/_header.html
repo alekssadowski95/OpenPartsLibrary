@@ -8,6 +8,7 @@
             {% if admin_available %}
             <nav class="opl-admin-navigation" aria-label="{{ _('Admin navigation') }}">
                 <a class="opl-admin-nav-link" href="{{ url_for('admin.index') }}">{{ _('Dashboard') }}</a>
+                <a class="opl-admin-nav-link" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                 <div class="dropdown">
                     <button class="opl-admin-nav-link dropdown-toggle" type="button" aria-expanded="false">{{ _('Library') }}</button>
                     <div class="dropdown-menu">
@@ -16,7 +17,6 @@
                         <a class="dropdown-item" href="{{ url_for('supplier.index_view') }}">{{ _('Suppliers') }}</a>
                         <a class="dropdown-item" href="{{ url_for('material.index_view') }}">{{ _('Materials') }}</a>
                         <a class="dropdown-item" href="{{ url_for('componentcomponent.index_view') }}">{{ _('Part relations') }}</a>
-                        <a class="dropdown-item" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                     </div>
                 </div>
                 <div class="dropdown">

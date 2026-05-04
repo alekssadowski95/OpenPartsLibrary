@@ -178,7 +178,7 @@ DOWNLOAD_DASHBOARD_TEMPLATE = """
         .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
         .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
-        .opl-admin-navigation .dropdown-menu { margin-top: 8px; z-index: 1000; }
+        .opl-admin-navigation .dropdown-menu { margin-top: 0; z-index: 1000; }
         .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
         .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
         .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
@@ -408,9 +408,17 @@ BOM_BUILDER_TEMPLATE = """
         .bom-child-list.is-open { display: block; }
         .bom-kind { color: #6c757d; font-size: 0.82rem; }
         .bom-list-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-list-icon { flex: 0 0 auto; color: #042c61; font-size: 1rem; line-height: 1; }
+        .bom-list-icon-part { color: #0d6efd; }
         .bom-list-number, .bom-list-quantity, .bom-list-cost { color: #5f6b7a; font-size: 0.9rem; }
         .bom-list-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
-        .bom-builder-row { display: grid; grid-template-columns: minmax(180px, 1fr) 110px minmax(120px, 0.6fr) 36px; gap: 8px; }
+        .bom-builder-table { border: 1px solid #dee2e6; background: white; }
+        .bom-builder-header,
+        .bom-builder-row { display: grid; grid-template-columns: minmax(220px, 1fr) 120px minmax(180px, 0.7fr) 44px; align-items: center; gap: 8px; }
+        .bom-builder-header { min-height: 36px; padding: 6px 10px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; color: #5f6b7a; font-size: 0.86rem; font-weight: 600; }
+        .bom-builder-row { min-height: 44px; padding: 6px 10px; border-top: 1px solid #e2e6ea; }
+        .bom-builder-items > .bom-builder-row:first-child { border-top: 0; }
+        .bom-builder-remove-button { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
         .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
         .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
         .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
@@ -419,12 +427,13 @@ BOM_BUILDER_TEMPLATE = """
         .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
         .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
-        .opl-admin-navigation .dropdown-menu { margin-top: 8px; z-index: 1000; }
+        .opl-admin-navigation .dropdown-menu { margin-top: 0; z-index: 1000; }
         .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
         .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
         .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
         @media (max-width: 767.98px) {
             .bom-builder-row { grid-template-columns: 1fr; }
+            .bom-builder-header { display: none; }
             .bom-list-main { grid-template-columns: 34px minmax(0, 1fr) 80px; }
             .bom-list-cost, .bom-list-actions { grid-column: 2 / -1; text-align: left !important; justify-content: flex-start; }
         }
@@ -461,9 +470,16 @@ BOM_BUILDER_TEMPLATE = """
                 </div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
                     <h3 class="h6 mb-0">{{ _('Items') }}</h3>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addBomBuilderRow()">{{ _('Add row') }}</button>
                 </div>
-                <div id="bom-builder-items" class="d-flex flex-column gap-2"></div>
+                <div class="bom-builder-table">
+                    <div class="bom-builder-header">
+                        <span>{{ _('Item') }}</span>
+                        <span>{{ _('Quantity') }}</span>
+                        <span>{{ _('Note') }}</span>
+                        <span></span>
+                    </div>
+                    <div id="bom-builder-items" class="bom-builder-items"></div>
+                </div>
                 <datalist id="bom-option-list">
                     {% for option in bom_options %}
                     <option value="{{ option.display_label }}"></option>
@@ -477,10 +493,11 @@ BOM_BUILDER_TEMPLATE = """
                         </div>
                         <input class="form-control form-control-sm" name="quantity" type="number" min="1" step="1" value="1">
                         <input class="form-control form-control-sm" name="note" placeholder="{{ _('Note') }}">
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('.bom-builder-row').remove()">×</button>
+                        <button type="button" class="btn btn-outline-secondary bom-builder-remove-button" onclick="this.closest('.bom-builder-row').remove()" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
                     </div>
                 </template>
-                <div class="mt-3">
+                <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="addBomBuilderRow()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('Add item') }}</button>
                     <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
                     {% if edit_bom %}
                     <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
@@ -590,6 +607,11 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
     )
     number = escape(bom.number or "")
     kind = _("Part") if bom.is_part_wrapper else _("BOM")
+    row_icon = (
+        '<i class="bi bi-box-fill bom-list-icon bom-list-icon-part" aria-hidden="true"></i>'
+        if bom.is_part_wrapper
+        else '<i class="bi bi-table bom-list-icon" aria-hidden="true"></i>'
+    )
     number_label = f'<span class="bom-list-number">{number}</span>' if number else ""
     quantity_label = escape(relation_quantity) if relation_quantity is not None else "-"
     children = f'<div id="{children_id}" class="bom-child-list">{"".join(child_rows)}</div>' if can_expand else ""
@@ -618,6 +640,7 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
         <div class="bom-list-main {'bom-row-part' if bom.is_part_wrapper else 'bom-row-bom'} bom-level-{min(depth, 7)} {'is-expandable' if can_expand else ''}" style="padding-left: {12 + (depth * 22)}px !important;"{row_click}>
             {expand_button}
             <div class="bom-list-name">
+                {row_icon}
                 {number_label}
                 <span class="fw-semibold">{escape(bom.name)}</span>
                 <span class="bom-list-meta">{escape(kind)}</span>

@@ -11,6 +11,7 @@
         <span class="bom-expand-spacer"></span>
         {% endif %}
         <div class="bom-list-name">
+            <i class="bi {{ 'bi-box-fill bom-list-icon-part' if bom.is_part_wrapper else 'bi-table' }} bom-list-icon" aria-hidden="true"></i>
             {% if bom.number %}<span class="bom-list-number">{{ bom.number }}</span>{% endif %}
             <span class="fw-semibold">{{ bom.name }}</span>
             <span class="bom-list-meta">{% if bom.is_part_wrapper %}{{ _('Part') }}{% else %}{{ _('BOM') }}{% endif %}</span>
@@ -106,6 +107,17 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.bom-list-icon {
+    flex: 0 0 auto;
+    color: #042c61;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.bom-list-icon-part {
+    color: #0c58c9;
 }
 
 .bom-list-number,

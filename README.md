@@ -6,7 +6,7 @@ The focus is practical mechanical engineering: find a standard part, preview or 
 
 ![OpenPartsLibrary interface](openpartslibrary/images/openpartslibrary-2026_05_04.png)
 
-## Purpose
+## Key Features
 
 Early-stage machine development is often slowed down by repeated component searches, missing CAD files, inconsistent part names, and unclear reuse across assemblies.
 

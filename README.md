@@ -1,55 +1,45 @@
 # OpenPartsLibrary
 
-OpenPartsLibrary helps hardware startups and small manufacturing teams develop machines faster by reusing cheap standard components from AliExpress.com together with ready-to-use CAD files.
+Build machines faster with cheap standard components and ready-to-use CAD files.
 
-The focus is practical mechanical engineering: find a standard part, preview or download its CAD model and use it in a FreeCAD assembly. With the available BOMs, a collection of FreeCAD parts can be downloaded with a single click.
+OpenPartsLibrary is for hardware startups, small manufacturing teams, and mechanical engineers who build prototypes, fixtures, automation equipment, test rigs, and early production machines. It is used during concept design, FreeCAD assembly work, BOM preparation, and procurement handoff.
+
+Benefits:
+
+- Find standard parts faster without searching supplier pages repeatedly.
+- Reuse CAD files from AliExpress.com components directly in FreeCAD assemblies.
+- Start from reusable BOM modules instead of selecting every related part manually.
+- Download CAD files for an entire BOM with one click.
+- Look up which BOMs already use a specific part.
+- Work with a multilingual interface for international teams.
 
 ![OpenPartsLibrary interface](openpartslibrary/images/openpartslibrary-2026_05_04.png)
 
 ## Key Features
 
-Early-stage machine development is often slowed down by repeated component searches, missing CAD files, inconsistent part names, and unclear reuse across assemblies.
+OpenPartsLibrary focuses on practical part reuse for FreeCAD-based machine development.
 
-OpenPartsLibrary provides a focused part library for this workflow:
+- Engineering search for standard mechanical parts, supplier names, part numbers, and dimensions.
+- CAD preview and CAD download for reusable components.
+- Reusable BOM modules for common machine subsystems.
+- One-click CAD package download for complete BOMs.
+- My Bill of Materials for collecting parts during design work.
+- Part usage lookup across existing BOMs.
+- Multilingual user interface.
 
-- Search standard mechanical parts by engineering terms, supplier names, part numbers, and dimensions.
-- Reuse provided CAD files directly in machine assemblies.
-- Prioritize practical size matches, such as the next larger rail length for a requested dimension.
-- Collect parts into My Bill of Materials for download and handoff.
-- Look up which BOMs already use a specific part.
-- Download CAD files and a structured hardware BOM package.
-- Download all CAD files for an entire BOM package with one click.
-- Use the interface in multiple languages.
+## Engineering Search
 
-## Search
+Search is tuned for mechanical part discovery. Engineers can use familiar terms such as `guide`, `rail`, `linear guide`, `profile`, or `washer` without needing to know the exact stored part name.
 
-Search is tuned for mechanical part discovery. It supports synonyms such as `guide`, `rail`, and `linear guide`, and it treats numeric input as a specification instead of plain text.
+For users, the result is simple: searches return practical engineering matches, including useful standard-size alternatives when the exact requested dimension is not available.
 
-For the end user, this means searches return practical engineering matches instead of only literal text matches. If a requested size is not available, the closest usable standard part can appear first.
+## FreeCAD CAD Reuse
 
-## Reusable BOM Modules
+The library is focused on assemblies created with FreeCAD.
 
-Precreated BOMs represent frequently combined parts that are often reused as machine modules.
+Many low-cost AliExpress components are good enough for prototypes and early machines, but the development workflow becomes slow when CAD files are scattered across supplier downloads, old projects, and local folders.
 
-Examples include complete linear axes, rail sets, motor and bracket combinations, or other groups of components that are usually selected together.
-
-Instead of collecting every rail, carriage, motor, fastener, and mounting bracket one by one, engineers can start from an existing BOM that already reflects a proven combination.
-
-The app also shows where a specific part is used across BOMs. This helps engineers understand which modules depend on a part and makes reuse more transparent when preparing or changing FreeCAD assemblies.
-
-Complete BOMs can be downloaded as one package, including the available CAD files and hardware BOM data. This makes it faster to move from a reusable module in the library to a working FreeCAD assembly or procurement handoff.
-
-## My Bill Of Materials
-
-Selected parts are collected in My Bill of Materials. From there, users can review quantities, estimated cost, CAD availability, and download the package.
-
-## FreeCAD Focussed
-
-The library is intended for assemblies created with FreeCAD.
-
-Many low-cost components from AliExpress are usable for prototypes, fixtures, automation equipment, test rigs, and early production machines, but the engineering work becomes slow when CAD models and part information are scattered.
-
-OpenPartsLibrary keeps the reusable part data close to the CAD workflow, so engineers can quickly insert known components into assemblies instead of rebuilding or searching for the same models again.
+OpenPartsLibrary keeps reusable CAD files close to the part information so engineers can quickly insert known components into FreeCAD assemblies.
 
 Typical part families include:
 
@@ -57,11 +47,39 @@ Typical part families include:
 - Aluminum profiles and brackets
 - Fasteners, nuts, washers, and spacers
 - Plates, panels, adapters, and mounting parts
-- Other purchased standard components used in machine frames and mechanisms
+- Purchased standard components used in machine frames and mechanisms
+
+## Reusable BOM Modules
+
+Precreated BOMs represent frequently combined parts that are often reused as machine modules.
+
+Examples include complete linear axes, rail sets, motor and bracket combinations, or other groups of components that are usually selected together.
+
+Instead of collecting every rail, carriage, motor, fastener, and mounting bracket one by one, engineers can start from an existing BOM that already reflects a useful combination.
+
+## One-Click BOM Packages
+
+Complete BOMs can be downloaded as one package, including available CAD files and hardware BOM data.
+
+This makes it faster to move from a reusable module in the library to a working FreeCAD assembly, procurement request, or manufacturing handoff.
+
+## Part Usage Lookup
+
+OpenPartsLibrary shows where a specific part is used across BOMs.
+
+This helps engineers understand which modules depend on a part, avoid duplicate decisions, and assess the impact of changing a component.
+
+## My Bill Of Materials
+
+My Bill of Materials is a temporary collection for parts selected during design work.
+
+Users can review quantities, estimated cost, CAD availability, and download the selected package.
 
 ## Multiple Languages
 
-OpenPartsLibrary supports multiple interface languages, which helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
+OpenPartsLibrary supports multiple interface languages.
+
+This helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
 
 ## Running Locally
 
@@ -95,7 +113,7 @@ Runtime data is stored in:
 instance/data/
 ```
 
-## How To Contribute
+## Contributing
 
 This section is for software developers and technical contributors.
 
@@ -110,7 +128,7 @@ openpartslibrary/models.py     Data models
 openpartslibrary/admin.py      Admin and BOM management views
 ```
 
-Keep contributions focused on the engineering workflow: faster part reuse, better CAD/BOM handling, and clearer support for FreeCAD-based machine assemblies.
+Keep contributions focused on faster part reuse, better CAD/BOM handling, and clearer support for FreeCAD-based machine assemblies.
 
 ## License
 

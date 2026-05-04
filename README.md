@@ -16,6 +16,8 @@ OpenPartsLibrary provides a focused part library for this workflow:
 - Collect parts into My Bill of Materials for download and handoff.
 - Look up which BOMs already use a specific part.
 - Download CAD files and a structured hardware BOM package.
+- Download all CAD files for an entire BOM package with one click.
+- Use the interface in multiple languages.
 
 ## Search
 
@@ -32,6 +34,12 @@ Examples include complete linear axes, rail sets, motor and bracket combinations
 Instead of collecting every rail, carriage, motor, fastener, and mounting bracket one by one, engineers can start from an existing BOM that already reflects a proven combination.
 
 The app also shows where a specific part is used across BOMs. This helps engineers understand which modules depend on a part and makes reuse more transparent when preparing or changing FreeCAD assemblies.
+
+Complete BOMs can be downloaded as one package, including the available CAD files and hardware BOM data. This makes it faster to move from a reusable module in the library to a working FreeCAD assembly or procurement handoff.
+
+## Multiple Languages
+
+OpenPartsLibrary supports multiple interface languages, which helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
 
 ## My Bill Of Materials
 

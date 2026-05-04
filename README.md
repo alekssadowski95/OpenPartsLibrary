@@ -39,15 +39,11 @@ The app also shows where a specific part is used across BOMs. This helps enginee
 
 Complete BOMs can be downloaded as one package, including the available CAD files and hardware BOM data. This makes it faster to move from a reusable module in the library to a working FreeCAD assembly or procurement handoff.
 
-## Multiple Languages
-
-OpenPartsLibrary supports multiple interface languages, which helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
-
 ## My Bill Of Materials
 
 Selected parts are collected in My Bill of Materials. From there, users can review quantities, estimated cost, CAD availability, and download the package.
 
-## FreeCAD Assembly Focus
+## FreeCAD Focussed
 
 The library is intended for assemblies created with FreeCAD.
 
@@ -62,6 +58,10 @@ Typical part families include:
 - Fasteners, nuts, washers, and spacers
 - Plates, panels, adapters, and mounting parts
 - Other purchased standard components used in machine frames and mechanisms
+
+## Multiple Languages
+
+OpenPartsLibrary supports multiple interface languages, which helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
 
 ## Running Locally
 

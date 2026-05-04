@@ -123,7 +123,6 @@ class BillOfMaterialsItem(Base):
     child_bom_id = Column(Integer, ForeignKey("bill_of_materials.id"), nullable=False)
     quantity = Column(Numeric(12, 3), default=1, nullable=False)
     position = Column(Integer, default=0, nullable=False)
-    note = Column(Text)
     date_created = Column(DateTime, default=datetime.utcnow)
     date_modified = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

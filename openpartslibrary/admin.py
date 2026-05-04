@@ -1,3 +1,4 @@
+import json
 import math
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -14,7 +15,7 @@ except ImportError:
 from flask import redirect, render_template_string, request, url_for
 from markupsafe import escape
 
-from openpartslibrary.boms import copy_bom, create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms, update_bom
+from openpartslibrary.boms import copy_bom, create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms, replace_bom_items, update_bom
 from openpartslibrary.i18n import gettext as _, lazy_gettext
 from openpartslibrary.models import BillOfMaterials, BillOfMaterialsItem, Component, ComponentComponent, DownloadEvent, File, Material, Supplier
 
@@ -384,12 +385,17 @@ BOM_BUILDER_TEMPLATE = """
     <style>
         body { background: #f8f9fa; }
         .bom-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
+        .bom-list-toolbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin: -1.5rem -12px 0; background: white; border-bottom: 1px solid #d7dde5; }
+        .bom-list-toolbar-title { min-width: 0; }
+        .bom-list-toolbar h1 { font-size: 1.25rem; margin: 0; }
+        .bom-list-toolbar-subtitle { color: #667085; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-list-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
         .bom-list-scroll { min-height: 0; overflow: auto; background: white; }
         .bom-list-header { border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; background-color: #f8f9fa; }
         .bom-list-table { border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; }
         .bom-list-row { border-top: 1px solid #e2e6ea; }
         .bom-list-table > .bom-list-row:first-of-type { border-top: 0; }
-        .bom-list-main { display: grid; grid-template-columns: 34px minmax(260px, 1fr) 120px 150px 180px; align-items: center; min-height: 36px; gap: 8px; padding-top: 4px; padding-right: 12px; padding-bottom: 4px; cursor: default; }
+        .bom-list-main { display: grid; grid-template-columns: 34px minmax(220px, 1fr) 90px 130px 250px; align-items: center; min-height: 36px; gap: 8px; padding-top: 4px; padding-right: 12px; padding-bottom: 4px; cursor: default; }
         .bom-list-main.is-expandable { cursor: pointer; }
         .bom-level-0 { background: #f8f9fa; }
         .bom-level-1 { background: #eef6ff; }
@@ -411,10 +417,10 @@ BOM_BUILDER_TEMPLATE = """
         .bom-list-icon { flex: 0 0 auto; color: #042c61; font-size: 1rem; line-height: 1; }
         .bom-list-icon-part { color: #0d6efd; }
         .bom-list-number, .bom-list-quantity, .bom-list-cost { color: #5f6b7a; font-size: 0.9rem; }
-        .bom-list-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
+        .bom-list-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; white-space: nowrap; }
         .bom-builder-table { border: 1px solid #dee2e6; background: white; }
         .bom-builder-header,
-        .bom-builder-row { display: grid; grid-template-columns: minmax(220px, 1fr) 120px minmax(180px, 0.7fr) 44px; align-items: center; gap: 8px; }
+        .bom-builder-row { display: grid; grid-template-columns: minmax(220px, 1fr) 120px 44px; align-items: center; gap: 8px; }
         .bom-builder-header { min-height: 36px; padding: 6px 10px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; color: #5f6b7a; font-size: 0.86rem; font-weight: 600; }
         .bom-builder-row { min-height: 44px; padding: 6px 10px; border-top: 1px solid #e2e6ea; }
         .bom-builder-items > .bom-builder-row:first-child { border-top: 0; }
@@ -432,6 +438,8 @@ BOM_BUILDER_TEMPLATE = """
         .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
         .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
         @media (max-width: 767.98px) {
+            .bom-list-toolbar { align-items: flex-start; flex-direction: column; }
+            .bom-list-toolbar-actions { justify-content: flex-start; }
             .bom-builder-row { grid-template-columns: 1fr; }
             .bom-builder-header { display: none; }
             .bom-list-main { grid-template-columns: 34px minmax(0, 1fr) 80px; }
@@ -442,31 +450,30 @@ BOM_BUILDER_TEMPLATE = """
 <body>
     {% include 'admin/_header.html' %}
     <main class="container-fluid py-4">
+        {% if edit_bom %}
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-                <h1 class="h3 mb-1">{{ _('Edit BOM') if edit_bom else _('Bill of Materials') }}</h1>
+                <h1 class="h3 mb-1">{{ _('Edit BOM') }}</h1>
                 <div class="text-muted">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
             </div>
             <a class="btn btn-outline-secondary" href="{{ node_editor_url }}"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>{{ _('Node editor') }}</a>
         </div>
 
         <section class="bom-card p-3 mb-3">
-            <h2 class="h5 mb-3">{{ _('Update BOM') if edit_bom else _('Create BOM') }}</h2>
+            <h2 class="h5 mb-3">{{ _('Update BOM') }}</h2>
             <form method="post" action="{{ form_action }}">
                 <div class="row g-2 mb-3">
-                    {% if edit_bom %}
                     <div class="col-12 col-md-3">
                         <label class="form-label">{{ _('BOM number') }}</label>
                         <div class="form-control-plaintext fw-semibold">{{ edit_bom.number }}</div>
                     </div>
-                    {% endif %}
-                    <div class="col-12 {{ 'col-md-4' if edit_bom else 'col-md-5' }}">
+                    <div class="col-12 col-md-4">
                         <label class="form-label">{{ _('Name') }}</label>
-                        <input id="bom-root-name-input" class="form-control" name="name" value="{{ edit_bom.name if edit_bom else '' }}" required>
+                        <input id="bom-root-name-input" class="form-control" name="name" value="{{ edit_bom.name }}" required>
                     </div>
-                    <div class="col-12 {{ 'col-md-5' if edit_bom else 'col-md-7' }}">
+                    <div class="col-12 col-md-5">
                         <label class="form-label">{{ _('Description') }}</label>
-                        <input class="form-control" name="description" value="{{ edit_bom.description if edit_bom and edit_bom.description else '' }}">
+                        <input class="form-control" name="description" value="{{ edit_bom.description if edit_bom.description else '' }}">
                     </div>
                 </div>
                 <div class="d-flex align-items-center justify-content-between mb-2">
@@ -476,7 +483,6 @@ BOM_BUILDER_TEMPLATE = """
                     <div class="bom-builder-header">
                         <span>{{ _('Item') }}</span>
                         <span>{{ _('Quantity') }}</span>
-                        <span>{{ _('Note') }}</span>
                         <span></span>
                     </div>
                     <div id="bom-builder-items" class="bom-builder-items"></div>
@@ -493,25 +499,27 @@ BOM_BUILDER_TEMPLATE = """
                             <input type="hidden" name="child_bom_id">
                         </div>
                         <input class="form-control form-control-sm" name="quantity" type="number" min="1" step="1" value="1">
-                        <input class="form-control form-control-sm" name="note" placeholder="{{ _('Note') }}">
                         <button type="button" class="btn btn-outline-secondary bom-builder-remove-button" onclick="removeBomBuilderRow(this.closest('.bom-builder-row'))" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
                     </div>
                 </template>
                 <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
                     <button type="button" class="btn btn-outline-secondary" onclick="addBomBuilderRow()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('Add item') }}</button>
-                    <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
-                    {% if edit_bom %}
+                    <button class="btn btn-primary" type="submit">{{ _('Save BOM') }}</button>
                     <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
-                    {% endif %}
                 </div>
             </form>
         </section>
-
-        {% if not edit_bom %}
-        <section class="container-fluid p-0 m-0 d-flex flex-column bom-list-scroll">
-            <div class="bom-list-header px-3 py-2">
-                <h2 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Bill of Materials') }}</h2>
+        {% else %}
+        <div class="bom-list-toolbar">
+            <div class="bom-list-toolbar-title">
+                <h1>{{ _('Bill of Materials') }}</h1>
+                <div class="bom-list-toolbar-subtitle">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
             </div>
+            <div class="bom-list-toolbar-actions">
+                <a class="btn btn-primary" href="{{ node_editor_url }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('New BOM') }}</a>
+            </div>
+        </div>
+        <section class="container-fluid p-0 m-0 d-flex flex-column bom-list-scroll">
             <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', boms|length) }}</p>
             <div class="bom-list-table">
                 <div class="bom-list-main fw-semibold" style="background: #ffffff;">
@@ -543,7 +551,6 @@ BOM_BUILDER_TEMPLATE = """
                 row.querySelector(".bom-item-search").value = item.display_label || "";
                 row.querySelector("input[name='child_bom_id']").value = item.child_bom_id || "";
                 row.querySelector("input[name='quantity']").value = item.quantity || 1;
-                row.querySelector("input[name='note']").value = item.note || "";
             }
             target.appendChild(fragment);
         }
@@ -585,6 +592,9 @@ BOM_BUILDER_TEMPLATE = """
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            if (!document.getElementById("bom-builder-row-template")) {
+                return;
+            }
             if (initialItems.length) {
                 initialItems.forEach((item) => addBomBuilderRow(item));
             } else {
@@ -634,18 +644,45 @@ BOM_NODE_EDITOR_TEMPLATE = """
         .bom-node-link { stroke: #6b7f97; stroke-width: 2; fill: none; }
         .bom-node-card { position: absolute; width: 220px; background: white; border: 1px solid #cfd7e2; border-radius: 6px; box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12); font-size: 0.82rem; cursor: default; }
         .bom-node-card-root { width: 250px; border-color: #8fb4dc; }
-        .bom-node-header { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 7px 9px; border-bottom: 1px solid #e1e7ef; background: #f8fafc; color: #1f2937; }
+        .bom-node-header { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 7px 38px 7px 9px; border-bottom: 1px solid #e1e7ef; background: #f8fafc; color: #1f2937; position: relative; }
         .bom-node-header i { flex: 0 0 auto; color: #042c61; }
         .bom-node-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
         .bom-node-body { padding: 9px; }
         .bom-node-body .form-label { margin-bottom: 3px; color: #5f6b7a; font-size: 0.72rem; }
-        .bom-node-note { margin-top: 8px; border-top: 1px solid #eef1f5; padding-top: 6px; }
-        .bom-node-note summary { cursor: pointer; color: #5f6b7a; font-size: 0.78rem; }
-        .bom-node-actions { display: flex; justify-content: flex-end; }
-        .bom-node-delete { width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
-        .bom-node-empty { position: absolute; left: 380px; top: 165px; color: #667085; background: rgba(255, 255, 255, 0.86); border: 1px dashed #aab8c7; border-radius: 6px; padding: 12px 14px; }
+        .bom-node-field-row { display: grid; grid-template-columns: minmax(0, 1fr) 62px; gap: 8px; align-items: end; }
+        .bom-node-readonly-value { min-height: 28px; padding: 4px 0; color: #1f2937; font-size: 0.82rem; overflow-wrap: anywhere; }
+        .bom-node-readonly-muted { color: #667085; }
+        .bom-node-card-readonly { background: #f8fafc; }
+        .bom-node-source-switch { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 8px; border-bottom: 1px solid #d7dde5; }
+        .bom-node-source-tab { min-height: 30px; padding: 4px 6px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #5f6b7a; font-size: 0.76rem; font-weight: 600; }
+        .bom-node-source-tab:hover { color: #042c61; background: #f8fafc; }
+        .bom-node-source-tab.is-active { color: #042c61; border-bottom-color: #0d6efd; background: white; }
+        .bom-node-combobox { position: relative; }
+        .bom-node-combobox .form-control { padding-right: 58px; }
+        .bom-node-body .form-control::placeholder { color: #9aa6b2; opacity: 1; }
+        .bom-node-selection-clear,
+        .bom-node-dropdown-toggle { position: absolute; top: 0; width: 28px; height: 31px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 0; background: transparent; color: #667085; }
+        .bom-node-selection-clear { right: 28px; }
+        .bom-node-dropdown-toggle { right: 0; }
+        .bom-node-selection-clear:hover,
+        .bom-node-dropdown-toggle:hover { color: #042c61; }
+        .bom-node-options { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 3px); display: none; max-height: 190px; overflow: auto; background: white; border: 1px solid #cfd7e2; border-radius: 4px; box-shadow: 0 10px 22px rgba(16, 24, 40, 0.16); }
+        .bom-node-options.is-open { display: block; }
+        .bom-node-option { width: 100%; display: flex; align-items: center; gap: 7px; min-height: 30px; padding: 5px 8px; border: 0; background: white; color: #1f2937; font-size: 0.78rem; text-align: left; }
+        .bom-node-option:hover, .bom-node-option:focus { background: #eef6ff; outline: 0; }
+        .bom-node-option-empty { padding: 7px 8px; color: #7a8794; font-size: 0.78rem; }
+        .bom-node-delete { position: absolute; top: 4px; right: 5px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-color: transparent; background: transparent; }
+        .bom-node-add-child { position: absolute; top: 50%; right: -42px; transform: translateY(-50%); width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 999px; box-shadow: 0 6px 14px rgba(16, 24, 40, 0.16); }
+        .bom-node-empty { position: absolute; color: #667085; background: rgba(255, 255, 255, 0.9); border: 1px dashed #aab8c7; border-radius: 6px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; }
+        .bom-node-empty .btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border-radius: 999px; }
         .bom-node-zoom { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 6px; padding: 6px; background: rgba(255, 255, 255, 0.92); border: 1px solid #d7dde5; border-radius: 6px; box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12); }
         .bom-node-zoom .btn { width: 34px; height: 34px; display: inline-flex; align-items: center; justify-content: center; padding: 0; }
+        .bom-node-modal-backdrop { position: fixed; inset: 0; z-index: 1100; display: none; align-items: center; justify-content: center; background: rgba(15, 23, 42, 0.46); padding: 16px; }
+        .bom-node-modal-backdrop.is-open { display: flex; }
+        .bom-node-modal { width: min(440px, 100%); background: white; border-radius: 6px; border: 1px solid #d7dde5; box-shadow: 0 22px 50px rgba(16, 24, 40, 0.22); }
+        .bom-node-modal-header, .bom-node-modal-body, .bom-node-modal-footer { padding: 14px 16px; }
+        .bom-node-modal-header { border-bottom: 1px solid #e6ebf1; font-weight: 600; }
+        .bom-node-modal-footer { display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid #e6ebf1; }
         @media (max-width: 767.98px) {
             body { overflow: auto; }
             .bom-node-page { height: auto; min-height: calc(100vh - 52px); }
@@ -666,10 +703,8 @@ BOM_NODE_EDITOR_TEMPLATE = """
                 </div>
             </div>
             <div class="bom-node-toolbar-actions">
-                <button type="button" class="btn btn-outline-secondary" onclick="addBomNode()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('Add node') }}</button>
-                <a class="btn btn-outline-secondary" href="{{ table_editor_url }}"><i class="bi bi-table me-1" aria-hidden="true"></i>{{ _('Table editor') }}</a>
+                <button id="clear-node-editor-button" type="button" class="btn btn-outline-secondary" onclick="openClearModal()">{{ _('Clear') }}</button>
                 <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
-                <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
             </div>
         </div>
         <div id="node-hidden-inputs"></div>
@@ -686,30 +721,173 @@ BOM_NODE_EDITOR_TEMPLATE = """
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetView()" title="{{ _('Reset view') }}" aria-label="{{ _('Reset view') }}"><i class="bi bi-aspect-ratio"></i></button>
             </div>
         </div>
+        <div id="delete-node-modal" class="bom-node-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-node-modal-title">
+            <div class="bom-node-modal">
+                <div id="delete-node-modal-title" class="bom-node-modal-header">{{ _('Delete node') }}</div>
+                <div class="bom-node-modal-body">{{ _('This node has child nodes. Deleting it will also remove those nested items from this BOM structure.') }}</div>
+                <div class="bom-node-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeDeleteModal()">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDeleteNode()">{{ _('Delete') }}</button>
+                </div>
+            </div>
+        </div>
+        <div id="clear-node-editor-modal" class="bom-node-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="clear-node-editor-modal-title">
+            <div class="bom-node-modal">
+                <div id="clear-node-editor-modal-title" class="bom-node-modal-header">{{ _('Clear BOM draft') }}</div>
+                <div class="bom-node-modal-body">{{ _('This will remove all nodes from the current editor draft and keep only the root node. The local draft saved in this browser will also be deleted.') }}</div>
+                <div class="bom-node-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" onclick="closeClearModal()">{{ _('Cancel') }}</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmClearEditor()">{{ _('Clear') }}</button>
+                </div>
+            </div>
+        </div>
     </form>
     <script>
         const bomOptions = {{ bom_options|tojson }};
         const initialItems = {{ initial_items|tojson }};
         const newBomLabel = {{ _('New BOM')|tojson }};
         const selectItemLabel = {{ _('Select part or BOM')|tojson }};
-        const noNodesLabel = {{ _('Add existing BOMs or parts as child nodes.')|tojson }};
+        const noNodesLabel = {{ _('Add BOMs or parts.')|tojson }};
+        const draftStorageKey = {{ draft_storage_key|tojson }};
         let rootName = {{ (edit_bom.name if edit_bom else '')|tojson }};
         let rootDescription = {{ (edit_bom.description if edit_bom and edit_bom.description else '')|tojson }};
-        let nodes = initialItems.length ? initialItems.map((item) => ({ ...item })) : [];
+        let nodes = initialItems.length ? initialItems.map((item) => normalizeNode(item)) : [];
         let scale = 1;
         let panX = 30;
         let panY = 30;
         let isPanning = false;
+        let isSubmitting = false;
+        let measuredNodeHeights = {};
         let panStart = { x: 0, y: 0, panX: 0, panY: 0 };
+        let pendingDeletePath = null;
+        const nodeTop = 80;
+        const nodeVerticalGap = 34;
+        const nodeHorizontalPitch = 302;
+        const firstChildNodeX = 402;
+        const rootNodeWidth = 250;
+        const childNodeWidth = 220;
+        const nodeLinkY = 23;
+        const nodeAddButtonOffset = 42;
+        const nodeAddButtonWidth = 32;
+        const nodeConnectorRightGap = 20;
+        const nodeConnectorTargetGap = 20;
+        const nodeConnectorVerticalGap = 18;
 
-        function addBomNode() {
-            nodes.push({ child_bom_id: "", display_label: "", quantity: "1", note: "" });
+        function normalizeNode(item = {}) {
+            return {
+                child_bom_id: item.child_bom_id || "",
+                display_label: item.display_label || "",
+                source_type: item.source_type || "existing",
+                readonly: Boolean(item.readonly),
+                new_bom_name: item.new_bom_name || "",
+                new_bom_description: item.new_bom_description || "",
+                quantity: item.quantity || "1",
+                children: Array.isArray(item.children) ? item.children.map((child) => normalizeNode(child)) : [],
+            };
+        }
+
+        function getNode(path) {
+            let branch = nodes;
+            let node = null;
+            for (const index of path) {
+                node = branch[index];
+                if (!node) {
+                    return null;
+                }
+                if (!Array.isArray(node.children)) {
+                    node.children = [];
+                }
+                branch = node.children;
+            }
+            return node;
+        }
+
+        function getBranch(path) {
+            if (!path.length) {
+                return nodes;
+            }
+            const parent = getNode(path);
+            if (parent && !Array.isArray(parent.children)) {
+                parent.children = [];
+            }
+            return parent ? parent.children : nodes;
+        }
+
+        function pathExpression(path) {
+            return `[${path.join(",")}]`;
+        }
+
+        function pathKey(path) {
+            return path.length ? path.join(".") : "root";
+        }
+
+        function addBomNode(path = []) {
+            const parent = path.length ? getNode(path) : null;
+            if (parent && !canNodeHaveChildren(parent)) {
+                return;
+            }
+            getBranch(path).push(normalizeNode());
             renderNodes();
         }
 
-        function removeBomNode(index) {
-            nodes.splice(index, 1);
+        function requestRemoveBomNode(path) {
+            const node = getNode(path);
+            if (!node) {
+                return;
+            }
+            if (node.readonly) {
+                return;
+            }
+            if (node.children.length) {
+                pendingDeletePath = path;
+                document.getElementById("delete-node-modal").classList.add("is-open");
+                return;
+            }
+            removeBomNode(path);
+        }
+
+        function removeBomNode(path) {
+            const parentPath = path.slice(0, -1);
+            const index = path[path.length - 1];
+            getBranch(parentPath).splice(index, 1);
             renderNodes();
+        }
+
+        function closeDeleteModal() {
+            pendingDeletePath = null;
+            document.getElementById("delete-node-modal").classList.remove("is-open");
+        }
+
+        function confirmDeleteNode() {
+            if (pendingDeletePath) {
+                removeBomNode(pendingDeletePath);
+            }
+            closeDeleteModal();
+        }
+
+        function openClearModal() {
+            const modal = document.getElementById("clear-node-editor-modal");
+            modal.classList.add("is-open");
+            modal.style.display = "flex";
+        }
+
+        function closeClearModal() {
+            const modal = document.getElementById("clear-node-editor-modal");
+            modal.classList.remove("is-open");
+            modal.style.display = "";
+        }
+
+        function confirmClearEditor() {
+            isSubmitting = true;
+            rootName = {{ (edit_bom.name if edit_bom else '')|tojson }};
+            rootDescription = {{ (edit_bom.description if edit_bom and edit_bom.description else '')|tojson }};
+            nodes = [];
+            closeClearModal();
+            clearDraft();
+            renderNodes();
+            frameInitialRootView();
+            isSubmitting = false;
+            syncHiddenInputs();
         }
 
         function updateRoot(field, value) {
@@ -721,17 +899,140 @@ BOM_NODE_EDITOR_TEMPLATE = """
             syncHiddenInputs();
         }
 
-        function updateNode(index, field, value) {
-            const node = nodes[index];
+        function updateNode(path, field, value) {
+            const node = getNode(path);
             if (!node) {
                 return;
             }
+            if (node.readonly) {
+                return;
+            }
+            const couldHaveChildren = canNodeHaveChildren(node);
             node[field] = value;
             if (field === "display_label") {
                 const match = bomOptions.find((option) => option.display_label === value);
                 node.child_bom_id = match ? match.id : "";
+                if (match) {
+                    node.children = [];
+                }
+            }
+            if (field === "display_label" && couldHaveChildren !== canNodeHaveChildren(node)) {
+                renderNodes();
+                return;
             }
             syncHiddenInputs();
+        }
+
+        function setNodeSourceType(path, sourceType) {
+            const node = getNode(path);
+            if (!node) {
+                return;
+            }
+            if (node.readonly) {
+                return;
+            }
+            node.source_type = sourceType;
+            if (sourceType === "new") {
+                node.child_bom_id = "";
+                node.display_label = "";
+            } else {
+                node.children = [];
+            }
+            renderNodes();
+        }
+
+        function renderNodeOptions(input, path) {
+            const menu = input.closest(".bom-node-combobox")?.querySelector(".bom-node-options");
+            if (!menu) {
+                return;
+            }
+            const query = input.value.trim().toLowerCase();
+            const matches = bomOptions
+                .filter((option) => !query || option.display_label.toLowerCase().includes(query))
+                .slice(0, 60);
+            if (!matches.length) {
+                menu.innerHTML = `<div class="bom-node-option-empty">{{ _('No matching BOMs or parts.') }}</div>`;
+            } else {
+                menu.innerHTML = matches.map((option) => `
+                    <button type="button" class="bom-node-option" data-option-id="${escapeHtml(option.id)}" data-option-label="${escapeHtml(option.display_label)}" onclick="selectNodeOption(this, ${pathExpression(path)})">
+                        <i class="bi ${option.is_part_wrapper ? "bi-box-fill text-primary" : "bi-table"}" aria-hidden="true"></i>
+                        <span>${escapeHtml(option.display_label)}</span>
+                    </button>
+                `).join("");
+            }
+            menu.classList.add("is-open");
+        }
+
+        function toggleNodeDropdown(button, path) {
+            const wrapper = button.closest(".bom-node-combobox");
+            const input = wrapper ? wrapper.querySelector("input") : null;
+            const menu = wrapper ? wrapper.querySelector(".bom-node-options") : null;
+            if (!input || !menu) {
+                return;
+            }
+            if (menu.classList.contains("is-open")) {
+                menu.classList.remove("is-open");
+                return;
+            }
+            renderNodeOptions(input, path);
+            input.focus();
+        }
+
+        function selectNodeOption(button, path) {
+            const wrapper = button.closest(".bom-node-combobox");
+            const input = wrapper ? wrapper.querySelector("input") : null;
+            const menu = wrapper ? wrapper.querySelector(".bom-node-options") : null;
+            const node = getNode(path);
+            if (!node) {
+                return;
+            }
+            if (node.readonly) {
+                return;
+            }
+            node.child_bom_id = button.dataset.optionId || "";
+            node.display_label = button.dataset.optionLabel || "";
+            node.children = [];
+            if (input) {
+                input.value = node.display_label;
+                updateNodeHeader(input, path);
+            }
+            if (menu) {
+                menu.classList.remove("is-open");
+            }
+            syncHiddenInputs();
+            renderNodes();
+        }
+
+        function clearNodeSelection(button, path) {
+            const wrapper = button.closest(".bom-node-combobox");
+            const input = wrapper ? wrapper.querySelector("input") : null;
+            const menu = wrapper ? wrapper.querySelector(".bom-node-options") : null;
+            const node = getNode(path);
+            if (!node) {
+                return;
+            }
+            if (node.readonly) {
+                return;
+            }
+            node.child_bom_id = "";
+            node.display_label = "";
+            if (input) {
+                input.value = "";
+                updateNodeHeader(input, path);
+            }
+            if (menu) {
+                menu.classList.remove("is-open");
+            }
+            syncHiddenInputs();
+            renderNodes();
+        }
+
+        function closeNodeDropdowns(exceptWrapper = null) {
+            document.querySelectorAll(".bom-node-options.is-open").forEach((menu) => {
+                if (!exceptWrapper || !exceptWrapper.contains(menu)) {
+                    menu.classList.remove("is-open");
+                }
+            });
         }
 
         function updateRootTitle(value) {
@@ -743,12 +1044,12 @@ BOM_NODE_EDITOR_TEMPLATE = """
             }
         }
 
-        function updateNodeHeader(input, index) {
+        function updateNodeHeader(input, path) {
             const card = input.closest(".bom-node-card");
             const title = card ? card.querySelector(".bom-node-title") : null;
             const icon = card ? card.querySelector(".bom-node-header i") : null;
-            const node = nodes[index];
-            const text = input.value || selectItemLabel;
+            const node = getNode(path);
+            const text = node && node.source_type === "new" ? (node.new_bom_name || newBomLabel) : (input.value || selectItemLabel);
             if (title) {
                 title.textContent = text;
                 title.title = text;
@@ -759,72 +1060,301 @@ BOM_NODE_EDITOR_TEMPLATE = """
         }
 
         function optionForNode(node) {
+            if (node.source_type === "new") {
+                return null;
+            }
             return bomOptions.find((option) => String(option.id) === String(node.child_bom_id)) || null;
         }
 
         function iconForNode(node) {
+            if (node.source_type === "new") {
+                return "bi-table";
+            }
             const option = optionForNode(node);
             return option && option.is_part_wrapper ? "bi-box-fill text-primary" : "bi-table";
         }
 
+        function canNodeHaveChildren(node) {
+            return !node.readonly && node.source_type === "new";
+        }
+
         function syncHiddenInputs() {
             const target = document.getElementById("node-hidden-inputs");
-            const itemInputs = nodes.map((node) => `
-                <input type="hidden" name="child_bom_id" value="${escapeHtml(node.child_bom_id || "")}">
-                <input type="hidden" name="quantity" value="${escapeHtml(node.quantity || "1")}">
-                <input type="hidden" name="note" value="${escapeHtml(node.note || "")}">
-            `).join("");
             target.innerHTML = `
                 <input type="hidden" name="name" value="${escapeHtml(rootName)}">
                 <input type="hidden" name="description" value="${escapeHtml(rootDescription)}">
-                ${itemInputs}
+                <input type="hidden" name="node_tree" value="${escapeHtml(JSON.stringify({ children: nodes }))}">
             `;
+            saveDraft();
         }
 
-        function nodeCard(node, index, x, y) {
-            const title = node.display_label || selectItemLabel;
+        function saveDraft() {
+            if (isSubmitting) {
+                return;
+            }
+            try {
+                window.localStorage.setItem(draftStorageKey, JSON.stringify({
+                    rootName,
+                    rootDescription,
+                    nodes,
+                    savedAt: new Date().toISOString(),
+                }));
+            } catch (error) {
+                // Local storage can be unavailable in private or locked-down browser contexts.
+            }
+        }
+
+        function restoreDraft() {
+            try {
+                const rawDraft = window.localStorage.getItem(draftStorageKey);
+                if (!rawDraft) {
+                    return false;
+                }
+                const draft = JSON.parse(rawDraft);
+                if (!draft || typeof draft !== "object") {
+                    return false;
+                }
+                rootName = draft.rootName || "";
+                rootDescription = draft.rootDescription || "";
+                nodes = Array.isArray(draft.nodes) ? draft.nodes.map((item) => normalizeNode(item)) : [];
+                return true;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        function clearDraft() {
+            try {
+                window.localStorage.removeItem(draftStorageKey);
+            } catch (error) {
+                // Nothing to do if the browser refuses local storage access.
+            }
+        }
+
+        function nodeCard(node, path, x, y) {
+            const title = node.source_type === "new" ? (node.new_bom_name || newBomLabel) : (node.display_label || selectItemLabel);
             const icon = iconForNode(node);
+            const expression = pathExpression(path);
+            const allowChildren = canNodeHaveChildren(node);
+            const readonlyDetails = node.readonly ? `
+                        <div class="bom-node-field-row">
+                            <div>
+                                <label class="form-label">{{ _('Item') }}</label>
+                                <div class="bom-node-readonly-value">${escapeHtml(title)}</div>
+                            </div>
+                            <div>
+                                <label class="form-label">{{ _('Quantity') }}</label>
+                                <div class="bom-node-readonly-value">${escapeHtml(node.quantity || "1")}</div>
+                            </div>
+                        </div>
+            ` : "";
             return `
-                <div class="bom-node-card" style="left:${x}px; top:${y}px;">
+                <div class="bom-node-card ${node.readonly ? "bom-node-card-readonly" : ""}" data-node-path="${escapeHtml(pathKey(path))}" style="left:${x}px; top:${y}px;">
                     <div class="bom-node-header">
                         <i class="bi ${icon}" aria-hidden="true"></i>
                         <span class="bom-node-title" title="${escapeHtml(title)}">${escapeHtml(title)}</span>
+                        ${node.readonly ? "" : `<button type="button" class="btn btn-outline-secondary bom-node-delete" onclick="requestRemoveBomNode(${expression})" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>`}
                     </div>
                     <div class="bom-node-body">
-                        <label class="form-label">{{ _('Item') }}</label>
-                        <input class="form-control form-control-sm mb-2" list="bom-option-list" value="${escapeHtml(node.display_label || "")}" placeholder="{{ _('Search part or BOM') }}" oninput="updateNode(${index}, 'display_label', this.value); updateNodeHeader(this, ${index});">
-                        <label class="form-label">{{ _('Quantity') }}</label>
-                        <input class="form-control form-control-sm" name="node_quantity_${index}" type="number" min="1" step="1" value="${escapeHtml(node.quantity || "1")}" oninput="updateNode(${index}, 'quantity', this.value)">
-                        <details class="bom-node-note">
-                            <summary>{{ _('Note') }}</summary>
-                            <input class="form-control form-control-sm mt-2" value="${escapeHtml(node.note || "")}" placeholder="{{ _('Note') }}" oninput="updateNode(${index}, 'note', this.value)">
-                        </details>
-                        <div class="bom-node-actions mt-2">
-                            <button type="button" class="btn btn-outline-secondary bom-node-delete" onclick="removeBomNode(${index})" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
+                        ${node.readonly ? readonlyDetails : `
+                        <div class="bom-node-source-switch" role="group" aria-label="{{ _('Node type') }}">
+                            <button type="button" class="bom-node-source-tab ${node.source_type !== "new" ? "is-active" : ""}" onclick="setNodeSourceType(${expression}, 'existing')">{{ _('Select') }}</button>
+                            <button type="button" class="bom-node-source-tab ${node.source_type === "new" ? "is-active" : ""}" onclick="setNodeSourceType(${expression}, 'new')">{{ _('New') }}</button>
                         </div>
+                        ${node.source_type === "new" ? `
+                            <div class="bom-node-field-row mb-2">
+                                <div>
+                                    <label class="form-label">{{ _('BOM name') }}</label>
+                                    <input class="form-control form-control-sm" value="${escapeHtml(node.new_bom_name || "")}" placeholder="{{ _('Enter BOM name...') }}" oninput="updateNode(${expression}, 'new_bom_name', this.value); updateNodeHeader(this, ${expression});">
+                                </div>
+                                <div>
+                                    <label class="form-label">{{ _('Quantity') }}</label>
+                                    <input class="form-control form-control-sm" type="number" min="1" step="1" value="${escapeHtml(node.quantity || "1")}" oninput="updateNode(${expression}, 'quantity', this.value)">
+                                </div>
+                            </div>
+                            <label class="form-label">{{ _('Description') }}</label>
+                            <input class="form-control form-control-sm mb-2" value="${escapeHtml(node.new_bom_description || "")}" placeholder="{{ _('Enter description...') }}" oninput="updateNode(${expression}, 'new_bom_description', this.value)">
+                        ` : `
+                            <div class="bom-node-field-row">
+                                <div>
+                                    <label class="form-label">{{ _('Item') }}</label>
+                                    <div class="bom-node-combobox">
+                                        <input class="form-control form-control-sm" value="${escapeHtml(node.display_label || "")}" placeholder="{{ _('Enter BOM / Part name...') }}" onfocus="renderNodeOptions(this, ${expression})" oninput="updateNode(${expression}, 'display_label', this.value); updateNodeHeader(this, ${expression}); renderNodeOptions(this, ${expression});">
+                                        <button type="button" class="bom-node-selection-clear" onclick="clearNodeSelection(this, ${expression})" title="{{ _('Clear selection') }}" aria-label="{{ _('Clear selection') }}"><i class="bi bi-x-lg"></i></button>
+                                        <button type="button" class="bom-node-dropdown-toggle" onclick="toggleNodeDropdown(this, ${expression})" title="{{ _('Show options') }}" aria-label="{{ _('Show options') }}"><i class="bi bi-chevron-down"></i></button>
+                                        <div class="bom-node-options"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="form-label">{{ _('Quantity') }}</label>
+                                    <input class="form-control form-control-sm" type="number" min="1" step="1" value="${escapeHtml(node.quantity || "1")}" oninput="updateNode(${expression}, 'quantity', this.value)">
+                                </div>
+                            </div>
+                        `}
+                        `}
                     </div>
+                    ${allowChildren ? `<button type="button" class="btn btn-primary bom-node-add-child" onclick="addBomNode(${expression})" title="{{ _('Add child node') }}" aria-label="{{ _('Add child node') }}"><i class="bi bi-plus-lg"></i></button>` : ""}
                 </div>
             `;
         }
 
-        function renderNodes() {
+        function estimatedNodeHeight(node, isRoot = false) {
+            const key = isRoot ? "root" : null;
+            if (key && measuredNodeHeights[key]) {
+                return measuredNodeHeights[key];
+            }
+            if (isRoot) {
+                return {{ 190 if edit_bom else 150 }};
+            }
+            return node.source_type === "new" ? 300 : 205;
+        }
+
+        function nodeLayoutHeight(node, path) {
+            const measuredHeight = measuredNodeHeights[pathKey(path)];
+            if (measuredHeight) {
+                return measuredHeight;
+            }
+            if (node.readonly) {
+                return 120;
+            }
+            return node.source_type === "new" ? 205 : 135;
+        }
+
+        function layoutBranch(branch, depth, positions, links, levelCursors, connectorCursors, parent = null, path = []) {
+            if (!branch.length) {
+                return;
+            }
+            const nodeHeights = branch.map((node, index) => nodeLayoutHeight(node, path.concat(index)));
+            const groupHeight = nodeHeights.reduce((total, height) => total + height, 0) + (nodeVerticalGap * Math.max(0, branch.length - 1));
+            const parentHeight = parent?.height || 0;
+            const preferredStartY = parent ? parent.y + (parentHeight / 2) - (groupHeight / 2) : nodeTop;
+            let cursorY = Math.max(levelCursors[depth] ?? -Infinity, preferredStartY);
+            if (parent) {
+                const lastNodeTop = cursorY + groupHeight - nodeHeights[nodeHeights.length - 1];
+                const parentAnchorY = parent.y + nodeLinkY;
+                const firstAnchorY = cursorY + nodeLinkY;
+                const lastAnchorY = lastNodeTop + nodeLinkY;
+                const connectorMinY = Math.min(parentAnchorY, firstAnchorY, lastAnchorY);
+                const minAllowedConnectorY = connectorCursors[depth] ?? -Infinity;
+                if (connectorMinY < minAllowedConnectorY) {
+                    cursorY += minAllowedConnectorY - connectorMinY;
+                }
+            }
+            if (parent) {
+                const centeredParentY = cursorY + (groupHeight / 2) - (parentHeight / 2);
+                if (centeredParentY > parent.y) {
+                    parent.y = centeredParentY;
+                    if (parent.depth !== undefined) {
+                        levelCursors[parent.depth] = Math.max(levelCursors[parent.depth] ?? -Infinity, parent.y + parent.height + nodeVerticalGap);
+                    }
+                }
+            }
+            branch.forEach((node, index) => {
+                const currentPath = path.concat(index);
+                const nodeHeight = nodeHeights[index];
+                const x = firstChildNodeX + (depth * nodeHorizontalPitch);
+                const y = cursorY;
+                const width = childNodeWidth;
+                const key = pathKey(currentPath);
+                const position = { node, path: currentPath, key, x, y, width, height: nodeHeight, depth };
+                positions.push(position);
+                if (parent) {
+                    links.push({ fromKey: parent.key, toKey: key });
+                }
+                layoutBranch(node.children, depth + 1, positions, links, levelCursors, connectorCursors, position, currentPath);
+                cursorY = position.y + nodeHeight + nodeVerticalGap;
+                levelCursors[depth] = Math.max(levelCursors[depth] ?? -Infinity, cursorY);
+            });
+            if (parent) {
+                const firstNodeTop = cursorY - groupHeight - nodeVerticalGap;
+                const lastNodeTop = cursorY - nodeVerticalGap - nodeHeights[nodeHeights.length - 1];
+                const parentAnchorY = parent.y + nodeLinkY;
+                const firstAnchorY = firstNodeTop + nodeLinkY;
+                const lastAnchorY = lastNodeTop + nodeLinkY;
+                connectorCursors[depth] = Math.max(parentAnchorY, firstAnchorY, lastAnchorY) + nodeConnectorVerticalGap;
+            }
+        }
+
+        function connectorPathsForGroup(from, children) {
+            if (!from || !children.length) {
+                return "";
+            }
+            const fromX = from.x + from.width;
+            const fromY = from.y + nodeLinkY;
+            const minToX = Math.min(...children.map((child) => child.x));
+            const preferredTrunkX = fromX + nodeAddButtonOffset + nodeConnectorRightGap;
+            const trunkX = Math.min(minToX - nodeConnectorTargetGap, preferredTrunkX);
+            const childYs = children.map((child) => child.y + nodeLinkY);
+            const minY = Math.min(fromY, ...childYs);
+            const maxY = Math.max(fromY, ...childYs);
+            const parentPath = `<path class="bom-node-link" d="M ${fromX} ${fromY} H ${trunkX}"></path>`;
+            const trunkPath = `<path class="bom-node-link" d="M ${trunkX} ${minY} V ${maxY}"></path>`;
+            const childPaths = children.map((child) => {
+                const childY = child.y + nodeLinkY;
+                return `<path class="bom-node-link" d="M ${trunkX} ${childY} H ${child.x}"></path>`;
+            }).join("");
+            return `${parentPath}${trunkPath}${childPaths}`;
+        }
+
+        function captureMeasuredNodeHeights() {
+            const nextHeights = {};
+            document.querySelectorAll(".bom-node-card").forEach((card) => {
+                const key = card.dataset.nodePath || "root";
+                nextHeights[key] = Math.ceil(card.offsetHeight || 0);
+            });
+            const changed = JSON.stringify(nextHeights) !== JSON.stringify(measuredNodeHeights);
+            measuredNodeHeights = nextHeights;
+            return changed;
+        }
+
+        function renderNodes(allowRemeasure = true) {
             const world = document.getElementById("bom-node-world");
             const rootTitle = rootName.trim() || newBomLabel;
             const rootX = 70;
-            const rootY = Math.max(130, 80 + Math.floor(nodes.length * 60));
-            let contentHeight = Math.max(900, rootY + 260, 120 + nodes.length * 150);
-            let links = "";
-            let childCards = "";
-            nodes.forEach((node, index) => {
-                const x = 390;
-                const y = 70 + (index * 150);
-                links += `<path class="bom-node-link" d="M ${rootX + 250} ${rootY + 72} C ${rootX + 310} ${rootY + 72}, ${x - 70} ${y + 72}, ${x} ${y + 72}"></path>`;
-                childCards += nodeCard(node, index, x, y);
+            const positions = [];
+            const linkRows = [];
+            const rootHeight = estimatedNodeHeight(null, true);
+            let rootY = nodeTop;
+            const rootPosition = { key: "root", x: rootX, y: rootY, width: rootNodeWidth, height: rootHeight };
+            layoutBranch(nodes, 0, positions, linkRows, {}, {}, rootPosition);
+            rootY = rootPosition.y;
+            const minY = Math.min(rootY, ...positions.map((position) => position.y));
+            if (minY < nodeTop) {
+                const offsetY = nodeTop - minY;
+                rootY += offsetY;
+                rootPosition.y = rootY;
+                positions.forEach((position) => {
+                    position.y += offsetY;
+                });
+            }
+            const positionsByKey = {
+                root: rootPosition,
+            };
+            positions.forEach((position) => {
+                positionsByKey[position.key] = position;
             });
+            const maxX = Math.max(rootX, ...positions.map((position) => position.x));
+            const maxY = Math.max(rootY + rootHeight, ...positions.map((position) => position.y + position.height));
+            let contentHeight = Math.max(900, maxY + 120);
+            let contentWidth = Math.max(1600, maxX + 380);
+            const linksByParent = linkRows.reduce((groups, link) => {
+                if (!groups[link.fromKey]) {
+                    groups[link.fromKey] = [];
+                }
+                groups[link.fromKey].push(link.toKey);
+                return groups;
+            }, {});
+            let links = Object.entries(linksByParent).map(([fromKey, toKeys]) => {
+                const from = positionsByKey[fromKey];
+                const children = toKeys.map((toKey) => positionsByKey[toKey]).filter(Boolean);
+                return connectorPathsForGroup(from, children);
+            }).join("");
+            let childCards = positions.map((position) => nodeCard(position.node, position.path, position.x, position.y)).join("");
             world.style.minHeight = `${contentHeight}px`;
+            world.style.width = `${contentWidth}px`;
             world.innerHTML = `
-                <svg class="bom-node-links" style="height:${contentHeight}px;" aria-hidden="true">${links}</svg>
-                <div class="bom-node-card bom-node-card-root" style="left:${rootX}px; top:${rootY}px;">
+                <svg class="bom-node-links" style="width:${contentWidth}px; height:${contentHeight}px;" aria-hidden="true">${links}</svg>
+                <div class="bom-node-card bom-node-card-root" data-node-path="root" style="left:${rootX}px; top:${rootY}px;">
                     <div class="bom-node-header">
                         <i class="bi bi-table" aria-hidden="true"></i>
                         <span class="bom-node-title" title="${escapeHtml(rootTitle)}">${escapeHtml(rootTitle)}</span>
@@ -835,15 +1365,19 @@ BOM_NODE_EDITOR_TEMPLATE = """
                         <div class="form-control-plaintext py-0 mb-2 fw-semibold">{{ edit_bom.number }}</div>
                         {% endif %}
                         <label class="form-label">{{ _('Name') }}</label>
-                        <input id="root-name" class="form-control form-control-sm mb-2" value="${escapeHtml(rootName)}" required oninput="updateRoot('name', this.value); updateRootTitle(this.value);">
+                        <input id="root-name" class="form-control form-control-sm mb-2" value="${escapeHtml(rootName)}" placeholder="{{ _('Enter BOM name...') }}" required oninput="updateRoot('name', this.value); updateRootTitle(this.value);">
                         <label class="form-label">{{ _('Description') }}</label>
-                        <input id="root-description" class="form-control form-control-sm" value="${escapeHtml(rootDescription)}" oninput="updateRoot('description', this.value)">
+                        <input id="root-description" class="form-control form-control-sm" value="${escapeHtml(rootDescription)}" placeholder="{{ _('Enter description...') }}" oninput="updateRoot('description', this.value)">
                     </div>
+                    ${nodes.length ? `<button type="button" class="btn btn-primary bom-node-add-child" onclick="addBomNode([])" title="{{ _('Add child node') }}" aria-label="{{ _('Add child node') }}"><i class="bi bi-plus-lg"></i></button>` : ""}
                 </div>
-                ${childCards || `<div class="bom-node-empty">${escapeHtml(noNodesLabel)}</div>`}
+                ${childCards || `<div class="bom-node-empty" style="left:${rootX + 320}px; top:${rootY + 56}px;"><span>${escapeHtml(noNodesLabel)}</span><button type="button" class="btn btn-primary" onclick="addBomNode([])" title="{{ _('Add child node') }}" aria-label="{{ _('Add child node') }}"><i class="bi bi-plus-lg"></i></button></div>`}
             `;
             applyTransform();
             syncHiddenInputs();
+            if (allowRemeasure && captureMeasuredNodeHeights()) {
+                renderNodes(false);
+            }
         }
 
         function applyTransform() {
@@ -866,9 +1400,69 @@ BOM_NODE_EDITOR_TEMPLATE = """
         }
 
         function resetView() {
-            scale = 1;
-            panX = 30;
-            panY = 30;
+            frameInitialRootView();
+        }
+
+        function fitTreeView() {
+            const canvas = document.getElementById("bom-node-canvas");
+            const cards = Array.from(document.querySelectorAll(".bom-node-card"));
+            if (!canvas || !cards.length) {
+                scale = 1;
+                panX = 30;
+                panY = 30;
+                applyTransform();
+                return;
+            }
+
+            const padding = 56;
+            const bounds = cards.reduce((box, card) => {
+                const left = Number.parseFloat(card.style.left || "0");
+                const top = Number.parseFloat(card.style.top || "0");
+                const width = card.offsetWidth || (card.classList.contains("bom-node-card-root") ? rootNodeWidth : childNodeWidth);
+                const height = card.offsetHeight || 220;
+                return {
+                    minX: Math.min(box.minX, left),
+                    minY: Math.min(box.minY, top),
+                    maxX: Math.max(box.maxX, left + width + 54),
+                    maxY: Math.max(box.maxY, top + height),
+                };
+            }, { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+
+            const treeWidth = Math.max(1, bounds.maxX - bounds.minX);
+            const treeHeight = Math.max(1, bounds.maxY - bounds.minY);
+            const availableWidth = Math.max(1, canvas.clientWidth - (padding * 2));
+            const availableHeight = Math.max(1, canvas.clientHeight - (padding * 2));
+            scale = Math.min(1, Math.max(0.35, Math.min(availableWidth / treeWidth, availableHeight / treeHeight)));
+            panX = ((canvas.clientWidth - (treeWidth * scale)) / 2) - (bounds.minX * scale);
+            panY = ((canvas.clientHeight - (treeHeight * scale)) / 2) - (bounds.minY * scale);
+            applyTransform();
+        }
+
+        function centerRootVertically() {
+            const canvas = document.getElementById("bom-node-canvas");
+            const root = document.querySelector(".bom-node-card-root");
+            if (!canvas || !root) {
+                return;
+            }
+            const rootTop = Number.parseFloat(root.style.top || "0");
+            const rootHeight = root.offsetHeight || 190;
+            panY = (canvas.clientHeight / 2) - rootTop - (rootHeight / 2);
+            applyTransform();
+        }
+
+        function frameInitialRootView() {
+            const canvas = document.getElementById("bom-node-canvas");
+            const root = document.querySelector(".bom-node-card-root");
+            if (!canvas || !root) {
+                return;
+            }
+            const rootLeft = Number.parseFloat(root.style.left || "0");
+            const rootTop = Number.parseFloat(root.style.top || "0");
+            const rootWidth = root.offsetWidth || rootNodeWidth;
+            const rootHeight = root.offsetHeight || 190;
+            scale = Math.min(1.25, Math.max(0.35, canvas.clientHeight / (rootHeight * 6)));
+            panX = Math.max(48, (canvas.clientWidth * 0.2) - (rootLeft * scale));
+            panY = (canvas.clientHeight / 2) - ((rootTop + (rootHeight / 2)) * scale);
             applyTransform();
         }
 
@@ -882,15 +1476,20 @@ BOM_NODE_EDITOR_TEMPLATE = """
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            const restoredDraft = restoreDraft();
             renderNodes();
+            frameInitialRootView();
             const canvas = document.getElementById("bom-node-canvas");
             canvas.addEventListener("wheel", (event) => {
+                if (event.target.closest(".bom-node-options")) {
+                    return;
+                }
                 event.preventDefault();
                 const rect = canvas.getBoundingClientRect();
                 zoomBy(event.deltaY < 0 ? 1.08 : 0.92, { x: event.clientX - rect.left, y: event.clientY - rect.top });
             }, { passive: false });
             canvas.addEventListener("pointerdown", (event) => {
-                if (event.target.closest(".bom-node-card, .bom-node-zoom")) {
+                if (event.target.closest(".bom-node-card, .bom-node-zoom, .bom-node-empty, button, input, select, textarea, a")) {
                     return;
                 }
                 isPanning = true;
@@ -914,7 +1513,19 @@ BOM_NODE_EDITOR_TEMPLATE = """
                 isPanning = false;
                 canvas.classList.remove("is-panning");
             });
-            document.getElementById("bom-node-form").addEventListener("submit", syncHiddenInputs);
+            document.getElementById("bom-node-form").addEventListener("submit", () => {
+                isSubmitting = true;
+                syncHiddenInputs();
+                clearDraft();
+            });
+            document.getElementById("clear-node-editor-button").addEventListener("click", (event) => {
+                event.preventDefault();
+                openClearModal();
+            });
+            document.addEventListener("click", (event) => {
+                const wrapper = event.target.closest(".bom-node-combobox");
+                closeNodeDropdowns(wrapper);
+            });
         });
     </script>
 </body>
@@ -963,8 +1574,7 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
         )
         edit_actions = (
             f"""
-                <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom_node_editor", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Node editor"))}" aria-label="{escape(_("Node editor"))}"><i class="bi bi-diagram-3"></i></a>
-                <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Modify BOM"))}" aria-label="{escape(_("Modify BOM"))}"><i class="bi bi-pencil-square"></i></a>
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom_node_editor", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Modify BOM"))}" aria-label="{escape(_("Modify BOM"))}"><i class="bi bi-pencil-square"></i></a>
                 <form method="post" action="{url_for("admin_copy_bom", bom_id=bom.id)}" onclick="event.stopPropagation()">
                     <button class="btn btn-sm btn-outline-secondary" type="submit" title="{escape(_("Copy"))}" aria-label="{escape(_("Copy"))}"><i class="bi bi-copy"></i></button>
                 </form>
@@ -1008,12 +1618,10 @@ def render_bom_item_row(item, depth, visited):
 def bom_form_items_from_request():
     item_ids = request.form.getlist("child_bom_id")
     quantities = request.form.getlist("quantity")
-    notes = request.form.getlist("note")
     return [
         {
             "child_bom_id": item_id,
             "quantity": quantities[index] if index < len(quantities) else 1,
-            "note": notes[index] if index < len(notes) else "",
         }
         for index, item_id in enumerate(item_ids)
         if item_id
@@ -1027,10 +1635,97 @@ def initial_bom_items(bom, bom_options):
             "child_bom_id": item.child_bom_id,
             "display_label": labels_by_id.get(item.child_bom_id, ""),
             "quantity": str(item.quantity.normalize() if item.quantity else 1),
-            "note": item.note or "",
         }
         for item in sorted(bom.children, key=lambda child: (child.position, child.id))
     ]
+
+
+def initial_bom_tree_items(bom, bom_options, visited=None, readonly=False):
+    visited = set(visited or set())
+    labels_by_id = {option["id"]: option["display_label"] for option in bom_options}
+    tree_items = []
+    for item in sorted(bom.children, key=lambda child: (child.position, child.id)):
+        child_bom = item.child_bom
+        children = []
+        if child_bom and not child_bom.is_part_wrapper and child_bom.id not in visited:
+            children = initial_bom_tree_items(child_bom, bom_options, visited | {bom.id}, readonly=True)
+        tree_items.append({
+            "child_bom_id": item.child_bom_id,
+            "display_label": labels_by_id.get(item.child_bom_id, ""),
+            "source_type": "existing",
+            "readonly": readonly,
+            "new_bom_name": "",
+            "new_bom_description": "",
+            "quantity": str(item.quantity.normalize() if item.quantity else 1),
+            "children": children,
+        })
+    return tree_items
+
+
+def node_editor_payload_from_request():
+    try:
+        payload = json.loads(request.form.get("node_tree") or "{}")
+    except (TypeError, ValueError):
+        payload = {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def resolve_node_editor_child_bom(session, node):
+    if not isinstance(node, dict):
+        return None
+
+    if node.get("source_type") == "new":
+        name = str(node.get("new_bom_name") or "").strip()
+        if not name:
+            return None
+        return create_bom(
+            session,
+            name,
+            node.get("new_bom_description", ""),
+            [],
+        )
+
+    child_bom_id = node.get("child_bom_id")
+    if not child_bom_id:
+        return None
+    try:
+        return session.query(BillOfMaterials).filter_by(id=int(child_bom_id)).first()
+    except (TypeError, ValueError):
+        return None
+
+
+def save_nested_bom_nodes(session, parent_bom, nodes, visited=None):
+    visited = set(visited or set())
+    if parent_bom is None or parent_bom.id in visited:
+        return
+
+    next_visited = visited | {parent_bom.id}
+    resolved_items = []
+    for node in nodes or []:
+        if not isinstance(node, dict):
+            continue
+        child_bom = resolve_node_editor_child_bom(session, node)
+        if child_bom is None or child_bom.id in visited:
+            continue
+        if node.get("source_type") != "new" or child_bom.is_part_wrapper:
+            node["children"] = []
+        else:
+            save_nested_bom_nodes(session, child_bom, node.get("children", []), next_visited)
+        resolved_items.append({
+            "child_bom_id": child_bom.id,
+            "quantity": node.get("quantity", 1),
+        })
+
+    replace_bom_items(session, parent_bom, resolved_items)
+    session.flush()
+
+
+def save_node_editor_bom(session, bom, name, description, payload):
+    bom.name = str(name or "").strip()
+    bom.description = str(description or "").strip() or None
+    save_nested_bom_nodes(session, bom, payload.get("children", []))
+    session.commit()
+    return bom
 
 
 def register_bom_admin_routes(app, session):
@@ -1067,11 +1762,18 @@ def register_bom_admin_routes(app, session):
         ensure_part_boms(session)
         if request.method == "POST":
             if request.form.get("name", "").strip():
-                create_bom(
+                bom = create_bom(
                     session,
                     request.form.get("name"),
                     request.form.get("description", ""),
-                    bom_form_items_from_request(),
+                    [],
+                )
+                save_node_editor_bom(
+                    session,
+                    bom,
+                    request.form.get("name"),
+                    request.form.get("description", ""),
+                    node_editor_payload_from_request(),
                 )
             return redirect(url_for("admin_bill_of_materials"))
 
@@ -1081,6 +1783,7 @@ def register_bom_admin_routes(app, session):
             edit_bom=None,
             form_action=url_for("admin_bom_node_editor"),
             table_editor_url=url_for("admin_bill_of_materials"),
+            draft_storage_key="openpartslibrary:bom-node-editor:new",
             initial_items=[],
         )
 
@@ -1101,12 +1804,12 @@ def register_bom_admin_routes(app, session):
             return _("BOM not found."), 404
         if request.method == "POST":
             if request.form.get("name", "").strip():
-                update_bom(
+                save_node_editor_bom(
                     session,
                     bom,
                     request.form.get("name"),
                     request.form.get("description", ""),
-                    bom_form_items_from_request(),
+                    node_editor_payload_from_request(),
                 )
             return redirect(url_for("admin_bill_of_materials"))
 
@@ -1120,7 +1823,8 @@ def register_bom_admin_routes(app, session):
             edit_bom=bom,
             form_action=url_for("admin_edit_bom_node_editor", bom_id=bom.id),
             table_editor_url=url_for("admin_edit_bom", bom_id=bom.id),
-            initial_items=initial_bom_items(bom, bom_options),
+            draft_storage_key=f"openpartslibrary:bom-node-editor:edit:{bom.id}",
+            initial_items=initial_bom_tree_items(bom, bom_options),
         )
 
     @app.route("/admin/bill-of-materials/<int:bom_id>/edit", methods=["GET", "POST"])

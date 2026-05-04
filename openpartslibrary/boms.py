@@ -169,7 +169,6 @@ def create_bom(session, name, description="", items=None, number=None):
             child_bom=child_bom,
             quantity=decimal_quantity(item.get("quantity")),
             position=position,
-            note=str(item.get("note") or "").strip() or None,
         ))
 
     session.commit()
@@ -193,7 +192,6 @@ def replace_bom_items(session, bom, items=None):
             child_bom=child_bom,
             quantity=decimal_quantity(item.get("quantity")),
             position=position,
-            note=str(item.get("note") or "").strip() or None,
         ))
 
 
@@ -222,7 +220,6 @@ def copy_bom(session, bom):
             {
                 "child_bom_id": item.child_bom_id,
                 "quantity": item.quantity,
-                "note": item.note,
             }
             for item in sorted(bom.children, key=lambda child: (child.position, child.id))
         ],

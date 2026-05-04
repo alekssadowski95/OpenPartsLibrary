@@ -1,17 +1,27 @@
 services:
   openpartslibrary:
     build: .
+    image: openpartslibrary:latest
+    restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "${OPENPARTSLIBRARY_PORT:-5000}:5000"
     environment:
       HOST: 0.0.0.0
       PORT: 5000
       FLASK_DEBUG: "0"
       OPENPARTSLIBRARY_DATA_DIR: /app/data
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
+      GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-120}"
       FREECAD_3MF_EXPORT_COMMAND: ""
       BLENDER_THUMBNAIL_COMMAND: ""
     volumes:
       - openpartslibrary-data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/', timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 volumes:
   openpartslibrary-data:

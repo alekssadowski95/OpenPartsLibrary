@@ -5,4 +5,5 @@ pywebview
 flask-cors
 Flask-Admin
 Flask-Babel
+gunicorn
 odfpy

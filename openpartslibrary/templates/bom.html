@@ -1,0 +1,294 @@
+{% extends "page.html" %}
+
+{% macro bom_item_row(item, depth=0, visited=[]) %}
+{% set child_bom = item.child_bom %}
+{% set child_id = 'bom-detail-children-' ~ child_bom.id ~ '-' ~ depth %}
+{% set can_expand = child_bom.children and child_bom.id not in visited %}
+<div class="bom-detail-row">
+    <div class="bom-detail-main {{ 'bom-row-part' if child_bom.is_part_wrapper else 'bom-row-bom' }} bom-level-{{ [depth, 7]|min }} {{ 'is-expandable' if can_expand else '' }}" style="padding-left: {{ 12 + (depth * 22) }}px;" {% if can_expand %}onclick="toggleBomChildrenForRow(event, '{{ child_id }}')"{% endif %}>
+        {% if can_expand %}
+        <button class="bom-expand-button" type="button" aria-expanded="false" aria-controls="{{ child_id }}" aria-label="{{ _('Expand BOM') }}"></button>
+        {% else %}
+        <span class="bom-expand-spacer"></span>
+        {% endif %}
+        <div class="bom-detail-name">
+            <i class="bi {{ 'bi-box-fill bom-list-icon-part' if child_bom.is_part_wrapper else 'bi-table' }} bom-detail-icon" aria-hidden="true"></i>
+            {% if child_bom.number %}<span class="bom-detail-number">{{ child_bom.number }}</span>{% endif %}
+            <span class="fw-semibold">{{ child_bom.name }}</span>
+            <span class="bom-detail-meta">{% if child_bom.is_part_wrapper %}{{ _('Part') }}{% else %}{{ _('BOM') }}{% endif %}</span>
+        </div>
+        <div class="text-end bom-detail-quantity">{{ item.quantity.normalize() if item.quantity else 1 }}</div>
+        <div class="text-end bom-detail-cost">{{ format_bom_cost(child_bom) }}</div>
+        <div class="bom-detail-actions">
+            {% if child_bom.is_part_wrapper and child_bom.component %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('component_view', uuid=child_bom.component.uuid) }}" onclick="event.stopPropagation()" title="{{ _('Part details') }}" aria-label="{{ _('Part details') }}"><i class="bi bi-eye"></i></a>
+            {% elif not child_bom.is_part_wrapper %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_view', bom_id=child_bom.id) }}" onclick="event.stopPropagation()" title="{{ _('BOM details') }}" aria-label="{{ _('BOM details') }}"><i class="bi bi-eye"></i></a>
+            {% endif %}
+        </div>
+    </div>
+    {% if can_expand %}
+    <div id="{{ child_id }}" class="bom-child-list">
+        {% set next_visited = visited + [child_bom.id] %}
+        {% for child_item in child_bom.children|sort(attribute='position') %}
+            {{ bom_item_row(child_item, depth + 1, next_visited) }}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endmacro %}
+
+{% block style %}
+<style>
+.bom-detail-scroll {
+    min-height: 0;
+    overflow-y: auto;
+    background: white;
+}
+
+.bom-detail-actions,
+.bom-detail-header-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.bom-detail-table {
+    border-top: 1px solid lightgray;
+    border-right: 1px solid lightgray;
+    border-bottom: 1px solid lightgray;
+    border-left: 1px solid lightgray;
+}
+
+.bom-detail-row {
+    border-top: 1px solid #e2e6ea;
+}
+
+.bom-detail-table > .bom-detail-row:first-of-type {
+    border-top: 0;
+}
+
+.bom-detail-main {
+    display: grid;
+    grid-template-columns: 34px minmax(260px, 1fr) 120px 150px 180px;
+    align-items: center;
+    min-height: 36px;
+    gap: 8px;
+    padding-top: 4px;
+    padding-right: 12px;
+    padding-bottom: 4px;
+    cursor: default;
+}
+
+.bom-detail-main.is-expandable {
+    cursor: pointer;
+}
+
+.bom-level-0 { background: #f8f9fa; }
+.bom-level-1 { background: #eef6ff; }
+.bom-level-2 { background: #e3f0ff; }
+.bom-level-3 { background: #d8eaff; }
+.bom-level-4 { background: #cde4ff; }
+.bom-level-5 { background: #c2ddfb; }
+.bom-level-6 { background: #b7d6f6; }
+.bom-level-7 { background: #accff2; }
+.bom-row-bom:hover { background: #dbeafe; }
+
+.bom-detail-name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bom-detail-icon {
+    flex: 0 0 auto;
+    color: #042c61;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.bom-list-icon-part {
+    color: #0c58c9;
+}
+
+.bom-detail-number,
+.bom-detail-meta,
+.bom-detail-quantity {
+    color: #5f6b7a;
+    font-size: 0.9rem;
+}
+
+.bom-detail-cost {
+    color: #273648;
+    font-size: 0.9rem;
+}
+
+.bom-expand-button,
+.bom-expand-spacer {
+    width: 30px;
+    height: 30px;
+}
+
+.bom-expand-button {
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #042c61;
+    pointer-events: none;
+}
+
+.bom-expand-button::before {
+    content: "\25B8";
+    display: inline-block;
+    transition: transform 120ms ease;
+}
+
+.bom-expand-button[aria-expanded="true"]::before {
+    transform: rotate(90deg);
+}
+
+.bom-child-list {
+    display: none;
+}
+
+.bom-child-list.is-open {
+    display: block;
+}
+
+.bom-detail-section-title {
+    margin-top: 2rem;
+}
+
+@media (max-width: 767.98px) {
+    .bom-detail-main {
+        grid-template-columns: 34px minmax(0, 1fr) 80px;
+    }
+
+    .bom-detail-cost,
+    .bom-detail-actions {
+        grid-column: 2 / -1;
+        text-align: right !important;
+        justify-content: flex-end;
+    }
+}
+</style>
+{% endblock style %}
+
+{% block main_view_content %}
+<div class="container p-3 m-0 bom-detail-scroll" style="width: 100%; min-width: 100%;">
+    <div class="container-fluid p-3">
+        <div class="mb-3">
+            <a type="button" class="btn btn-outline-secondary btn-sm" href="{{ url_for('boms') }}">&larr; {{ _('All BOMs') }}</a>
+        </div>
+
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
+            <div>
+                <p class="mb-1">{{ _('Bill of Materials') }}</p>
+                <h1 class="mb-2">{{ bom.name }}</h1>
+                <div class="text-muted">{{ bom.number }}</div>
+            </div>
+            <div class="bom-detail-header-actions">
+                <a class="btn btn-outline-secondary" href="{{ url_for('bom_download', bom_id=bom.id) }}" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download') }}</a>
+            </div>
+        </div>
+
+        <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+            <tbody>
+                <tr>
+                    <th>{{ _('BOM number') }}</th>
+                    <td>{{ bom.number }}</td>
+                </tr>
+                <tr>
+                    <th>{{ _('Name') }}</th>
+                    <td>{{ bom.name }}</td>
+                </tr>
+                <tr>
+                    <th>{{ _('Description') }}</th>
+                    <td>{{ bom.description }}</td>
+                </tr>
+                <tr>
+                    <th>{{ _('Estimated cost') }}</th>
+                    <td>{{ format_bom_cost(bom) }}</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 class="bom-detail-section-title">{{ _('BOM items') }}</h2>
+        <div class="bom-detail-table">
+            <div class="bom-detail-main fw-semibold" style="background: #ffffff;">
+                <span></span>
+                <span>{{ _('Name') }}</span>
+                <span class="text-end">{{ _('Quantity') }}</span>
+                <span class="text-end">{{ _('Total cost') }}</span>
+                <span class="text-end">{{ _('Actions') }}</span>
+            </div>
+            {% for item in bom.children|sort(attribute='position') %}
+                {{ bom_item_row(item)|safe }}
+            {% else %}
+            <div class="p-3 text-muted">{{ _('No BOM items have been added yet.') }}</div>
+            {% endfor %}
+        </div>
+
+        <h2 class="bom-detail-section-title">{{ _('Parts') }}</h2>
+        <p class="mb-2">{{ ngettext('%(num)s part found.', '%(num)s parts found.', part_rows|length) }}</p>
+        <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+            <thead>
+                <tr>
+                    <th>{{ _('Part number') }}</th>
+                    <th>{{ _('Name') }}</th>
+                    <th>{{ _('Quantity') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for part_row in part_rows %}
+                {% set component = part_row.component %}
+                <tr>
+                    <td>{{ component.number }}</td>
+                    <td>{{ component.name }}</td>
+                    <td>{{ part_row.quantity }}</td>
+                    <td class="text-end">
+                        <div class="bom-detail-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('component_view', uuid=component.uuid) }}" title="{{ _('Part details') }}" aria-label="{{ _('Part details') }}"><i class="bi bi-eye"></i></a>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-muted">{{ _('No parts found in this BOM.') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock main_view_content %}
+
+{% block script %}
+<script>
+function toggleBomChildren(button) {
+    const row = button.closest(".bom-detail-main");
+    const target = row ? row.nextElementSibling : null;
+    if (!target) {
+        return;
+    }
+    const isOpen = target.classList.toggle("is-open");
+    button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
+function toggleBomChildrenForRow(event, childrenId) {
+    if (event.target.closest("a, button, form, input, select, textarea")) {
+        return;
+    }
+    const button = event.currentTarget.querySelector(".bom-expand-button");
+    if (button) {
+        toggleBomChildren(button);
+    }
+}
+</script>
+{% endblock script %}

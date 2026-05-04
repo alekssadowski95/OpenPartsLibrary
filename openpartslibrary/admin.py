@@ -435,7 +435,7 @@ BOM_BUILDER_TEMPLATE = """
             .bom-builder-row { grid-template-columns: 1fr; }
             .bom-builder-header { display: none; }
             .bom-list-main { grid-template-columns: 34px minmax(0, 1fr) 80px; }
-            .bom-list-cost, .bom-list-actions { grid-column: 2 / -1; text-align: left !important; justify-content: flex-start; }
+            .bom-list-cost, .bom-list-actions { grid-column: 2 / -1; text-align: right !important; justify-content: flex-end; }
         }
     </style>
 </head>
@@ -620,17 +620,30 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
     if bom.is_part_wrapper and bom.component:
         actions = f"""
             <div class="bom-list-actions">
-                <a class="btn btn-sm btn-outline-secondary" href="{url_for("component_view", uuid=bom.component.uuid)}" onclick="event.stopPropagation()" title="{escape(_("Part details"))}" aria-label="{escape(_("Part details"))}"><i class="bi bi-box-arrow-up-right"></i></a>
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("component_view", uuid=bom.component.uuid)}" onclick="event.stopPropagation()" title="{escape(_("Part details"))}" aria-label="{escape(_("Part details"))}"><i class="bi bi-eye"></i></a>
             </div>
         """
-    elif depth == 0 and not bom.is_part_wrapper:
-        actions = f"""
-            <div class="bom-list-actions">
-                <a class="btn btn-sm btn-outline-secondary" href="{url_for("bom_download", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Download"))}" aria-label="{escape(_("Download"))}"><i class="bi bi-download"></i></a>
+    elif not bom.is_part_wrapper:
+        download_action = (
+            f'<a class="btn btn-sm btn-outline-secondary" href="{url_for("bom_download", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Download"))}" aria-label="{escape(_("Download"))}"><i class="bi bi-download"></i></a>'
+            if depth == 0
+            else ""
+        )
+        edit_actions = (
+            f"""
                 <a class="btn btn-sm btn-outline-secondary" href="{url_for("admin_edit_bom", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("Modify BOM"))}" aria-label="{escape(_("Modify BOM"))}"><i class="bi bi-pencil-square"></i></a>
                 <form method="post" action="{url_for("admin_copy_bom", bom_id=bom.id)}" onclick="event.stopPropagation()">
                     <button class="btn btn-sm btn-outline-secondary" type="submit" title="{escape(_("Copy"))}" aria-label="{escape(_("Copy"))}"><i class="bi bi-copy"></i></button>
                 </form>
+            """
+            if depth == 0
+            else ""
+        )
+        actions = f"""
+            <div class="bom-list-actions">
+                <a class="btn btn-sm btn-outline-secondary" href="{url_for("bom_view", bom_id=bom.id)}" onclick="event.stopPropagation()" title="{escape(_("BOM details"))}" aria-label="{escape(_("BOM details"))}"><i class="bi bi-eye"></i></a>
+                {download_action}
+                {edit_actions}
             </div>
         """
     else:

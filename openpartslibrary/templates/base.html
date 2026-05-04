@@ -213,10 +213,46 @@
         filter: grayscale(0.8);
     }
 
+    .parts-selection-scroll {
+        scrollbar-color: #0a3b7a rgb(1, 29, 65);
+        scrollbar-width: thin;
+    }
+
+    .parts-selection-scroll::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    .parts-selection-scroll::-webkit-scrollbar-track {
+        background: rgb(1, 29, 65);
+    }
+
+    .parts-selection-scroll::-webkit-scrollbar-thumb {
+        background-color: #0a3b7a;
+        border: 2px solid rgb(1, 29, 65);
+        border-radius: 999px;
+    }
+
+    .parts-selection-scroll::-webkit-scrollbar-thumb:hover {
+        background-color: #164f91;
+    }
+
     .parts-selection-delete-all-button img,
-    .parts-selection-clear-button img,
+    .parts-selection-clear-button img {
+        filter: brightness(0) invert(1);
+    }
+
     .navbar-selection-icon {
-        filter: invert(1);
+        color: white;
+        font-size: 18px;
+        line-height: 1;
+    }
+
+    .navbar-selection-button {
+        width: 32px;
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .selection-toggle-wrapper {
@@ -341,10 +377,10 @@
                     </select>
                 </form>
                 <span class="selection-toggle-wrapper">
-                    <button title="{{ _('Open and close the parts selection') }}" class="btn btn-link p-1 btn-link-transparent" onclick="showPartsSelection()">
-                        <img class="navbar-selection-icon" src="{{ url_for('static', filename='bootstrap-icons-1.11.3/clipboard-check.svg') }}" alt="" style="padding: 0;" height="26px" width="26px">
+                    <button title="{{ _('Open and close My Bill of Materials') }}" class="btn btn-link p-0 btn-link-transparent navbar-selection-button" onclick="showPartsSelection()">
+                        <i class="bi bi-table navbar-selection-icon" aria-hidden="true"></i>
                     </button>
-                    <span id="selection-notification" class="selection-notification d-none">{{ _('Added to selection') }}</span>
+                    <span id="selection-notification" class="selection-notification d-none">{{ _('Added to My Bill of Materials') }}</span>
                 </span>
             </div>
         </header>
@@ -359,18 +395,18 @@
         <!-- New assembly column -->
         <aside id="parts-selection-div" class="parts-selection-column d-none d-flex flex-column">
             <div class="container-fluid d-flex align-items-center justify-content-between px-2" style="height: 40px; border-bottom: 1px solid #042c61;">
-                <span>{{ _('My Selection') }}</span>
+                <span>{{ _('My Bill of Materials') }}</span>
                 <div class="d-flex align-items-center gap-1">
-                    <button id="clear-parts-selection-button" type="button" class="parts-selection-delete-all-button" title="{{ _('Delete all parts from selection') }}" data-bs-toggle="modal" data-bs-target="#delete-selection-modal">
+                    <button id="clear-parts-selection-button" type="button" class="parts-selection-delete-all-button" title="{{ _('Delete all parts from My Bill of Materials') }}" data-bs-toggle="modal" data-bs-target="#delete-selection-modal">
                         <img src="{{ url_for('static', filename = 'bin.png') }}" width="15" height="15" alt="">
                         <span>{{ _('Delete all') }}</span>
                     </button>
-                    <button type="button" class="parts-selection-clear-button" title="{{ _('Close parts selection') }}" onclick="closePartsSelection()">
+                    <button type="button" class="parts-selection-clear-button" title="{{ _('Close My Bill of Materials') }}" onclick="closePartsSelection()">
                         <img src="{{ url_for('static', filename = 'bootstrap-icons-1.11.3/x-lg.svg') }}" width="14" height="14" alt="">
                     </button>
                 </div>
             </div>
-            <div id="parts-selection-scroll" class="m-0 p-0 flex-grow-1" style="min-height: 0; overflow-y: scroll;">
+            <div id="parts-selection-scroll" class="parts-selection-scroll m-0 p-0 flex-grow-1" style="min-height: 0; overflow-y: scroll;">
                 <ul id="parts-selection-list" class="p-2 pb-0 m-0">
                 </ul>
             </div>
@@ -397,7 +433,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
                 </div>
                 <div class="modal-body">
-                    {{ _('Are you sure you want to delete all parts from your selection?') }}
+                    {{ _('Are you sure you want to delete all parts from My Bill of Materials?') }}
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
@@ -414,14 +450,14 @@
         const selectionNotification = document.getElementById("selection-notification");
         let selectionNotificationTimeout = null;
         const i18n = {
-            addedToSelection: {{ _('Added to selection')|tojson }},
-            addedToSelectionWithName: {{ _('<%(name)s> added to selection')|tojson }},
+            addedToSelection: {{ _('Added to My Bill of Materials')|tojson }},
+            addedToSelectionWithName: {{ _('<%(name)s> added to My Bill of Materials')|tojson }},
             estimatedTotal: {{ _('Estimated total')|tojson }},
             partNumber: {{ _('Part number')|tojson }},
             quantity: {{ _('Quantity')|tojson }},
             estimatedUnitPrice: {{ _('Estimated unit price')|tojson }},
             noCadFileAvailable: {{ _('No CAD file available')|tojson }},
-            removeFromSelection: {{ _('Remove from selection')|tojson }}
+            removeFromSelection: {{ _('Remove from My Bill of Materials')|tojson }}
         };
 
         function getSelectionList() {
@@ -557,7 +593,7 @@
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement("a");
             link.href = downloadUrl;
-            link.download = "OPL_OpenPartsLibrary_selection.zip";
+            link.download = "OPL_OpenPartsLibrary_my-bill-of-materials.zip";
             document.body.appendChild(link);
             link.click();
             link.remove();

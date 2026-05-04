@@ -182,6 +182,28 @@ def register_routes(app, parts_library):
             format_bom_cost=format_bom_cost,
         )
 
+    @app.route("/bom/<int:bom_id>")
+    def bom_view(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+
+        part_rows = sorted(
+            bom_part_quantities(bom).values(),
+            key=lambda row: (
+                str(row["component"].number or "").lower() if row["component"] else "",
+                str(row["component"].name or "").lower() if row["component"] else "",
+            ),
+        )
+
+        return render_template(
+            "bom.html",
+            bom=bom,
+            part_rows=part_rows,
+            format_bom_cost=format_bom_cost,
+        )
+
     @app.route("/bom/<int:bom_id>/download")
     def bom_download(bom_id):
         ensure_part_boms(session)
@@ -248,6 +270,7 @@ def register_routes(app, parts_library):
 
     @app.route("/component_view/<uuid>")
     def component_view(uuid):
+        ensure_part_boms(session)
         component = session.query(Component).filter_by(uuid=uuid).first()
         if component is None:
             return _("Part not found with UUID: %(uuid)s", uuid=uuid), 404
@@ -260,6 +283,17 @@ def register_routes(app, parts_library):
                 component_cad_filepath = str(cad_path.resolve())
                 component_cad_filename = cad_path.name
 
+        used_in_boms = []
+        for bom in get_created_boms(session):
+            part_row = bom_part_quantities(bom).get(component.uuid)
+            if part_row is None:
+                continue
+            used_in_boms.append({
+                "bom": bom,
+                "quantity": part_row["quantity"],
+                "cost": format_bom_cost(bom),
+            })
+
         return render_template(
             "component.html",
             component=component,
@@ -268,6 +302,7 @@ def register_routes(app, parts_library):
             component_cad_filename=component_cad_filename,
             files=component.files,
             used_in_files=[],
+            used_in_boms=used_in_boms,
         )
 
     @app.route("/component/<uuid>/download-cad")
@@ -396,10 +431,10 @@ def register_routes(app, parts_library):
                 )
 
         if files_added == 0 and not bom_components:
-            return _("No CAD files found for the current selection."), 404
+            return _("No CAD files found for My Bill of Materials."), 404
 
         zip_buffer.seek(0)
-        zip_download_name = branded_library_filename("selection.zip")
+        zip_download_name = branded_library_filename("my-bill-of-materials.zip")
         record_download_event(session, "selection_zip", zip_download_name, quantity=1)
         return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
 

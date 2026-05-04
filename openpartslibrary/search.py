@@ -214,6 +214,50 @@ def is_numeric_term(term):
     return bool(re.fullmatch(r"\d+", normalize_search_text(term)))
 
 
+def numeric_query_terms(query):
+    return [
+        int(token)
+        for token in normalize_search_text(query).split()
+        if token.isdigit()
+    ]
+
+
+def part_numeric_values(part):
+    fields = searchable_part_fields(part)
+    text = " ".join(
+        normalize_search_text(value)
+        for value in (fields.get("name"), fields.get("number"), fields.get("description"))
+        if value
+    )
+    return [int(value) for value in re.findall(r"\d+", text)]
+
+
+def numeric_match_sort_key(query, part):
+    query_numbers = numeric_query_terms(query)
+    if not query_numbers:
+        return (0, 0, 0)
+
+    part_numbers = part_numeric_values(part)
+    if not part_numbers:
+        return (3, 0, 0)
+
+    sort_rows = []
+    for query_number in query_numbers:
+        exact_matches = [number for number in part_numbers if number == query_number]
+        if exact_matches:
+            sort_rows.append((0, 0))
+            continue
+
+        larger_or_equal = [number for number in part_numbers if number >= query_number]
+        if larger_or_equal:
+            sort_rows.append((1, min(larger_or_equal) - query_number))
+            continue
+
+        sort_rows.append((2, query_number - max(part_numbers)))
+
+    return max(row[0] for row in sort_rows), sum(row[1] for row in sort_rows), len(part_numbers)
+
+
 def has_search_phrase(text, phrases):
     normalized_text = normalize_search_text(text)
     return any(phrase in normalized_text for phrase in phrases)
@@ -357,5 +401,5 @@ def search_parts(query, parts, minimum_score=58, limit=1000):
         if score >= minimum_score:
             scored_parts.append((score, part))
 
-    scored_parts.sort(key=lambda item: (-item[0], normalize_search_text(item[1].name)))
+    scored_parts.sort(key=lambda item: (-item[0], numeric_match_sort_key(query, item[1]), normalize_search_text(item[1].name)))
     return [part for _, part in scored_parts[:limit]]

@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 
 def build_spdx_hardware_bom(components):
     created = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-    namespace = f"https://openpartslibrary.local/spdxdocs/selection-{uuid.uuid4()}"
+    namespace = f"https://openpartslibrary.local/spdxdocs/my-bill-of-materials-{uuid.uuid4()}"
     creation_info = {
         "type": "CreationInfo",
         "specVersion": "3.0.1",

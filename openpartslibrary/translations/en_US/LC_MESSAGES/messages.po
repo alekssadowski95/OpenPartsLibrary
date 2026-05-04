@@ -47,23 +47,23 @@ msgstr "Apply"
 msgid "Reset"
 msgstr "Reset"
 
-msgid "My Selection"
-msgstr "My Selection"
+msgid "My Bill of Materials"
+msgstr "My Bill of Materials"
 
-msgid "Add to selection"
-msgstr "Add to selection"
+msgid "Add to My Bill of Materials"
+msgstr "Add to My Bill of Materials"
 
-msgid "Add part to selection"
-msgstr "Add part to selection"
+msgid "Add part to My Bill of Materials"
+msgstr "Add part to My Bill of Materials"
 
-msgid "Added to selection"
-msgstr "Added to selection"
+msgid "Added to My Bill of Materials"
+msgstr "Added to My Bill of Materials"
 
-msgid "<%(name)s> added to selection"
-msgstr "<%(name)s> added to selection"
+msgid "<%(name)s> added to My Bill of Materials"
+msgstr "<%(name)s> added to My Bill of Materials"
 
-msgid "Remove from selection"
-msgstr "Remove from selection"
+msgid "Remove from My Bill of Materials"
+msgstr "Remove from My Bill of Materials"
 
 msgid "Delete all"
 msgstr "Delete all"
@@ -71,11 +71,11 @@ msgstr "Delete all"
 msgid "Delete all parts?"
 msgstr "Delete all parts?"
 
-msgid "Delete all parts from selection"
-msgstr "Delete all parts from selection"
+msgid "Delete all parts from My Bill of Materials"
+msgstr "Delete all parts from My Bill of Materials"
 
-msgid "Are you sure you want to delete all parts from your selection?"
-msgstr "Are you sure you want to delete all parts from your selection?"
+msgid "Are you sure you want to delete all parts from My Bill of Materials?"
+msgstr "Are you sure you want to delete all parts from My Bill of Materials?"
 
 msgid "Cancel"
 msgstr "Cancel"
@@ -83,11 +83,11 @@ msgstr "Cancel"
 msgid "Close"
 msgstr "Close"
 
-msgid "Close parts selection"
-msgstr "Close parts selection"
+msgid "Close My Bill of Materials"
+msgstr "Close My Bill of Materials"
 
-msgid "Open and close the parts selection"
-msgstr "Open and close the parts selection"
+msgid "Open and close My Bill of Materials"
+msgstr "Open and close My Bill of Materials"
 
 msgid "Estimated total"
 msgstr "Estimated total"
@@ -110,8 +110,8 @@ msgstr "No preview"
 msgid "CAD file not found."
 msgstr "CAD file not found."
 
-msgid "No CAD files found for the current selection."
-msgstr "No CAD files found for the current selection."
+msgid "No CAD files found for My Bill of Materials."
+msgstr "No CAD files found for My Bill of Materials."
 
 msgid "Open part details"
 msgstr "Open part details"

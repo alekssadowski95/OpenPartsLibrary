@@ -34,6 +34,24 @@
     filter: brightness(0.5);
 }
 
+.component-detail-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+}
+
+.component-detail-section-title {
+    margin-top: 2rem;
+}
+
+.component-detail-list-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
 @media (max-width: 767.98px) {
     .component-detail-scroll {
         padding: 0.75rem !important;
@@ -80,18 +98,16 @@
         <div class="col-12 col-md-8">
             <p>{{ _('Part') }}</p>
             <h1 class="mb-3">{{ component.name }}</h1>
-            <div class="mb-2">
-                <button title="{{ _('Add part to selection') }}" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
-                    <i class="bi-plus-lg" style="padding-right: 6px;"></i>{{ _('Add to selection') }}
+            <div class="component-detail-actions">
+                <button title="{{ _('Add part to My Bill of Materials') }}" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" onclick="addComponentToSelection('{{ component.uuid }}')">
+                    <i class="bi-plus-lg" style="padding-right: 6px;"></i>{{ _('Add to My Bill of Materials') }}
                 </button>
-            </div>
-            {% if component_cad_filename %}
-            <div class="mb-2">
+                {% if component_cad_filename %}
                 <a title="{{ _('Download CAD file') }}" type="button" class="btn btn-outline-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('component_download_cad', uuid = component.uuid) }}">
                     <i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download CAD') }}
                 </a>
+                {% endif %}
             </div>
-            {% endif %}
             <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
                 <tbody>
                     <tr>
@@ -118,32 +134,68 @@
             </table>  
         </div>
     </div>
-    {% if files %}
-        <h2>{{ _('Attached Files') }}</h2>
-        <p class="mb-2">{{ ngettext('%(num)s file found.', '%(num)s files found.', component.files|length) }}</p>
-        <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
-            <thead>
-                <tr>
-                    <th>{{ _('Name') }}</th>
-                    <th>{{ _('Last modified') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for file in files %}
-                <tr>
-                    <td>{{ file.name }}</td>
-                    <td>{{ file.date_modified }}</td>
-                    <td>
-                        <nobr>
-                            <a class="btn btn-secondary" style="padding-left: 10px; padding-right: 10px;" href="{{ url_for('download_file', file_uuid = file.uuid) }}"><i class="bi-download"></i></a>
-                        </nobr>
+    <h2 class="component-detail-section-title">{{ _('Attached Files') }}</h2>
+    <p class="mb-2">{{ ngettext('%(num)s file found.', '%(num)s files found.', files|length) }}</p>
+    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+        <thead>
+            <tr>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Last modified') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for file in files %}
+            <tr>
+                <td>{{ file.name }}</td>
+                <td>{{ file.date_modified }}</td>
+                    <td class="text-end">
+                        <div class="component-detail-list-actions">
+                            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('download_file', file_uuid = file.uuid) }}" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi-download"></i></a>
+                        </div>
                     </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="3" class="text-muted">{{ _('No files attached.') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="component-detail-section-title">{{ _('Used in BOM') }}</h2>
+    <p class="mb-2">{{ ngettext('%(num)s BOM found.', '%(num)s BOMs found.', used_in_boms|length) }}</p>
+    <table class="table table-striped" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
+        <thead>
+            <tr>
+                <th>{{ _('BOM number') }}</th>
+                <th>{{ _('Name') }}</th>
+                <th>{{ _('Quantity') }}</th>
+                <th>{{ _('Estimated cost') }}</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for used_in_bom in used_in_boms %}
+            <tr>
+                <td>{{ used_in_bom.bom.number }}</td>
+                <td>{{ used_in_bom.bom.name }}</td>
+                <td>{{ used_in_bom.quantity }}</td>
+                <td>{{ used_in_bom.cost }}</td>
+                <td class="text-end">
+                    <div class="component-detail-list-actions">
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_view', bom_id = used_in_bom.bom.id) }}" title="{{ _('BOM details') }}" aria-label="{{ _('BOM details') }}"><i class="bi bi-eye"></i></a>
+                        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_download', bom_id = used_in_bom.bom.id) }}" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi-download"></i></a>
+                    </div>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-muted">{{ _('This part is not used in any BOM.') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
 </div>
 </div>
 

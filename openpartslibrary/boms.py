@@ -260,10 +260,44 @@ def get_created_boms(session):
 def get_bom_options(session):
     boms = (
         session.query(BillOfMaterials)
+        .options(selectinload(BillOfMaterials.children).selectinload(BillOfMaterialsItem.child_bom))
         .outerjoin(BillOfMaterials.component)
         .order_by(BillOfMaterials.is_part_wrapper, BillOfMaterials.name)
         .all()
     )
+    labels_by_id = {
+        bom.id: f"{bom.number + ' - ' if bom.number else ''}{bom.name}"
+        for bom in boms
+    }
+    boms_by_id = {bom.id: bom for bom in boms}
+
+    def cost_totals_for_option(bom):
+        return {
+            currency: str(amount)
+            for currency, amount in bom_cost_totals(bom).items()
+        }
+
+    def readonly_children_for_bom(bom, visited=None):
+        visited = set(visited or set())
+        if bom is None or bom.is_part_wrapper or bom.id in visited:
+            return []
+
+        next_visited = visited | {bom.id}
+        children = []
+        for item in sorted(bom.children, key=lambda child: (child.position, child.id)):
+            child_bom = item.child_bom
+            children.append({
+                "child_bom_id": item.child_bom_id,
+                "display_label": labels_by_id.get(item.child_bom_id, ""),
+                "source_type": "existing",
+                "readonly": True,
+                "new_bom_name": "",
+                "new_bom_description": "",
+                "quantity": str(item.quantity.normalize() if item.quantity else 1),
+                "children": readonly_children_for_bom(child_bom, next_visited),
+            })
+        return children
+
     return [
         {
             "id": bom.id,
@@ -272,6 +306,8 @@ def get_bom_options(session):
             "is_part_wrapper": bom.is_part_wrapper,
             "label": f"{bom.number + ' - ' if bom.number else ''}{bom.name}",
             "display_label": f"{bom.number + ' - ' if bom.number else ''}{bom.name}",
+            "cost_totals": cost_totals_for_option(bom),
+            "children": readonly_children_for_bom(boms_by_id.get(bom.id)),
         }
         for bom in boms
     ]

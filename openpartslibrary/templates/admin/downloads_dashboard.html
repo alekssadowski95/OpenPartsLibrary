@@ -1,0 +1,225 @@
+{% import 'admin/layout.html' as layout with context %}
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ _('Downloads Dashboard') }} | {{ _('OpenPartsLibrary Admin') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .dashboard-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
+        .chart-wrap { height: 300px; position: relative; }
+        .chart-tooltip {
+            position: absolute;
+            display: none;
+            padding: 6px 8px;
+            border-radius: 4px;
+            background: rgba(4, 44, 97, 0.94);
+            color: white;
+            font-size: 0.8rem;
+            pointer-events: none;
+            transform: translate(-50%, -110%);
+            white-space: nowrap;
+            z-index: 5;
+        }
+        .metric { color: #6c757d; font-size: 0.85rem; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .opl-admin-navigation .dropdown-menu { margin-top: 0; z-index: 1000; }
+        .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h1 class="h3 mb-1">{{ _('Downloads Dashboard') }}</h1>
+                <div class="metric">{{ _(data.timeframe_label) }} · {{ ngettext('%(num)s total download', '%(num)s total downloads', data.total_downloads) }}</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                {% for key, timeframe in data.translated_timeframes.items() %}
+                <a class="btn btn-sm {{ 'btn-primary' if key == data.timeframe_key else 'btn-outline-secondary' }}" href="{{ dashboard_url }}?timeframe={{ key }}">{{ timeframe[0] }}</a>
+                {% endfor %}
+                <a class="btn btn-sm btn-outline-secondary" href="{{ admin_home_url }}">{{ _('Admin home') }}</a>
+            </div>
+        </div>
+
+        <section class="dashboard-card p-3 mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <h2 class="h5 mb-0">{{ _('Downloads over time') }}</h2>
+                <span class="metric">{{ _('Daily totals') }}</span>
+            </div>
+            <div class="chart-wrap">
+                <canvas id="downloads-chart" width="1200" height="300"></canvas>
+                <div id="downloads-chart-tooltip" class="chart-tooltip"></div>
+            </div>
+        </section>
+
+        <div class="row g-3">
+            <section class="col-12 col-lg-6">
+                <div class="dashboard-card p-3 h-100">
+                    <h2 class="h5 mb-1">{{ _('Most downloaded parts') }}</h2>
+                    <p class="metric mb-3">{{ _('Top parts in descending order by download count.') }}</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>{{ _('Part number') }}</th>
+                                    <th>{{ _('Name') }}</th>
+                                    <th class="text-end">{{ _('Downloads') }}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data.most_downloaded %}
+                                <tr>
+                                    <td>{{ row.part_number }}</td>
+                                    <td>{{ row.part_name }}</td>
+                                    <td class="text-end">{{ row.count }}</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="3" class="text-muted">{{ _('No part downloads in this timeframe.') }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section class="col-12 col-lg-6">
+                <div class="dashboard-card p-3 h-100">
+                    <h2 class="h5 mb-1">{{ _('Trending downloads') }}</h2>
+                    <p class="metric mb-3">{{ _('Ranks recent growth against the previous %(days)s days using absolute and percentage increase.', days=data.recent_window_days) }}</p>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle">
+                            <thead>
+                                <tr>
+                                    <th>{{ _('Part') }}</th>
+                                    <th class="text-end">{{ _('Recent') }}</th>
+                                    <th class="text-end">{{ _('Previous') }}</th>
+                                    <th class="text-end">{{ _('Increase') }}</th>
+                                    <th class="text-end">%</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in data.trending %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ row.part_name }}</div>
+                                        <div class="metric">{{ row.part_number }}</div>
+                                    </td>
+                                    <td class="text-end">{{ row.recent_count }}</td>
+                                    <td class="text-end">{{ row.previous_count }}</td>
+                                    <td class="text-end">+{{ row.absolute_increase }}</td>
+                                    <td class="text-end">+{{ "%.0f"|format(row.percent_increase) }}%</td>
+                                </tr>
+                                {% else %}
+                                <tr><td colspan="5" class="text-muted">{{ _('No trending downloads in this timeframe yet.') }}</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <script>
+        const labels = {{ data.chart_labels|tojson }};
+        const values = {{ data.chart_values|tojson }};
+        const canvas = document.getElementById("downloads-chart");
+        const tooltip = document.getElementById("downloads-chart-tooltip");
+        const ctx = canvas.getContext("2d");
+        const width = canvas.width;
+        const height = canvas.height;
+        const padding = 32;
+        const maxValue = Math.max(...values, 1);
+
+        ctx.clearRect(0, 0, width, height);
+        ctx.strokeStyle = "#dee2e6";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, height - padding);
+        ctx.lineTo(width - padding, height - padding);
+        ctx.stroke();
+
+        const usableWidth = width - (padding * 2);
+        const usableHeight = height - (padding * 2);
+        const step = values.length > 1 ? usableWidth / (values.length - 1) : usableWidth;
+        const points = values.map((value, index) => ({
+            label: labels[index],
+            value,
+            x: padding + (index * step),
+            y: height - padding - ((value / maxValue) * usableHeight)
+        }));
+
+        ctx.strokeStyle = "#0d6efd";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        points.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x, point.y);
+            } else {
+                ctx.lineTo(point.x, point.y);
+            }
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = "#0d6efd";
+        points.forEach((point) => {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        ctx.fillStyle = "#6c757d";
+        ctx.font = "12px system-ui, sans-serif";
+        ctx.fillText("0", 8, height - padding + 4);
+        ctx.fillText(String(maxValue), 8, padding + 4);
+        if (labels.length) {
+            ctx.fillText(labels[0], padding, height - 8);
+            const endLabel = labels[labels.length - 1];
+            ctx.fillText(endLabel, width - padding - ctx.measureText(endLabel).width, height - 8);
+        }
+
+        canvas.addEventListener("mousemove", (event) => {
+            if (!points.length) {
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (event.clientX - rect.left) * scaleX;
+            const mouseY = (event.clientY - rect.top) * scaleY;
+            const nearest = points.reduce((closest, point) => {
+                const distance = Math.hypot(point.x - mouseX, point.y - mouseY);
+                return distance < closest.distance ? { point, distance } : closest;
+            }, { point: null, distance: Number.POSITIVE_INFINITY });
+
+            if (!nearest.point || nearest.distance > 18) {
+                tooltip.style.display = "none";
+                return;
+            }
+
+            const downloadLabel = nearest.point.value === 1 ? {{ _('download')|tojson }} : {{ _('downloads')|tojson }};
+            tooltip.textContent = `${nearest.point.label}: ${nearest.point.value} ${downloadLabel}`;
+            tooltip.style.left = `${nearest.point.x / scaleX}px`;
+            tooltip.style.top = `${nearest.point.y / scaleY}px`;
+            tooltip.style.display = "block";
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+            tooltip.style.display = "none";
+        });
+    </script>
+</body>
+</html>

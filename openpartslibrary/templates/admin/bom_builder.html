@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ _('Bill of Materials') }} | {{ _('OpenPartsLibrary Admin') }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .bom-card { background: white; border: 1px solid #dee2e6; border-radius: 6px; }
+        .bom-list-toolbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin: -1.5rem -12px 0; background: white; border-bottom: 1px solid #d7dde5; }
+        .bom-list-toolbar-title { min-width: 0; }
+        .bom-list-toolbar h1 { font-size: 1.25rem; margin: 0; }
+        .bom-list-toolbar-subtitle { color: #667085; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-list-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+        .bom-list-scroll { min-height: 0; overflow: auto; background: white; }
+        .bom-list-header { border-top: 1px solid #e0e0e0; border-bottom: 1px solid #e0e0e0; background-color: #f8f9fa; }
+        .bom-list-table { border-top: 1px solid lightgray; border-bottom: 1px solid lightgray; }
+        .bom-list-row { border-top: 1px solid #e2e6ea; }
+        .bom-list-table > .bom-list-row:first-of-type { border-top: 0; }
+        .bom-list-main { display: grid; grid-template-columns: 34px minmax(220px, 1fr) 90px 130px 250px; align-items: center; min-height: 36px; gap: 8px; padding-top: 4px; padding-right: 12px; padding-bottom: 4px; cursor: default; }
+        .bom-list-main.is-expandable { cursor: pointer; }
+        .bom-level-0 { background: #f8f9fa; }
+        .bom-level-1 { background: #eef6ff; }
+        .bom-level-2 { background: #e3f0ff; }
+        .bom-level-3 { background: #d8eaff; }
+        .bom-level-4 { background: #cde4ff; }
+        .bom-level-5 { background: #c2ddfb; }
+        .bom-level-6 { background: #b7d6f6; }
+        .bom-level-7 { background: #accff2; }
+        .bom-row-bom:hover { background: #dbeafe; }
+        .bom-list-meta { color: #6c757d; font-size: 0.9rem; }
+        .bom-expand-button { width: 30px; height: 30px; border: 0; background: transparent; color: #042c61; pointer-events: none; }
+        .bom-expand-button::before { content: "▸"; display: inline-block; transition: transform 120ms ease; }
+        .bom-expand-button[aria-expanded="true"]::before { transform: rotate(90deg); }
+        .bom-child-list { display: none; }
+        .bom-child-list.is-open { display: block; }
+        .bom-kind { color: #6c757d; font-size: 0.82rem; }
+        .bom-list-name { display: flex; align-items: baseline; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bom-list-icon { flex: 0 0 auto; color: #042c61; font-size: 1rem; line-height: 1; }
+        .bom-list-icon-part { color: #0d6efd; }
+        .bom-list-number, .bom-list-quantity, .bom-list-cost { color: #5f6b7a; font-size: 0.9rem; }
+        .bom-list-actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: nowrap; white-space: nowrap; }
+        .bom-builder-table { border: 1px solid #dee2e6; background: white; }
+        .bom-builder-header,
+        .bom-builder-row { display: grid; grid-template-columns: minmax(220px, 1fr) 120px 44px; align-items: center; gap: 8px; }
+        .bom-builder-header { min-height: 36px; padding: 6px 10px; background: #f8f9fa; border-bottom: 1px solid #dee2e6; color: #5f6b7a; font-size: 0.86rem; font-weight: 600; }
+        .bom-builder-row { min-height: 44px; padding: 6px 10px; border-top: 1px solid #e2e6ea; }
+        .bom-builder-items > .bom-builder-row:first-child { border-top: 0; }
+        .bom-builder-remove-button { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-navigation { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border: 0; border-radius: 4px; background: transparent; color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .opl-admin-navigation .dropdown-menu { margin-top: 0; z-index: 1000; }
+        .opl-admin-navigation .dropdown:hover .dropdown-menu, .opl-admin-navigation .dropdown:focus-within .dropdown-menu { display: block; }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+        @media (max-width: 767.98px) {
+            .bom-list-toolbar { align-items: flex-start; flex-direction: column; }
+            .bom-list-toolbar-actions { justify-content: flex-start; }
+            .bom-builder-row { grid-template-columns: 1fr; }
+            .bom-builder-header { display: none; }
+            .bom-list-main { grid-template-columns: 34px minmax(0, 1fr) 80px; }
+            .bom-list-cost, .bom-list-actions { grid-column: 2 / -1; text-align: right !important; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        {% if edit_bom %}
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <div>
+                <h1 class="h3 mb-1">{{ _('Edit BOM') }}</h1>
+                <div class="text-muted">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
+            </div>
+            <a class="btn btn-outline-secondary" href="{{ node_editor_url }}"><i class="bi bi-diagram-3 me-1" aria-hidden="true"></i>{{ _('Node editor') }}</a>
+        </div>
+
+        <section class="bom-card p-3 mb-3">
+            <h2 class="h5 mb-3">{{ _('Update BOM') }}</h2>
+            <form method="post" action="{{ form_action }}">
+                <div class="row g-2 mb-3">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label">{{ _('BOM number') }}</label>
+                        <div class="form-control-plaintext fw-semibold">{{ edit_bom.number }}</div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label">{{ _('Name') }}</label>
+                        <input id="bom-root-name-input" class="form-control" name="name" value="{{ edit_bom.name }}" required>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <label class="form-label">{{ _('Description') }}</label>
+                        <input class="form-control" name="description" value="{{ edit_bom.description if edit_bom.description else '' }}">
+                    </div>
+                </div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <h3 class="h6 mb-0">{{ _('Items') }}</h3>
+                </div>
+                <div class="bom-builder-table">
+                    <div class="bom-builder-header">
+                        <span>{{ _('Item') }}</span>
+                        <span>{{ _('Quantity') }}</span>
+                        <span></span>
+                    </div>
+                    <div id="bom-builder-items" class="bom-builder-items"></div>
+                </div>
+                <datalist id="bom-option-list">
+                    {% for option in bom_options %}
+                    <option value="{{ option.display_label }}"></option>
+                    {% endfor %}
+                </datalist>
+                <template id="bom-builder-row-template">
+                    <div class="bom-builder-row">
+                        <div>
+                            <input class="form-control form-control-sm bom-item-search" list="bom-option-list" placeholder="{{ _('Search part or BOM') }}" oninput="syncBomSearch(this)">
+                            <input type="hidden" name="child_bom_id">
+                        </div>
+                        <input class="form-control form-control-sm" name="quantity" type="number" min="1" step="1" value="1">
+                        <button type="button" class="btn btn-outline-secondary bom-builder-remove-button" onclick="removeBomBuilderRow(this.closest('.bom-builder-row'))" title="{{ _('Remove') }}" aria-label="{{ _('Remove') }}"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                </template>
+                <div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="addBomBuilderRow()"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('Add item') }}</button>
+                    <button class="btn btn-primary" type="submit">{{ _('Save BOM') }}</button>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Cancel') }}</a>
+                </div>
+            </form>
+        </section>
+        {% else %}
+        <div class="bom-list-toolbar">
+            <div class="bom-list-toolbar-title">
+                <h1>{{ _('Bill of Materials') }}</h1>
+                <div class="bom-list-toolbar-subtitle">{{ _('Create nested BOMs from library parts and existing BOMs.') }}</div>
+            </div>
+            <div class="bom-list-toolbar-actions">
+                <a class="btn btn-primary" href="{{ node_editor_url }}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>{{ _('New BOM') }}</a>
+            </div>
+        </div>
+        <section class="container-fluid p-0 m-0 d-flex flex-column bom-list-scroll">
+            <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', boms|length) }}</p>
+            <div class="bom-list-table">
+                <div class="bom-list-main fw-semibold" style="background: #ffffff;">
+                    <span></span>
+                    <span>{{ _('Name') }}</span>
+                    <span class="text-end">{{ _('Quantity') }}</span>
+                    <span class="text-end">{{ _('Total cost') }}</span>
+                    <span class="text-end">{{ _('Actions') }}</span>
+                </div>
+                {% for bom in boms %}
+                    {{ render_bom_row(bom, 0)|safe }}
+                {% else %}
+                <div class="p-3 text-muted">{{ _('No BOMs have been created yet.') }}</div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+    <script>
+        const bomOptions = {{ bom_options|tojson }};
+        const initialItems = {{ initial_items|tojson }};
+
+        function addBomBuilderRow(item = null) {
+            const template = document.getElementById("bom-builder-row-template");
+            const target = document.getElementById("bom-builder-items");
+            const fragment = template.content.cloneNode(true);
+            const row = fragment.querySelector(".bom-builder-row");
+            if (item) {
+                row.querySelector(".bom-item-search").value = item.display_label || "";
+                row.querySelector("input[name='child_bom_id']").value = item.child_bom_id || "";
+                row.querySelector("input[name='quantity']").value = item.quantity || 1;
+            }
+            target.appendChild(fragment);
+        }
+
+        function syncBomSearch(input) {
+            const row = input.closest(".bom-builder-row");
+            const hiddenInput = row ? row.querySelector("input[name='child_bom_id']") : null;
+            if (!hiddenInput) {
+                return;
+            }
+            const match = bomOptions.find((option) => option.display_label === input.value);
+            hiddenInput.value = match ? match.id : "";
+        }
+
+        function removeBomBuilderRow(row) {
+            if (row) {
+                row.remove();
+            }
+        }
+
+        function toggleBomChildren(button) {
+            const row = button.closest(".bom-list-main");
+            const target = row ? row.nextElementSibling : null;
+            if (!target) {
+                return;
+            }
+            const isOpen = target.classList.toggle("is-open");
+            button.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        }
+
+        function toggleBomChildrenForRow(event, childrenId) {
+            if (event.target.closest("a, button, form, input, select, textarea")) {
+                return;
+            }
+            const button = event.currentTarget.querySelector(".bom-expand-button");
+            if (button) {
+                toggleBomChildren(button);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            if (!document.getElementById("bom-builder-row-template")) {
+                return;
+            }
+            if (initialItems.length) {
+                initialItems.forEach((item) => addBomBuilderRow(item));
+            } else {
+                addBomBuilderRow();
+            }
+        });
+    </script>
+</body>
+</html>

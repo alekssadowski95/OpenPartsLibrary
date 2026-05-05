@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ name }} | OpenPartsLibrary Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <style>
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body class="bg-light">
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="h3 mb-0">{{ name }}</h1>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('fallback_admin_index') }}">{{ _('Admin home') }}</a>
+        </div>
+        <div class="table-responsive bg-white border">
+            <table class="table table-sm table-striped mb-0">
+                <thead>
+                    <tr>
+                        {% for column in columns %}
+                        <th>{{ column_labels.get(column, column) }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        {% for column in columns %}
+                        <td>{{ record|attr(column) }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p class="text-muted mt-2 mb-0">{{ _('Showing up to 200 rows.') }}</p>
+    </main>
+</body>
+</html>

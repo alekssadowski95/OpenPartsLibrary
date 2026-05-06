@@ -126,6 +126,93 @@ def search_bom_options(db_session, query, limit=60):
     return [option_by_id[option_id] for option_id in ranked_ids[:limit]]
 
 
+def bom_builder_filter_options(db_session):
+    suppliers = (
+        db_session.query(Supplier)
+        .filter(
+            Supplier.name.isnot(None),
+            func.trim(Supplier.name) != "",
+            func.lower(func.trim(Supplier.name)) != "unknown supplier",
+        )
+        .order_by(Supplier.name)
+        .all()
+    )
+    materials = [
+        value[0]
+        for value in db_session.query(Component.material)
+        .filter(Component.material.isnot(None), Component.material != "")
+        .distinct()
+        .order_by(Component.material)
+        .all()
+    ]
+    currencies = [
+        value[0]
+        for value in db_session.query(Component.currency)
+        .filter(Component.currency.isnot(None), Component.currency != "")
+        .distinct()
+        .order_by(Component.currency)
+        .all()
+    ]
+    return {
+        "suppliers": [{"id": supplier.id, "name": supplier.name} for supplier in suppliers],
+        "materials": materials,
+        "currencies": currencies,
+    }
+
+
+def bom_builder_part_rows(db_session, query_text="", supplier="", material="", currency="", price_min="", price_max="", limit=50):
+    query = db_session.query(Component).outerjoin(Component.supplier)
+
+    if supplier and str(supplier).isdigit():
+        query = query.filter(Component.supplier_id == int(supplier))
+    if material:
+        query = query.filter(Component.material == material)
+    if currency:
+        query = query.filter(Component.currency == currency)
+    if price_min:
+        try:
+            query = query.filter(Component.unit_price >= float(price_min))
+        except ValueError:
+            pass
+    if price_max:
+        try:
+            query = query.filter(Component.unit_price <= float(price_max))
+        except ValueError:
+            pass
+
+    components = query.all()
+    if str(query_text or "").strip():
+        components = search_parts(query_text, components, limit=limit)
+    else:
+        components = sorted(components, key=lambda component: (str(component.name or "").lower(), str(component.number or "").lower()))[:limit]
+
+    part_boms_by_component_id = {
+        bom.component_id: bom
+        for bom in db_session.query(BillOfMaterials)
+        .filter(BillOfMaterials.is_part_wrapper.is_(True), BillOfMaterials.component_id.isnot(None))
+        .all()
+    }
+
+    rows = []
+    for component in components:
+        part_bom = part_boms_by_component_id.get(component.id)
+        if part_bom is None:
+            continue
+        rows.append({
+            "uuid": component.uuid,
+            "name": component.name,
+            "number": component.number,
+            "description": component.description or "",
+            "supplier": component.supplier.name if component.supplier else "",
+            "material": component.material or "",
+            "unit_price": str(component.unit_price or ""),
+            "currency": component.currency or "",
+            "part_bom_id": part_bom.id,
+            "display_label": f"{part_bom.number + ' - ' if part_bom.number else ''}{part_bom.name}",
+        })
+    return rows
+
+
 def register_routes(app, parts_library):
     session = parts_library.session
     cad_dir = app.config["CAD_DIR"]
@@ -272,6 +359,21 @@ def register_routes(app, parts_library):
         ensure_part_boms(session)
         return jsonify(search_bom_options(session, request.args.get("q", ""), limit=60))
 
+    @app.route("/bom-builder/parts-library")
+    def bom_builder_parts_library():
+        ensure_part_boms(session)
+        return jsonify({
+            "parts": bom_builder_part_rows(
+                session,
+                request.args.get("search_query", ""),
+                request.args.get("supplier", ""),
+                request.args.get("material", ""),
+                request.args.get("currency", ""),
+                request.args.get("price_min", ""),
+                request.args.get("price_max", ""),
+            )
+        })
+
     @app.route("/bom-builder", methods=["GET", "POST"])
     def public_bom_node_editor():
         ensure_part_boms(session)
@@ -295,6 +397,8 @@ def register_routes(app, parts_library):
             loadable_boms=[],
             show_load_bom_button=False,
             public_builder=True,
+            parts_library_filters=bom_builder_filter_options(session),
+            initial_parts_library_parts=bom_builder_part_rows(session),
             format_bom_cost=format_bom_cost,
         )
 
@@ -327,6 +431,8 @@ def register_routes(app, parts_library):
             loadable_boms=[],
             show_load_bom_button=False,
             public_builder=True,
+            parts_library_filters=bom_builder_filter_options(session),
+            initial_parts_library_parts=bom_builder_part_rows(session),
             format_bom_cost=format_bom_cost,
         )
 

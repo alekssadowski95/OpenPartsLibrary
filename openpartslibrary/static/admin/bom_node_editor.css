@@ -67,13 +67,16 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
 .bom-node-toolbar h1 { font-size: 1.25rem; margin: 0; }
 .bom-node-toolbar-subtitle { color: #667085; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .bom-node-toolbar-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
-.bom-node-canvas { position: relative; flex: 1 1 auto; min-height: 0; overflow: hidden; background-color: var(--bom-node-canvas-bg); background-image: radial-gradient(#cbd5df 1px, transparent 1px); background-size: 20px 20px; cursor: grab; touch-action: none; }
+.bom-node-workspace { flex: 1 1 auto; min-height: 0; display: flex; }
+.bom-node-canvas { position: relative; flex: 1 1 auto; min-width: 0; min-height: 0; overflow: hidden; background-color: var(--bom-node-canvas-bg); background-image: radial-gradient(#cbd5df 1px, transparent 1px); background-size: 20px 20px; cursor: grab; touch-action: none; }
 .bom-node-canvas.is-panning { cursor: grabbing; }
 .bom-node-world { position: absolute; left: 0; top: 0; width: 1600px; min-height: 900px; transform-origin: 0 0; }
 .bom-node-links { position: absolute; inset: 0; width: 1600px; height: 900px; overflow: visible; pointer-events: none; }
 .bom-node-link { stroke: #6b7f97; stroke-width: 2; fill: none; }
 .bom-node-card { position: absolute; width: var(--bom-node-width); background: white; border: 1px solid #cfd7e2; border-radius: var(--bom-node-radius); box-shadow: 0 8px 18px rgba(16, 24, 40, 0.12); font-size: 0.82rem; cursor: default; }
 .bom-node-card-root { border-color: #8fb4dc; }
+.bom-node-card.is-drop-target { border-color: #0d6efd; box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.22), 0 12px 24px rgba(16, 24, 40, 0.16); }
+.bom-node-card.is-drop-target .bom-node-header { background: #eef6ff; }
 .bom-node-header { display: flex; align-items: center; gap: 7px; min-height: 32px; padding: 7px 38px 7px 9px; border-bottom: 1px solid #e1e7ef; border-radius: var(--bom-node-radius) var(--bom-node-radius) 0 0; background: #f8fafc; color: #1f2937; position: relative; }
 .bom-node-header i { flex: 0 0 auto; color: #042c61; }
 .bom-node-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
@@ -83,7 +86,8 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
 .bom-node-readonly-value { min-height: 28px; padding: 4px 0; color: #1f2937; font-size: 0.82rem; overflow-wrap: anywhere; }
 .bom-node-readonly-muted { color: #667085; }
 .bom-node-price-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 31px; padding: 6px var(--bom-node-body-padding-x); border-top: 1px solid #e1e7ef; color: #5f6b7a; font-size: 0.74rem; }
-.bom-node-price-row strong { min-width: 0; color: #1f2937; font-size: 0.82rem; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.bom-node-price-row strong { min-width: 0; color: #1f2937; font-size: 0.82rem; font-weight: 400; text-align: right; overflow-wrap: anywhere; }
+#root-estimated-price { font-weight: 700; }
 .bom-node-card-readonly,
 .bom-node-card-readonly .bom-node-header,
 .bom-node-card-readonly .bom-node-body,
@@ -130,6 +134,21 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
 .bom-node-load-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .bom-node-load-meta { flex: 0 0 auto; color: #667085; font-size: 0.82rem; }
 .bom-node-load-empty { padding: 16px; color: #667085; }
+.parts-library-panel { flex: 0 0 360px; width: 360px; min-width: 0; display: flex; flex-direction: column; background: #ffffff; border-left: 1px solid #cfd7e2; }
+.parts-library-panel.d-none { display: none !important; }
+.parts-library-header { min-height: 50px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-bottom: 1px solid #e1e7ef; }
+.parts-library-header h2 { margin: 0; font-size: 1rem; }
+.parts-library-filters { display: grid; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #e1e7ef; background: #f8fafc; }
+.parts-library-filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.parts-library-filter-grid select { grid-column: 1 / -1; }
+.parts-library-status { min-height: 30px; padding: 7px 12px; color: #667085; font-size: 0.8rem; border-bottom: 1px solid #edf1f5; }
+.parts-library-list { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 10px 12px; background: #f8fafc; }
+.parts-library-card { display: grid; gap: 5px; width: 100%; padding: 9px; margin-bottom: 8px; border: 1px solid #d7dde5; border-radius: 6px; background: white; color: #1f2937; cursor: grab; text-align: left; box-shadow: 0 2px 6px rgba(16, 24, 40, 0.06); }
+.parts-library-card:active { cursor: grabbing; }
+.parts-library-card:hover, .parts-library-card:focus { border-color: #8fb4dc; box-shadow: 0 6px 14px rgba(16, 24, 40, 0.12); outline: 0; }
+.parts-library-card-title { font-weight: 600; line-height: 1.25; }
+.parts-library-card-meta { color: #667085; font-size: 0.78rem; line-height: 1.25; }
+.parts-library-card-price { color: #1f2937; font-size: 0.82rem; }
 @media (max-width: 767.98px) {
     body { overflow: auto; }
     .bom-node-page { height: auto; min-height: calc(100vh - 79px); }
@@ -137,7 +156,9 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
     .opl-public-search { display: none; }
     .bom-node-toolbar { align-items: flex-start; flex-direction: column; }
     .bom-node-toolbar-actions { justify-content: flex-start; }
+    .bom-node-workspace { flex-direction: column; }
     .bom-node-canvas { min-height: 720px; }
+    .parts-library-panel { flex: 0 0 auto; width: 100%; max-height: 70vh; border-left: 0; border-top: 1px solid #cfd7e2; }
 }
 @media (max-width: 420px) {
     .opl-admin-brand span { display: none; }

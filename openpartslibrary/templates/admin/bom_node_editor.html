@@ -57,6 +57,9 @@
                 {% if show_load_bom_button|default(true) %}
                 <button id="load-bom-button" type="button" class="btn btn-outline-secondary" onclick="openLoadBomModal()"><i class="bi bi-folder2-open me-1" aria-hidden="true"></i>{{ _('Load BOM') }}</button>
                 {% endif %}
+                {% if public_builder|default(false) %}
+                <button id="parts-library-toggle-button" type="button" class="btn btn-outline-secondary" onclick="togglePartsLibraryPanel()"><i class="bi bi-layout-sidebar-inset-reverse me-1" aria-hidden="true"></i>{{ _('Parts library') }}</button>
+                {% endif %}
                 <button id="clear-node-editor-button" type="button" class="btn btn-outline-secondary" onclick="openClearModal()">{{ _('Clear') }}</button>
                 <button class="btn btn-primary" type="submit">{{ _('Save BOM') if public_builder|default(false) or edit_bom else _('Create BOM') }}</button>
             </div>
@@ -67,13 +70,51 @@
             <option value="{{ option.display_label }}"></option>
             {% endfor %}
         </datalist>
-        <div id="bom-node-canvas" class="bom-node-canvas">
-            <div id="bom-node-world" class="bom-node-world"></div>
-            <div class="bom-node-zoom" aria-label="{{ _('Zoom controls') }}">
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(1.15)" title="{{ _('Zoom in') }}" aria-label="{{ _('Zoom in') }}"><i class="bi bi-plus-lg"></i></button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(0.87)" title="{{ _('Zoom out') }}" aria-label="{{ _('Zoom out') }}"><i class="bi bi-dash-lg"></i></button>
-                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetView()" title="{{ _('Reset view') }}" aria-label="{{ _('Reset view') }}"><i class="bi bi-aspect-ratio"></i></button>
+        <div class="bom-node-workspace">
+            <div id="bom-node-canvas" class="bom-node-canvas">
+                <div id="bom-node-world" class="bom-node-world"></div>
+                <div class="bom-node-zoom" aria-label="{{ _('Zoom controls') }}">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(1.15)" title="{{ _('Zoom in') }}" aria-label="{{ _('Zoom in') }}"><i class="bi bi-plus-lg"></i></button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="zoomBy(0.87)" title="{{ _('Zoom out') }}" aria-label="{{ _('Zoom out') }}"><i class="bi bi-dash-lg"></i></button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="resetView()" title="{{ _('Reset view') }}" aria-label="{{ _('Reset view') }}"><i class="bi bi-aspect-ratio"></i></button>
+                </div>
             </div>
+            {% if public_builder|default(false) %}
+            <aside id="parts-library-panel" class="parts-library-panel d-none" aria-label="{{ _('Parts library') }}">
+                <div class="parts-library-header">
+                    <h2>{{ _('Parts library') }}</h2>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePartsLibraryPanel()" title="{{ _('Close') }}" aria-label="{{ _('Close') }}"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <form id="parts-library-form" class="parts-library-filters">
+                    <input id="parts-library-search" class="form-control form-control-sm" name="search_query" type="search" placeholder="{{ _('Search...') }}" aria-label="{{ _('Search') }}">
+                    <div class="parts-library-filter-grid">
+                        <select class="form-select form-select-sm" name="supplier" aria-label="{{ _('Supplier') }}">
+                            <option value="">{{ _('All suppliers') }}</option>
+                            {% for supplier in parts_library_filters.suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input class="form-control form-control-sm" name="price_min" type="number" min="0" step="0.01" placeholder="{{ _('Min price') }}" aria-label="{{ _('Min price') }}">
+                        <input class="form-control form-control-sm" name="price_max" type="number" min="0" step="0.01" placeholder="{{ _('Max price') }}" aria-label="{{ _('Max price') }}">
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary btn-sm flex-fill" type="submit">{{ _('Apply') }}</button>
+                        <button class="btn btn-outline-secondary btn-sm" type="button" onclick="resetPartsLibraryFilters()">{{ _('Reset') }}</button>
+                    </div>
+                </form>
+                <div id="parts-library-status" class="parts-library-status">{{ ngettext('%(num)s part found.', '%(num)s parts found.', initial_parts_library_parts|length) }}</div>
+                <div id="parts-library-list" class="parts-library-list">
+                    {% for part in initial_parts_library_parts %}
+                    <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="{{ part.part_bom_id }}" data-display-label="{{ part.display_label }}">
+                        <div class="parts-library-card-title">{{ part.display_label }}</div>
+                        <div class="parts-library-card-price">{{ part.unit_price }} {{ part.currency }}</div>
+                    </div>
+                    {% else %}
+                    <div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>
+                    {% endfor %}
+                </div>
+            </aside>
+            {% endif %}
         </div>
         <div id="delete-node-modal" class="bom-node-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="delete-node-modal-title">
             <div class="bom-node-modal">
@@ -131,6 +172,7 @@
     <script>
         const bomOptions = {{ bom_options|tojson }};
         const bomOptionSearchUrl = {{ url_for('bom_options_search')|tojson }};
+        const partsLibraryUrl = {{ url_for('bom_builder_parts_library')|tojson }};
         const initialItems = {{ initial_items|tojson }};
         const newBomLabel = {{ _('New BOM')|tojson }};
         const selectItemLabel = {{ _('Select part or BOM')|tojson }};
@@ -150,6 +192,9 @@
         let pendingDeletePath = null;
         let pendingLoadUrl = "";
         let nodeOptionSearchSequence = 0;
+        let partsLibrarySearchTimeout = null;
+        let draggedPartOption = null;
+        let activeDropTarget = null;
         let initialEditorState = JSON.stringify({ rootName, rootDescription, nodes });
         const nodeTop = 80;
         const nodeVerticalGap = 34;
@@ -239,6 +284,29 @@
             }
             getBranch(path).push(normalizeNode());
             renderNodes();
+        }
+
+        function addPartOptionToNode(path, optionId, displayLabel) {
+            const option = bomOptions.find((candidate) => String(candidate.id) === String(optionId));
+            if (!option || !option.is_part_wrapper) {
+                return false;
+            }
+
+            const parent = path.length ? getNode(path) : null;
+            if (parent && !canNodeHaveChildren(parent)) {
+                return false;
+            }
+
+            getBranch(path).push(normalizeNode({
+                child_bom_id: option.id,
+                display_label: displayLabel || option.display_label,
+                source_type: "existing",
+                readonly: false,
+                quantity: "1",
+                children: [],
+            }));
+            renderNodes();
+            return true;
         }
 
         function requestRemoveBomNode(path) {
@@ -729,6 +797,90 @@
             }
         }
 
+        function togglePartsLibraryPanel() {
+            const panel = document.getElementById("parts-library-panel");
+            if (!panel) {
+                return;
+            }
+            const isOpening = panel.classList.contains("d-none");
+            panel.classList.toggle("d-none");
+            if (isOpening) {
+                loadPartsLibrary();
+            }
+        }
+
+        function resetPartsLibraryFilters() {
+            const form = document.getElementById("parts-library-form");
+            if (!form) {
+                return;
+            }
+            form.reset();
+            loadPartsLibrary();
+        }
+
+        async function loadPartsLibrary() {
+            const form = document.getElementById("parts-library-form");
+            const list = document.getElementById("parts-library-list");
+            const status = document.getElementById("parts-library-status");
+            if (!form || !list || !status) {
+                return;
+            }
+            status.textContent = {{ _('Searching...')|tojson }};
+            const params = new URLSearchParams(new FormData(form));
+            try {
+                const response = await fetch(`${partsLibraryUrl}?${params.toString()}`);
+                const payload = response.ok ? await response.json() : { parts: [] };
+                const parts = Array.isArray(payload.parts) ? payload.parts : [];
+                status.textContent = {{ ngettext('%(num)s part found.', '%(num)s parts found.', 0)|tojson }}.replace("0", String(parts.length));
+                list.innerHTML = parts.length ? parts.map((part) => partsLibraryCard(part)).join("") : `<div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>`;
+            } catch (error) {
+                status.textContent = {{ _('No matching parts.')|tojson }};
+                list.innerHTML = `<div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>`;
+            }
+        }
+
+        function partsLibraryCard(part) {
+            const price = `${part.unit_price || ""} ${part.currency || ""}`.trim();
+            return `
+                <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="${escapeHtml(part.part_bom_id)}" data-display-label="${escapeHtml(part.display_label)}">
+                    <div class="parts-library-card-title">${escapeHtml(part.display_label)}</div>
+                    ${price ? `<div class="parts-library-card-price">${escapeHtml(price)}</div>` : ""}
+                </div>
+            `;
+        }
+
+        function clearDropTarget() {
+            if (activeDropTarget) {
+                activeDropTarget.classList.remove("is-drop-target");
+                activeDropTarget = null;
+            }
+        }
+
+        function canCardAcceptDrop(card) {
+            if (!card || !draggedPartOption) {
+                return false;
+            }
+            const key = card.dataset.nodePath || "root";
+            if (key === "root") {
+                return true;
+            }
+            const node = getNode(pathFromKey(key));
+            return Boolean(node && canNodeHaveChildren(node));
+        }
+
+        function updateDropTarget(card) {
+            if (!canCardAcceptDrop(card)) {
+                clearDropTarget();
+                return false;
+            }
+            if (activeDropTarget !== card) {
+                clearDropTarget();
+                activeDropTarget = card;
+                activeDropTarget.classList.add("is-drop-target");
+            }
+            return true;
+        }
+
         function nodeCard(node, path, x, y) {
             const title = node.source_type === "new" ? (node.new_bom_name || newBomLabel) : (node.display_label || selectItemLabel);
             const icon = iconForNode(node);
@@ -1104,6 +1256,44 @@
             }
             frameInitialRootView();
             const canvas = document.getElementById("bom-node-canvas");
+            const partsLibraryForm = document.getElementById("parts-library-form");
+            const partsLibrarySearch = document.getElementById("parts-library-search");
+            const partsLibraryList = document.getElementById("parts-library-list");
+            if (partsLibraryForm) {
+                partsLibraryForm.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    loadPartsLibrary();
+                });
+            }
+            if (partsLibrarySearch) {
+                partsLibrarySearch.addEventListener("input", () => {
+                    if (partsLibrarySearchTimeout) {
+                        window.clearTimeout(partsLibrarySearchTimeout);
+                    }
+                    partsLibrarySearchTimeout = window.setTimeout(loadPartsLibrary, 180);
+                });
+            }
+            if (partsLibraryList) {
+                partsLibraryList.addEventListener("dragstart", (event) => {
+                    const card = event.target.closest(".parts-library-card");
+                    if (!card) {
+                        return;
+                    }
+                    draggedPartOption = {
+                        optionId: card.dataset.optionId || "",
+                        displayLabel: card.dataset.displayLabel || "",
+                    };
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData("application/json", JSON.stringify(draggedPartOption));
+                });
+                partsLibraryList.addEventListener("dragend", () => {
+                    draggedPartOption = null;
+                    clearDropTarget();
+                });
+            }
+            if (partsLibraryForm) {
+                loadPartsLibrary();
+            }
             canvas.addEventListener("wheel", (event) => {
                 if (event.target.closest(".bom-node-options")) {
                     return;
@@ -1136,6 +1326,31 @@
             canvas.addEventListener("pointercancel", () => {
                 isPanning = false;
                 canvas.classList.remove("is-panning");
+            });
+            canvas.addEventListener("dragover", (event) => {
+                const card = event.target.closest(".bom-node-card");
+                if (!updateDropTarget(card)) {
+                    return;
+                }
+                event.preventDefault();
+                event.dataTransfer.dropEffect = "copy";
+            });
+            canvas.addEventListener("dragleave", (event) => {
+                if (!canvas.contains(event.relatedTarget)) {
+                    clearDropTarget();
+                }
+            });
+            canvas.addEventListener("drop", (event) => {
+                const card = event.target.closest(".bom-node-card");
+                if (!updateDropTarget(card)) {
+                    return;
+                }
+                event.preventDefault();
+                const key = card.dataset.nodePath || "root";
+                const path = key === "root" ? [] : pathFromKey(key);
+                addPartOptionToNode(path, draggedPartOption.optionId, draggedPartOption.displayLabel);
+                draggedPartOption = null;
+                clearDropTarget();
             });
             document.getElementById("bom-node-form").addEventListener("submit", () => {
                 isSubmitting = true;

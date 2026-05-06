@@ -13,12 +13,15 @@
             width: 100%;
             margin: 0;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .viewer-shell {
             position: relative;
             width: 100%;
-            height: 100%;
+            flex: 1 1 auto;
+            min-height: 0;
             background: rgb(245, 245, 245);
         }
 
@@ -79,6 +82,7 @@
             <div id="viewer-loading-message" class="viewer-loading-message">Loading model...</div>
         </div>
     </div>
+    {% include '_copyright_bar.html' %}
 </body>
 <script>
 window.addEventListener ('load', () => {

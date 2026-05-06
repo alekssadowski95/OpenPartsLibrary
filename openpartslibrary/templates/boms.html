@@ -25,10 +25,24 @@
         <div class="bom-list-actions">
             {% if bom.is_part_wrapper and bom.component %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('component_view', uuid=bom.component.uuid) }}" onclick="event.stopPropagation()" title="{{ _('Part details') }}" aria-label="{{ _('Part details') }}"><i class="bi bi-eye"></i></a>
+            {% elif bom.is_session_bom|default(false) %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('session_bom_view', bom_uuid=bom.uuid) }}" onclick="event.stopPropagation()" title="{{ _('BOM details') }}" aria-label="{{ _('BOM details') }}"><i class="bi bi-eye"></i></a>
+            {% if depth == 0 %}
+            {% if bom_has_cad_files(bom) %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('session_bom_download', bom_uuid=bom.uuid) }}" onclick="event.stopPropagation()" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi bi-download"></i></a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary disabled" type="button" disabled title="{{ _('No CAD files found for this BOM.') }}" aria-label="{{ _('No CAD files found for this BOM.') }}"><i class="bi bi-download"></i></button>
+            {% endif %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('edit_session_bom_node_editor', bom_uuid=bom.uuid) }}" onclick="event.stopPropagation()" title="{{ _('Modify BOM') }}" aria-label="{{ _('Modify BOM') }}"><i class="bi bi-pencil-square"></i></a>
+            {% endif %}
             {% elif not bom.is_part_wrapper %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_view', bom_id=bom.id) }}" onclick="event.stopPropagation()" title="{{ _('BOM details') }}" aria-label="{{ _('BOM details') }}"><i class="bi bi-eye"></i></a>
             {% if depth == 0 %}
+            {% if bom_has_cad_files(bom) %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_download', bom_id=bom.id) }}" onclick="event.stopPropagation()" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi bi-download"></i></a>
+            {% else %}
+            <button class="btn btn-sm btn-outline-secondary disabled" type="button" disabled title="{{ _('No CAD files found for this BOM.') }}" aria-label="{{ _('No CAD files found for this BOM.') }}"><i class="bi bi-download"></i></button>
+            {% endif %}
             {% endif %}
             {% endif %}
         </div>
@@ -69,6 +83,24 @@
 
 .bom-list-table > .bom-list-row:first-of-type {
     border-top: 0;
+}
+
+.bom-list-separator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    color: #5f6b7a;
+    background: #ffffff;
+    font-size: 0.9rem;
+}
+
+.bom-list-separator::before,
+.bom-list-separator::after {
+    content: "";
+    height: 1px;
+    background: #d7dee9;
+    flex: 1 1 auto;
 }
 
 .bom-list-main {
@@ -193,7 +225,7 @@
     <div class="bom-list-header px-3 py-2">
         <h1 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Bill of Materials') }}</h1>
     </div>
-    <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', boms|length) }}</p>
+    <p class="pb-2 pt-4 m-0 px-3" style="background-color: white;">{{ ngettext('%(num)s BOM was found.', '%(num)s BOMs were found.', total_bom_count|default(boms|length)) }}</p>
     <div class="bom-list-table">
         <div class="bom-list-main fw-semibold" style="background: #ffffff;">
             <span></span>
@@ -202,10 +234,21 @@
             <span class="text-end">{{ _('Total cost') }}</span>
             <span class="text-end">{{ _('Actions') }}</span>
         </div>
+        {% if user_boms|default([]) %}
+        <div class="bom-list-separator">{{ _('Your BOMs') }}</div>
+        {% endif %}
+        {% for bom in user_boms|default([]) %}
+            {{ bom_row(bom)|safe }}
+        {% endfor %}
+        {% if user_boms|default([]) and boms %}
+        <div class="bom-list-separator">{{ _('Library BOMs') }}</div>
+        {% endif %}
         {% for bom in boms %}
             {{ bom_row(bom)|safe }}
         {% else %}
+        {% if not user_boms|default([]) %}
         <div class="p-3 text-muted">{{ _('No BOMs have been created yet.') }}</div>
+        {% endif %}
         {% endfor %}
     </div>
 </div>

@@ -22,6 +22,8 @@
         <div class="bom-detail-actions">
             {% if child_bom.is_part_wrapper and child_bom.component %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('component_view', uuid=child_bom.component.uuid) }}" onclick="event.stopPropagation()" title="{{ _('Part details') }}" aria-label="{{ _('Part details') }}"><i class="bi bi-eye"></i></a>
+            {% elif child_bom.is_session_bom|default(false) %}
+            <span></span>
             {% elif not child_bom.is_part_wrapper %}
             <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('bom_view', bom_id=child_bom.id) }}" onclick="event.stopPropagation()" title="{{ _('BOM details') }}" aria-label="{{ _('BOM details') }}"><i class="bi bi-eye"></i></a>
             {% endif %}
@@ -193,16 +195,31 @@
                 <div class="text-muted">{{ bom.number }}</div>
             </div>
             <div class="bom-detail-header-actions">
+                {% if bom.is_session_bom|default(false) %}
+                {% if bom_has_cad_files(bom) %}
+                <a class="btn btn-outline-secondary" href="{{ url_for('session_bom_download', bom_uuid=bom.uuid) }}" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download') }}</a>
+                {% else %}
+                <button class="btn btn-outline-secondary disabled" type="button" disabled title="{{ _('No CAD files found for this BOM.') }}" aria-label="{{ _('No CAD files found for this BOM.') }}"><i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download') }}</button>
+                {% endif %}
+                <a class="btn btn-outline-secondary" href="{{ url_for('edit_session_bom_node_editor', bom_uuid=bom.uuid) }}" title="{{ _('Modify BOM') }}" aria-label="{{ _('Modify BOM') }}"><i class="bi-pencil-square" style="padding-right: 6px;"></i>{{ _('Edit BOM') }}</a>
+                {% else %}
+                {% if bom_has_cad_files(bom) %}
                 <a class="btn btn-outline-secondary" href="{{ url_for('bom_download', bom_id=bom.id) }}" title="{{ _('Download') }}" aria-label="{{ _('Download') }}"><i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download') }}</a>
+                {% else %}
+                <button class="btn btn-outline-secondary disabled" type="button" disabled title="{{ _('No CAD files found for this BOM.') }}" aria-label="{{ _('No CAD files found for this BOM.') }}"><i class="bi-download" style="padding-right: 6px;"></i>{{ _('Download') }}</button>
+                {% endif %}
+                {% endif %}
             </div>
         </div>
 
         <table class="table table-striped mb-0" style="outline-style: solid; outline-color: lightgray; outline-width: 1px;">
             <tbody>
+                {% if not bom.is_session_bom|default(false) %}
                 <tr>
                     <th>{{ _('BOM number') }}</th>
                     <td>{{ bom.number }}</td>
                 </tr>
+                {% endif %}
                 <tr>
                     <th>{{ _('Name') }}</th>
                     <td>{{ bom.name }}</td>

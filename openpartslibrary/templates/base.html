@@ -363,6 +363,7 @@
                 <nav class="app-primary-nav me-2" aria-label="{{ _('Main navigation') }}">
                     <a href="{{ url_for('components') }}" class="{% if request.endpoint == 'components' %}active{% endif %}">{{ _('Parts') }}</a>
                     <a href="{{ url_for('boms') }}" class="{% if request.endpoint == 'boms' %}active{% endif %}">{{ _('BOMs') }}</a>
+                    <a href="{{ url_for('public_bom_node_editor') }}" class="{% if request.endpoint == 'public_bom_node_editor' %}active{% endif %}">{{ _('BOM Builder') }}</a>
                 </nav>
                 <form method="get" class="me-2 d-inline-flex">
                     {% for key, value in request.args.items() %}
@@ -410,21 +411,20 @@
                 <ul id="parts-selection-list" class="p-2 pb-0 m-0">
                 </ul>
             </div>
-            <div class="container-fluid px-2" style="height: 86px; flex: 0 0 86px; border-top: 1px solid #042c61; padding-top: 8px;">
+            <div class="container-fluid px-2" style="height: 132px; flex: 0 0 132px; border-top: 1px solid #042c61; padding-top: 8px;">
                 <div id="parts-selection-total" class="pb-2" style="font-size: 0.85rem; color: #c9d8ec;">{{ _('Estimated total') }}: -</div>
                 <div class="d-grid gap-2">
                     <button class="btn btn-primary" type="button" onclick="downloadSelection()">{{ _('Download all') }}</button>
+                    <div class="d-grid gap-2" style="grid-template-columns: 1fr 1fr;">
+                        <button class="btn btn-outline-light btn-sm" type="button" onclick="saveSelectionAsSessionBom()">{{ _('Save BOM') }}</button>
+                        <button class="btn btn-outline-light btn-sm" type="button" onclick="editSelectionInBomBuilder()">{{ _('Edit BOM') }}</button>
+                    </div>
                 </div>
             </div>
         </aside>
     </div>
     <!-- Bottom bar -->
-    <div style="min-height: 27px; max-height: 27px; margin: 0px; background-color:#042c61; color: white; ">
-        <span style="font-size: 11px; margin: 0px; padding-left: 8px;">
-            <span>{{ _('Copyright (C) 2024 - 2025. OpenPartsLibrary by') }} </span>
-            <a style="color: white; " href="https://www.alsado.de">www.alsado.de</a>
-        </span>
-    </div>
+    {% include '_copyright_bar.html' %}
     <div class="modal fade" id="delete-selection-modal" tabindex="-1" aria-labelledby="delete-selection-modal-title" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -457,7 +457,10 @@
             quantity: {{ _('Quantity')|tojson }},
             estimatedUnitPrice: {{ _('Estimated unit price')|tojson }},
             noCadFileAvailable: {{ _('No CAD file available')|tojson }},
-            removeFromSelection: {{ _('Remove from My Bill of Materials')|tojson }}
+            removeFromSelection: {{ _('Remove from My Bill of Materials')|tojson }},
+            bomNamePrompt: {{ _('Name for saved BOM')|tojson }},
+            myBillOfMaterials: {{ _('My Bill of Materials')|tojson }},
+            savedBom: {{ _('Saved BOM')|tojson }}
         };
 
         function getSelectionList() {
@@ -598,6 +601,68 @@
             link.click();
             link.remove();
             window.URL.revokeObjectURL(downloadUrl);
+        }
+
+        async function selectionBomDraft() {
+            let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
+            if (list.length === 0) {
+                return null;
+            }
+
+            const response = await fetch("{{ url_for('selection_bom_draft') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(list)
+            });
+
+            if (!response.ok) {
+                return null;
+            }
+            return response.json();
+        }
+
+        async function saveSelectionAsSessionBom() {
+            let list = getSelectionList().map(normalizeSelectionItem).filter(item => item.uuid);
+            if (list.length === 0) {
+                return;
+            }
+
+            const name = window.prompt(i18n.bomNamePrompt, i18n.myBillOfMaterials);
+            if (name === null) {
+                return;
+            }
+
+            const response = await fetch("{{ url_for('selection_save_bom') }}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    name: name.trim() || i18n.myBillOfMaterials,
+                    items: list
+                })
+            });
+
+            if (!response.ok) {
+                return;
+            }
+            showSelectionNotification(i18n.savedBom);
+        }
+
+        async function editSelectionInBomBuilder() {
+            const draft = await selectionBomDraft();
+            if (!draft) {
+                return;
+            }
+
+            try {
+                window.localStorage.setItem("openpartslibrary:public-bom-node-editor:new", JSON.stringify(draft));
+            } catch (error) {
+                // Local storage can be unavailable in private or locked-down browser contexts.
+            }
+            window.location.href = "{{ url_for('public_bom_node_editor') }}";
         }
 
         function escapeHtml(value) {

@@ -167,6 +167,8 @@
     </div>
 {% endblock %}
 
+{% include '_copyright_bar.html' %}
+
 {% block tail_js %}
     <script {{ admin_csp_nonce_attribute }} src="{{ admin_static.url(filename='vendor/jquery.min.js', v='3.5.1') }}" type="text/javascript"></script>
     <script {{ admin_csp_nonce_attribute }} src="{{ admin_static.url(filename='bootstrap/bootstrap4/js/popper.min.js') }}" type="text/javascript"></script>

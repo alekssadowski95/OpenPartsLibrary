@@ -3,25 +3,62 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ _('BOM Node Editor') }} | {{ _('OpenPartsLibrary Admin') }}</title>
+    <title>{% if public_builder|default(false) %}{{ _('BOM Builder') }}{% else %}{{ _('BOM Node Editor') }}{% endif %} | OpenPartsLibrary</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='admin/bom_node_editor.css') }}">
 </head>
 <body>
+    {% if public_builder|default(false) %}
+    <header class="opl-admin-header">
+        <div class="opl-admin-header-inner opl-public-header-inner">
+            <a class="opl-admin-brand" href="{{ url_for('components') }}">
+                <img src="{{ url_for('static', filename='nut-bolt.png') }}" alt="" width="36" height="36">
+                <span>OpenPartsLibrary</span>
+            </a>
+            <div class="opl-public-search">
+                <form id="public-search-form" role="search">
+                    <input title="{{ _('Search for a part by its name or description') }}" name="search_query" type="search" class="form-control opl-public-search-input" placeholder="{{ _('Search...') }}" value="{{ search_query|default('') }}" id="site-search" aria-label="{{ _('Search') }}">
+                </form>
+            </div>
+            <div class="opl-admin-header-right">
+                <nav class="opl-admin-navigation" aria-label="{{ _('Main navigation') }}">
+                    <a class="opl-admin-nav-link" href="{{ url_for('components') }}">{{ _('Parts') }}</a>
+                    <a class="opl-admin-nav-link" href="{{ url_for('boms') }}">{{ _('BOMs') }}</a>
+                    <a class="opl-admin-nav-link is-active" href="{{ url_for('public_bom_node_editor') }}">{{ _('BOM Builder') }}</a>
+                </nav>
+                <form method="get" class="d-inline-flex">
+                    {% for key, value in request.args.items() %}
+                        {% if key != 'lang' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <select class="form-select form-select-sm opl-public-language-select" name="lang" title="{{ _('Language') }}" aria-label="{{ _('Language') }}" onchange="this.form.submit()">
+                        {% for locale, label in supported_locales.items() %}
+                        <option value="{{ locale }}" {% if locale == current_locale %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+        </div>
+    </header>
+    {% else %}
     {% include 'admin/_header.html' %}
+    {% endif %}
     <form id="bom-node-form" class="bom-node-page" method="post" action="{{ form_action }}">
         <div class="bom-node-toolbar">
             <div class="bom-node-toolbar-title">
-                <h1>{{ _('BOM Node Editor') }}</h1>
+                <h1>{% if public_builder|default(false) %}{{ _('BOM Builder') }}{% else %}{{ _('BOM Node Editor') }}{% endif %}</h1>
                 <div class="bom-node-toolbar-subtitle">
                     {% if edit_bom %}{{ edit_bom.number }} - {{ edit_bom.name }}{% else %}{{ _('Create a BOM from existing BOMs and parts.') }}{% endif %}
                 </div>
             </div>
             <div class="bom-node-toolbar-actions">
+                {% if show_load_bom_button|default(true) %}
                 <button id="load-bom-button" type="button" class="btn btn-outline-secondary" onclick="openLoadBomModal()"><i class="bi bi-folder2-open me-1" aria-hidden="true"></i>{{ _('Load BOM') }}</button>
+                {% endif %}
                 <button id="clear-node-editor-button" type="button" class="btn btn-outline-secondary" onclick="openClearModal()">{{ _('Clear') }}</button>
-                <button class="btn btn-primary" type="submit">{{ _('Save BOM') if edit_bom else _('Create BOM') }}</button>
+                <button class="btn btn-primary" type="submit">{{ _('Save BOM') if public_builder|default(false) or edit_bom else _('Create BOM') }}</button>
             </div>
         </div>
         <div id="node-hidden-inputs"></div>
@@ -90,8 +127,10 @@
             </div>
         </div>
     </form>
+    {% include '_copyright_bar.html' %}
     <script>
         const bomOptions = {{ bom_options|tojson }};
+        const bomOptionSearchUrl = {{ url_for('bom_options_search')|tojson }};
         const initialItems = {{ initial_items|tojson }};
         const newBomLabel = {{ _('New BOM')|tojson }};
         const selectItemLabel = {{ _('Select part or BOM')|tojson }};
@@ -110,6 +149,7 @@
         let panStart = { x: 0, y: 0, panX: 0, panY: 0 };
         let pendingDeletePath = null;
         let pendingLoadUrl = "";
+        let nodeOptionSearchSequence = 0;
         let initialEditorState = JSON.stringify({ rootName, rootDescription, nodes });
         const nodeTop = 80;
         const nodeVerticalGap = 34;
@@ -389,15 +429,33 @@
             renderNodes();
         }
 
-        function renderNodeOptions(input, path) {
+        async function renderNodeOptions(input, path) {
             const menu = input.closest(".bom-node-combobox")?.querySelector(".bom-node-options");
             if (!menu) {
                 return;
             }
             const query = input.value.trim().toLowerCase();
-            const matches = bomOptions
-                .filter((option) => !query || option.display_label.toLowerCase().includes(query))
-                .slice(0, 60);
+            const searchSequence = ++nodeOptionSearchSequence;
+            let matches = [];
+            if (!query) {
+                matches = bomOptions.slice(0, 60);
+            } else {
+                menu.innerHTML = `<div class="bom-node-option-empty">{{ _('Searching...') }}</div>`;
+                positionNodeOptionsMenu(input, menu);
+                menu.classList.add("is-open");
+                try {
+                    const response = await fetch(`${bomOptionSearchUrl}?q=${encodeURIComponent(query)}`);
+                    if (searchSequence !== nodeOptionSearchSequence) {
+                        return;
+                    }
+                    matches = response.ok ? await response.json() : [];
+                } catch (error) {
+                    if (searchSequence !== nodeOptionSearchSequence) {
+                        return;
+                    }
+                    matches = [];
+                }
+            }
             if (!matches.length) {
                 menu.innerHTML = `<div class="bom-node-option-empty">{{ _('No matching BOMs or parts.') }}</div>`;
             } else {
@@ -408,10 +466,14 @@
                     </button>
                 `).join("");
             }
+            positionNodeOptionsMenu(input, menu);
+            menu.classList.add("is-open");
+        }
+
+        function positionNodeOptionsMenu(input, menu) {
             const inputRect = input.getBoundingClientRect();
             const canvasRect = document.getElementById("bom-node-canvas").getBoundingClientRect();
             menu.classList.toggle("is-above", canvasRect.bottom - inputRect.bottom < 215 && inputRect.top - canvasRect.top > 215);
-            menu.classList.add("is-open");
         }
 
         function toggleNodeDropdown(button, path) {
@@ -901,7 +963,7 @@
                         <span class="bom-node-title" title="${escapeHtml(rootTitle)}">${escapeHtml(rootTitle)}</span>
                     </div>
                     <div class="bom-node-body">
-                        {% if edit_bom %}
+                        {% if edit_bom and not public_builder|default(false) %}
                         <label class="form-label">{{ _('BOM number') }}</label>
                         <div class="form-control-plaintext py-0 mb-2 fw-semibold">{{ edit_bom.number }}</div>
                         {% endif %}
@@ -1005,7 +1067,7 @@
             const rootTop = Number.parseFloat(root.style.top || "0");
             const rootWidth = root.offsetWidth || rootNodeWidth;
             const rootHeight = root.offsetHeight || 190;
-            scale = Math.min(1.25, Math.max(0.35, canvas.clientHeight / (rootHeight * 6)));
+            scale = Math.min(1.25, Math.max(0.35, canvas.clientHeight / (rootHeight * 4.5)));
             panX = Math.max(48, (canvas.clientWidth * 0.2) - (rootLeft * scale));
             panY = (canvas.clientHeight / 2) - ((rootTop + (rootHeight / 2)) * scale);
             applyTransform();
@@ -1021,6 +1083,20 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            const publicSearchForm = document.getElementById("public-search-form");
+            if (publicSearchForm) {
+                publicSearchForm.addEventListener("submit", (event) => {
+                    event.preventDefault();
+                    const queryInput = publicSearchForm.querySelector('[name="search_query"]');
+                    const value = queryInput.value.trim();
+                    const params = new URLSearchParams();
+                    if (value) {
+                        params.set("search_query", value);
+                    }
+                    const queryString = params.toString();
+                    window.location.href = "{{ url_for('components') }}" + (queryString ? "?" + queryString : "");
+                });
+            }
             const restoredDraft = restoreDraft();
             renderNodes();
             if (!restoredDraft) {

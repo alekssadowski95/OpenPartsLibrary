@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from flask import Flask
 from flask_cors import CORS
 
@@ -13,6 +15,7 @@ from openpartslibrary.startup import bootstrap_sample_data, migrate_legacy_datab
 
 app = Flask(__name__, instance_relative_config=True)
 app.config["SECRET_KEY"] = "afs87fas7bfsa98fbasbas98fh78oizu"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=360)
 CORS(app)
 babel = init_i18n(app)
 

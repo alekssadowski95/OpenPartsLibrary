@@ -1,9 +1,17 @@
+"""Startup migration and sample-data bootstrap helpers."""
+
 import sqlite3
 
 from openpartslibrary.models import Component
 
 
 def migrate_legacy_database_schema(db_path):
+    """Add columns expected by newer code to an existing SQLite database.
+
+    :param db_path: Path to the runtime SQLite database.
+    :return: ``None``.
+    """
+
     if not db_path.exists():
         return
 
@@ -29,6 +37,12 @@ def migrate_legacy_database_schema(db_path):
 
 
 def bootstrap_sample_data(parts_library):
+    """Populate or refresh the database from the bundled sample spreadsheet.
+
+    :param parts_library: Initialized :class:`openpartslibrary.db.PartsLibrary`.
+    :return: ``None``.
+    """
+
     sample_spreadsheet_path = parts_library.get_default_sample_spreadsheet_path()
 
     if not parts_library.session.query(Component).first():

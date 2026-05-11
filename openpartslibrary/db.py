@@ -1,3 +1,5 @@
+"""Database setup and spreadsheet import services."""
+
 import shutil
 import uuid
 from datetime import datetime
@@ -11,7 +13,15 @@ from openpartslibrary.models import Base, Component, File, Supplier
 
 
 class PartsLibrary:
+    """Facade around the local SQLite database and imported library files.
+
+    :param db_path: Optional explicit SQLite database path.
+    :param data_dir_path: Optional runtime data directory for copied files.
+    """
+
     def __init__(self, db_path=None, data_dir_path=None):
+        """Initialize paths, create database tables, and open a session."""
+
         package_dir = Path(__file__).resolve().parent
         self.data_dir_path = Path(data_dir_path or package_dir / "data").expanduser().resolve()
         self.data_cad_dir_path = self.data_dir_path / "cad"
@@ -30,6 +40,12 @@ class PartsLibrary:
         self.session = self.session_factory()
 
     def get_default_sample_spreadsheet_path(self):
+        """Return the bundled sample spreadsheet path.
+
+        :raises FileNotFoundError: If no supported sample spreadsheet exists.
+        :return: Path to ``components.ods`` or ``components.xlsx``.
+        """
+
         for candidate in ("components.ods", "components.xlsx"):
             candidate_path = self.sample_data_dir_path / candidate
             if candidate_path.exists():
@@ -43,6 +59,15 @@ class PartsLibrary:
         components_cad_dir_path=None,
         suppliers_sheet_name="suppliers",
     ):
+        """Import components, suppliers, and optional CAD files from a sheet.
+
+        :param spreadsheet_file_path: Spreadsheet with component/supplier tabs.
+        :param components_sheet_name: Sheet containing component rows.
+        :param components_cad_dir_path: Optional directory containing CAD files.
+        :param suppliers_sheet_name: Sheet containing supplier rows.
+        :return: ``None``.
+        """
+
         components_df = self._read_spreadsheet(spreadsheet_file_path, components_sheet_name, dtype={"number": str})
         suppliers_df = self._read_spreadsheet(spreadsheet_file_path, suppliers_sheet_name)
         suppliers_by_uuid = self._import_suppliers(suppliers_df)
@@ -76,6 +101,8 @@ class PartsLibrary:
         self.session.commit()
 
     def sync_cad_files_from_spreadsheet(self, spreadsheet_file_path, components_sheet_name="components"):
+        """Copy CAD files referenced by an existing component spreadsheet."""
+
         spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
         components_df = self._read_spreadsheet(spreadsheet_path, components_sheet_name, dtype={"number": str})
 
@@ -111,6 +138,8 @@ class PartsLibrary:
         components_sheet_name="components",
         suppliers_sheet_name="suppliers",
     ):
+        """Refresh supplier records and component supplier links from a sheet."""
+
         components_df = self._read_spreadsheet(spreadsheet_file_path, components_sheet_name, dtype={"number": str})
         suppliers_df = self._read_spreadsheet(spreadsheet_file_path, suppliers_sheet_name)
         suppliers_by_uuid = self._import_suppliers(suppliers_df)
@@ -141,6 +170,12 @@ class PartsLibrary:
         self.session.commit()
 
     def _import_suppliers(self, suppliers_df):
+        """Upsert supplier rows from a pandas DataFrame.
+
+        :return: Mapping of supplier UUID to :class:`Supplier`.
+        :rtype: dict
+        """
+
         suppliers_by_uuid = {}
 
         for _, row in suppliers_df.iterrows():
@@ -166,6 +201,8 @@ class PartsLibrary:
         return suppliers_by_uuid
 
     def _attach_cad_file_from_row(self, component, row, spreadsheet_file_path, components_cad_dir_path=None):
+        """Attach or update a component CAD-file record from a spreadsheet row."""
+
         cad_file_name = self._clean_value(row.get("cad_file_name"))
         if not cad_file_name:
             return
@@ -187,6 +224,8 @@ class PartsLibrary:
             shutil.copy2(source_path, destination_path)
 
     def _find_cad_source(self, spreadsheet_path, cad_file_name, cad_link=None, components_cad_dir_path=None):
+        """Find a CAD source file near the spreadsheet or in the sample CAD dir."""
+
         spreadsheet_path = Path(spreadsheet_path).expanduser().resolve()
         search_dir = Path(components_cad_dir_path) if components_cad_dir_path else self.sample_data_dir_path / "components-cad"
         candidates = [search_dir / candidate for candidate in self._cad_filename_candidates(cad_file_name)]
@@ -198,6 +237,8 @@ class PartsLibrary:
         return next((candidate for candidate in candidates if candidate.exists()), None)
 
     def _cad_filename_candidates(self, cad_file_name):
+        """Return tolerated filename variants for imported CAD references."""
+
         cad_file_name = str(cad_file_name)
         return dict.fromkeys([
             cad_file_name,
@@ -206,11 +247,15 @@ class PartsLibrary:
         ])
 
     def _read_spreadsheet(self, spreadsheet_file_path, sheet_name, dtype=None):
+        """Read a spreadsheet sheet into a pandas DataFrame."""
+
         spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
         engine = "odf" if spreadsheet_path.suffix.lower() == ".ods" else None
         return pd.read_excel(spreadsheet_path, sheet_name=sheet_name, dtype=dtype, engine=engine)
 
     def _clean_value(self, value):
+        """Normalize empty spreadsheet values to ``None`` and trim text."""
+
         if pd.isna(value):
             return None
         if isinstance(value, float) and value.is_integer():

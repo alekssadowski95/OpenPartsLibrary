@@ -1,3 +1,5 @@
+"""Filesystem path configuration for runtime data and bundled assets."""
+
 import os
 from pathlib import Path
 
@@ -8,6 +10,16 @@ SAMPLE_DIR = PACKAGE_DIR / "sample"
 
 
 def configure_paths(app):
+    """Create and register the application's writable data directories.
+
+    The directory can be overridden with ``OPENPARTSLIBRARY_DATA_DIR``.  When no
+    override is present, Flask's instance folder is used.
+
+    :param app: Flask application whose config should receive path values.
+    :return: Tuple of ``(data_dir, cad_dir, file_dir)``.
+    :rtype: tuple[pathlib.Path, pathlib.Path, pathlib.Path]
+    """
+
     data_dir = Path(
         os.environ.get(
             "OPENPARTSLIBRARY_DATA_DIR",

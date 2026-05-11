@@ -1,3 +1,10 @@
+"""Session-backed BOM storage and adapters.
+
+Public users can create temporary BOMs without writing persistent BOM rows.  This
+module stores the editable tree as JSON and exposes lightweight BOM-like objects
+that the normal BOM rendering and download helpers can consume.
+"""
+
 import uuid
 import json
 from datetime import datetime
@@ -15,10 +22,14 @@ SESSION_BOMS_DIRNAME = "session_boms"
 
 
 def mark_session_boms_permanent():
+    """Keep the session BOM cookie alive for the configured session lifetime."""
+
     flask_session.permanent = True
 
 
 def get_session_bom_records():
+    """Read validated BOM records for the current browser session."""
+
     mark_session_boms_permanent()
     records = read_session_bom_store()
     if not isinstance(records, list):
@@ -27,6 +38,11 @@ def get_session_bom_records():
 
 
 def save_session_bom_record(name, description, payload):
+    """Create a new session BOM record.
+
+    :return: Saved record dictionary, or ``None`` when the name is empty.
+    """
+
     record = {
         "uuid": str(uuid.uuid4()),
         "name": str(name or "").strip(),
@@ -45,6 +61,8 @@ def save_session_bom_record(name, description, payload):
 
 
 def update_session_bom_record(bom_uuid, name, description, payload):
+    """Update an existing session BOM record by UUID."""
+
     records = get_session_bom_records()
     for index, record in enumerate(records):
         if record.get("uuid") != bom_uuid:
@@ -67,6 +85,8 @@ def update_session_bom_record(bom_uuid, name, description, payload):
 
 
 def get_session_bom_record(bom_uuid):
+    """Return one stored session BOM record by UUID."""
+
     for record in get_session_bom_records():
         if record.get("uuid") == bom_uuid:
             return record
@@ -74,6 +94,8 @@ def get_session_bom_record(bom_uuid):
 
 
 def get_session_boms_id():
+    """Return or create the stable storage ID for this browser session."""
+
     mark_session_boms_permanent()
     session_boms_id = flask_session.get(SESSION_BOMS_ID_KEY)
     if not session_boms_id:
@@ -84,6 +106,8 @@ def get_session_boms_id():
 
 
 def session_boms_path():
+    """Return the JSON storage path for the current session's BOMs."""
+
     session_boms_id = get_session_boms_id()
     storage_dir = Path(current_app.instance_path) / SESSION_BOMS_DIRNAME
     storage_dir.mkdir(parents=True, exist_ok=True)
@@ -91,6 +115,8 @@ def session_boms_path():
 
 
 def read_session_bom_store():
+    """Read raw session BOM records from disk."""
+
     path = session_boms_path()
     if not path.exists():
         return []
@@ -103,12 +129,16 @@ def read_session_bom_store():
 
 
 def write_session_bom_store(records):
+    """Write raw session BOM records to disk."""
+
     path = session_boms_path()
     with path.open("w", encoding="utf-8") as handle:
         json.dump(records, handle)
 
 
 def sanitize_session_nodes(nodes):
+    """Validate and normalize editable session BOM tree nodes."""
+
     sanitized_nodes = []
     for node in nodes or []:
         if not isinstance(node, dict):
@@ -147,6 +177,8 @@ def sanitize_session_nodes(nodes):
 
 
 def get_session_boms(db_session):
+    """Return all session BOMs as BOM-like objects."""
+
     return [
         build_session_bom(db_session, record)
         for record in get_session_bom_records()
@@ -154,6 +186,8 @@ def get_session_boms(db_session):
 
 
 def get_session_bom(db_session, bom_uuid):
+    """Return one session BOM as a BOM-like object."""
+
     for record in get_session_bom_records():
         if record.get("uuid") == bom_uuid:
             return build_session_bom(db_session, record)
@@ -161,6 +195,8 @@ def get_session_bom(db_session, bom_uuid):
 
 
 def build_session_bom(db_session, record, path="root"):
+    """Build a lightweight BOM object from a JSON record."""
+
     bom_uuid = record.get("uuid") or str(uuid.uuid4())
     return SimpleNamespace(
         id=f"session-{bom_uuid}-{path}",
@@ -176,6 +212,8 @@ def build_session_bom(db_session, record, path="root"):
 
 
 def build_session_items(db_session, nodes, bom_uuid, parent_path):
+    """Build lightweight BOM item objects for a session BOM node list."""
+
     items = []
     for position, node in enumerate(nodes or [], start=1):
         child_bom = resolve_session_child_bom(db_session, node, bom_uuid, f"{parent_path}-{position}")
@@ -193,6 +231,8 @@ def build_session_items(db_session, nodes, bom_uuid, parent_path):
 
 
 def resolve_session_child_bom(db_session, node, bom_uuid, path):
+    """Resolve a session node to an existing BOM or nested session BOM."""
+
     if node.get("source_type") == "new":
         return build_session_bom(
             db_session,

@@ -1,8 +1,18 @@
+"""SPDX hardware BOM export helpers."""
+
 import uuid
 from datetime import datetime, timezone
 
 
 def build_spdx_hardware_bom(components):
+    """Build an SPDX 3 JSON-LD document for selected hardware components.
+
+    :param components: Iterable of dictionaries containing part metadata,
+        quantity, pricing, supplier, and optional CAD archive filename.
+    :return: SPDX JSON-LD document ready to serialize.
+    :rtype: dict
+    """
+
     created = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     namespace = f"https://openpartslibrary.local/spdxdocs/my-bill-of-materials-{uuid.uuid4()}"
     creation_info = {

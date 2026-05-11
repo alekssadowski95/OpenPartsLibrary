@@ -1,3 +1,5 @@
+"""Internationalization helpers with Flask-Babel and gettext fallbacks."""
+
 import gettext as gettext_library
 from functools import lru_cache
 from pathlib import Path
@@ -27,6 +29,8 @@ SUPPORTED_LOCALES = {
 
 
 def normalize_locale(locale):
+    """Normalize a requested locale to one of the supported locale IDs."""
+
     if not locale:
         return None
 
@@ -43,6 +47,8 @@ def normalize_locale(locale):
 
 
 def select_locale():
+    """Choose the active locale from query string, session, or Accept-Language."""
+
     if not has_request_context():
         return DEFAULT_LOCALE
 
@@ -60,6 +66,8 @@ def select_locale():
 
 
 def compile_translation_catalogs(app):
+    """Compile bundled ``.po`` files to ``.mo`` files when Babel is available."""
+
     try:
         from babel.messages import mofile, pofile
     except ImportError:
@@ -80,6 +88,8 @@ def compile_translation_catalogs(app):
 
 @lru_cache(maxsize=16)
 def load_gettext_translation(translations_dir, locale):
+    """Load and cache a gettext translation object."""
+
     return gettext_library.translation(
         "messages",
         localedir=translations_dir,
@@ -89,6 +99,8 @@ def load_gettext_translation(translations_dir, locale):
 
 
 def get_translation():
+    """Return the active gettext translation object or a null translation."""
+
     if not has_app_context():
         return gettext_library.NullTranslations()
 
@@ -98,6 +110,8 @@ def get_translation():
 
 
 def gettext(message, **variables):
+    """Translate a message and interpolate named variables."""
+
     if babel_gettext is not None:
         return babel_gettext(message, **variables)
 
@@ -106,6 +120,8 @@ def gettext(message, **variables):
 
 
 def ngettext(singular, plural, num, **variables):
+    """Translate singular/plural messages and interpolate named variables."""
+
     if babel_ngettext is not None:
         return babel_ngettext(singular, plural, num, **variables)
 
@@ -115,24 +131,36 @@ def ngettext(singular, plural, num, **variables):
 
 
 class LazyString:
+    """Minimal lazy translation object used when Flask-Babel is absent."""
+
     def __init__(self, func, *args, **kwargs):
+        """Store the callable and its arguments for later rendering."""
+
         self.func = func
         self.args = args
         self.kwargs = kwargs
 
     def __str__(self):
+        """Evaluate and stringify the lazy value."""
+
         return str(self.func(*self.args, **self.kwargs))
 
     def __html__(self):
+        """Return the HTML-safe string representation used by templates."""
+
         return str(self)
 
 
 if Babel is None:
     def lazy_gettext(message, **variables):
+        """Return a lazily evaluated translation fallback."""
+
         return LazyString(gettext, message, **variables)
 
 
 def init_i18n(app):
+    """Initialize translation support and inject i18n globals into templates."""
+
     app.config.setdefault("BABEL_DEFAULT_LOCALE", DEFAULT_LOCALE)
     app.config.setdefault("BABEL_TRANSLATION_DIRECTORIES", "translations")
     compile_translation_catalogs(app)

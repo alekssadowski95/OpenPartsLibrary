@@ -61,6 +61,14 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
     background-color: #042c61;
     color: white;
 }
+.bom-node-page,
+.bom-node-page input,
+.bom-node-page textarea,
+.bom-node-page select,
+.bom-node-page button {
+    -webkit-user-select: none;
+    user-select: none;
+}
 .bom-node-page { height: calc(100vh - 79px); display: flex; flex-direction: column; min-height: 0; }
 .bom-node-toolbar { min-height: 58px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: white; border-bottom: 1px solid #d7dde5; }
 .bom-node-toolbar-title { min-width: 0; }
@@ -146,7 +154,7 @@ body { min-height: 100%; background: var(--bom-node-canvas-bg); overflow: hidden
 .parts-library-card { display: grid; gap: 5px; width: 100%; padding: 9px; margin-bottom: 8px; border: 1px solid #d7dde5; border-radius: 6px; background: white; color: #1f2937; cursor: grab; text-align: left; box-shadow: 0 2px 6px rgba(16, 24, 40, 0.06); }
 .parts-library-card:active { cursor: grabbing; }
 .parts-library-card:hover, .parts-library-card:focus { border-color: #8fb4dc; box-shadow: 0 6px 14px rgba(16, 24, 40, 0.12); outline: 0; }
-.parts-library-card-title { font-weight: 600; line-height: 1.25; }
+.parts-library-card-title { display: flex; align-items: center; gap: 7px; font-weight: 600; line-height: 1.25; }
 .parts-library-card-meta { color: #667085; font-size: 0.78rem; line-height: 1.25; }
 .parts-library-card-price { color: #1f2937; font-size: 0.82rem; }
 @media (max-width: 767.98px) {

@@ -1,3 +1,5 @@
+"""Search normalization, synonym expansion, and part ranking logic."""
+
 import json
 import re
 import unicodedata
@@ -11,6 +13,8 @@ SYNONYM_GROUPS_PATH = Path(__file__).with_name("search_synonyms.json")
 
 @lru_cache(maxsize=50000)
 def normalize_search_text(value):
+    """Normalize text for fuzzy and token-based search matching."""
+
     value = unicodedata.normalize("NFKD", str(value or ""))
     value = "".join(char for char in value if not unicodedata.combining(char))
     value = value.lower()
@@ -21,6 +25,8 @@ def normalize_search_text(value):
 
 
 def build_synonyms(groups):
+    """Build a lookup of normalized terms to equivalent normalized terms."""
+
     synonyms = {}
     for group in groups:
         normalized_group = {normalize_search_text(term) for term in group if term}
@@ -68,6 +74,8 @@ def normalize_ranking_rule(rule):
 
 
 def load_search_config():
+    """Load synonym groups and ranking rules from ``search_synonyms.json``."""
+
     try:
         with SYNONYM_GROUPS_PATH.open("r", encoding="utf-8") as synonyms_file:
             data = json.load(synonyms_file)
@@ -133,6 +141,8 @@ def query_phrases(normalized_query, max_words=4):
 
 
 def expand_query_terms(query):
+    """Return direct and synonym-expanded search terms for a query."""
+
     normalized_query = normalize_search_text(query)
     direct_terms = {normalized_query} if normalized_query else set()
     synonym_terms = set()
@@ -148,6 +158,8 @@ def expand_query_terms(query):
 
 
 def searchable_part_fields(part):
+    """Return the component fields that participate in search ranking."""
+
     supplier_name = part.supplier.name if part.supplier else ""
     return {
         "number": part.number,
@@ -164,6 +176,8 @@ def searchable_part_fields(part):
 
 @lru_cache(maxsize=50000)
 def fuzzy_ratio(query, text):
+    """Return a full-string fuzzy score from 0 to 100."""
+
     query = normalize_search_text(query)
     text = normalize_search_text(text)
     if not query or not text:
@@ -174,6 +188,8 @@ def fuzzy_ratio(query, text):
 
 @lru_cache(maxsize=50000)
 def partial_fuzzy_ratio(query, text):
+    """Return the best token-window fuzzy score from 0 to 100."""
+
     query = normalize_search_text(query)
     text = normalize_search_text(text)
     if not query or not text:
@@ -202,6 +218,8 @@ def partial_fuzzy_ratio(query, text):
 
 @lru_cache(maxsize=50000)
 def token_overlap_score(query, text):
+    """Return percentage overlap between query tokens and text tokens."""
+
     query_tokens = set(normalize_search_text(query).split())
     text_tokens = set(normalize_search_text(text).split())
     if not query_tokens or not text_tokens:
@@ -233,6 +251,8 @@ def part_numeric_values(part):
 
 
 def numeric_match_sort_key(query, part):
+    """Sort numeric search results by exact and nearest-size matches."""
+
     query_numbers = numeric_query_terms(query)
     if not query_numbers:
         return (0, 0, 0)
@@ -276,6 +296,8 @@ def term_matches_text(term, text, threshold=88):
 
 
 def score_part(query, part):
+    """Calculate a relevance score for one component against a query."""
+
     direct_terms, synonym_terms = expand_query_terms(query)
     if not direct_terms and not synonym_terms:
         return 0
@@ -395,6 +417,8 @@ def score_part(query, part):
 
 
 def search_parts(query, parts, minimum_score=58, limit=1000):
+    """Return ranked parts whose score meets the minimum threshold."""
+
     scored_parts = []
     for part in parts:
         score = score_part(query, part)

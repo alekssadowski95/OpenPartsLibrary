@@ -1,3 +1,9 @@
+"""Public Flask routes and route-adjacent view helpers.
+
+This module keeps HTTP concerns together: query parsing, template rendering,
+download responses, thumbnail responses, and user-session BOM actions.
+"""
+
 import io
 import json
 import zipfile
@@ -9,17 +15,24 @@ from sqlalchemy import asc, desc, func
 
 from openpartslibrary.boms import bom_part_quantities, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms
 from openpartslibrary.admin import node_editor_payload_from_request
-from openpartslibrary.desktop import open_with_default_application
 from openpartslibrary.downloads import branded_library_filename, branded_part_filename, record_download_event
 from openpartslibrary.hbom import build_spdx_hardware_bom
 from openpartslibrary.i18n import gettext as _
-from openpartslibrary.models import BillOfMaterials, Component, File, Supplier
+from openpartslibrary.models import BillOfMaterials, Component, DownloadEvent, File, Supplier
 from openpartslibrary.search import normalize_search_text, partial_fuzzy_ratio, search_parts, token_overlap_score
 from openpartslibrary.session_boms import get_session_bom, get_session_bom_record, get_session_boms, save_session_bom_record, update_session_bom_record
 from openpartslibrary.thumbnails import ensure_cad_thumbnail, placeholder_thumbnail_svg
 
 
 def selection_quantities_from_payload(selection_items):
+    """Aggregate selected component UUIDs into quantities.
+
+    :param selection_items: List of UUID strings or dictionaries with ``uuid``
+        and optional ``quantity`` keys.
+    :return: Mapping of component UUID to integer quantity.
+    :rtype: dict[str, int]
+    """
+
     selected_quantities = {}
     for item in selection_items:
         if isinstance(item, dict):
@@ -35,6 +48,13 @@ def selection_quantities_from_payload(selection_items):
 
 
 def build_components_url(overrides=None):
+    """Build a components-page URL while preserving active query filters.
+
+    :param overrides: Query-parameter values to set or remove.
+    :return: Relative URL for the components route.
+    :rtype: str
+    """
+
     query_args = request.args.to_dict(flat=True)
     for key, value in (overrides or {}).items():
         if value is None or value == "":
@@ -49,6 +69,13 @@ def build_components_url(overrides=None):
 
 
 def component_sort_value(component, sort_key):
+    """Return a stable sort value for a component and UI sort key.
+
+    :param component: :class:`openpartslibrary.models.Component` instance.
+    :param sort_key: Sort field requested by the components page.
+    :return: Lowercase text or numeric value suitable for Python sorting.
+    """
+
     if sort_key == "number":
         return str(component.number or "").lower()
     if sort_key == "supplier":
@@ -64,19 +91,74 @@ def component_sort_value(component, sort_key):
     return str(component.name or "").lower()
 
 
+def component_cad_filename(component, cad_dir):
+    """Return the stored CAD filename when the component has a CAD file on disk."""
+
+    if component.cad_file is None:
+        return None
+
+    cad_filename = f"{component.cad_file.uuid}.FCStd"
+    if (cad_dir / cad_filename).exists():
+        return cad_filename
+    return None
+
+
+def component_popularity_counts(db_session, components):
+    """Return all-time download counts keyed by component UUID."""
+
+    component_uuids = {component.uuid for component in components}
+    if not component_uuids:
+        return {}
+
+    return {
+        component_uuid: count
+        for component_uuid, count in (
+            db_session.query(DownloadEvent.component_uuid, func.count(DownloadEvent.id))
+            .filter(DownloadEvent.component_uuid.isnot(None))
+            .group_by(DownloadEvent.component_uuid)
+            .all()
+        )
+        if component_uuid in component_uuids
+    }
+
+
+def default_component_sort_key(component, cad_filenames, popularity_counts):
+    """Sort default component results by CAD availability and popularity."""
+
+    return (
+        0 if cad_filenames.get(component.uuid) else 1,
+        -popularity_counts.get(component.uuid, 0),
+        str(component.name or "").lower(),
+        str(component.number or "").lower(),
+    )
+
+
 def bom_has_cad_files(bom, cad_dir):
+    """Check whether any part in a BOM has a CAD file on disk.
+
+    :param bom: BOM-like object accepted by :func:`bom_part_quantities`.
+    :param cad_dir: Directory containing stored ``.FCStd`` files.
+    :return: ``True`` when at least one referenced CAD file exists.
+    :rtype: bool
+    """
+
     for row in bom_part_quantities(bom).values():
         component = row["component"]
-        if component is None or component.cad_file is None:
-            continue
-
-        cad_filename = f"{component.cad_file.uuid}.FCStd"
-        if (cad_dir / cad_filename).exists():
+        if component is not None and component_cad_filename(component, cad_dir):
             return True
     return False
 
 
 def search_bom_options(db_session, query, limit=60):
+    """Search BOM picker options using part search and BOM label matching.
+
+    :param db_session: SQLAlchemy session.
+    :param query: User search text.
+    :param limit: Maximum options to return.
+    :return: Ranked BOM option dictionaries.
+    :rtype: list[dict]
+    """
+
     options = get_bom_options(db_session)
     if not str(query or "").strip():
         return options[:limit]
@@ -127,6 +209,13 @@ def search_bom_options(db_session, query, limit=60):
 
 
 def bom_builder_filter_options(db_session):
+    """Return supplier, material, and currency choices for BOM builders.
+
+    :param db_session: SQLAlchemy session.
+    :return: Filter option dictionary for JSON and template contexts.
+    :rtype: dict
+    """
+
     suppliers = (
         db_session.query(Supplier)
         .filter(
@@ -160,7 +249,29 @@ def bom_builder_filter_options(db_session):
     }
 
 
-def bom_builder_part_rows(db_session, query_text="", supplier="", material="", currency="", price_min="", price_max="", limit=50):
+def bom_builder_library_rows(db_session, query_text="", supplier="", material="", currency="", price_min="", price_max="", limit=50):
+    """Return searchable library rows that can be inserted into a BOM.
+
+    :param db_session: SQLAlchemy session.
+    :param query_text: Optional free-text search query.
+    :param supplier: Optional supplier ID filter.
+    :param material: Optional material filter.
+    :param currency: Optional currency filter.
+    :param price_min: Optional minimum unit price.
+    :param price_max: Optional maximum unit price.
+    :param limit: Maximum rows to return.
+    :return: JSON-serializable library rows.
+    :rtype: list[dict]
+    """
+
+    options = get_bom_options(db_session)
+    part_boms_by_component_id = {
+        bom.component_id: bom
+        for bom in db_session.query(BillOfMaterials)
+        .filter(BillOfMaterials.is_part_wrapper.is_(True), BillOfMaterials.component_id.isnot(None))
+        .all()
+    }
+
     query = db_session.query(Component).outerjoin(Component.supplier)
 
     if supplier and str(supplier).isdigit():
@@ -180,40 +291,86 @@ def bom_builder_part_rows(db_session, query_text="", supplier="", material="", c
         except ValueError:
             pass
 
-    components = query.all()
-    if str(query_text or "").strip():
-        components = search_parts(query_text, components, limit=limit)
-    else:
-        components = sorted(components, key=lambda component: (str(component.name or "").lower(), str(component.number or "").lower()))[:limit]
-
-    part_boms_by_component_id = {
-        bom.component_id: bom
-        for bom in db_session.query(BillOfMaterials)
-        .filter(BillOfMaterials.is_part_wrapper.is_(True), BillOfMaterials.component_id.isnot(None))
-        .all()
+    filtered_components = query.all()
+    component_by_part_option_id = {
+        part_boms_by_component_id[component.id].id: component
+        for component in filtered_components
+        if component.id in part_boms_by_component_id
     }
+    filtered_part_option_ids = {
+        option_id
+        for option_id in component_by_part_option_id
+    }
+    has_part_filters = any(str(value or "").strip() for value in (supplier, material, currency, price_min, price_max))
+
+    if str(query_text or "").strip():
+        ranked_options = search_bom_options(db_session, query_text, limit=max(limit * 4, 120))
+    else:
+        ranked_options = options
 
     rows = []
-    for component in components:
-        part_bom = part_boms_by_component_id.get(component.id)
-        if part_bom is None:
+    for option in ranked_options:
+        component = None
+        if option["is_part_wrapper"]:
+            if option["id"] not in filtered_part_option_ids:
+                continue
+            component = component_by_part_option_id.get(option["id"])
+        elif has_part_filters:
             continue
+
+        cost_totals = option.get("cost_totals", {})
+        price_label = ""
+        if component:
+            price_label = " ".join(part for part in (str(component.unit_price or ""), component.currency or "") if part)
+        elif cost_totals:
+            price_label = ", ".join(f"{amount} {currency}" for currency, amount in sorted(cost_totals.items()))
+
         rows.append({
-            "uuid": component.uuid,
-            "name": component.name,
-            "number": component.number,
-            "description": component.description or "",
-            "supplier": component.supplier.name if component.supplier else "",
-            "material": component.material or "",
-            "unit_price": str(component.unit_price or ""),
-            "currency": component.currency or "",
-            "part_bom_id": part_bom.id,
-            "display_label": f"{part_bom.number + ' - ' if part_bom.number else ''}{part_bom.name}",
+            "uuid": component.uuid if component else "",
+            "name": component.name if component else option["name"],
+            "number": option.get("number", ""),
+            "description": component.description or "" if component else "",
+            "supplier": component.supplier.name if component and component.supplier else "",
+            "material": component.material or "" if component else "",
+            "unit_price": str(component.unit_price or "") if component else "",
+            "currency": component.currency or "" if component else "",
+            "price_label": price_label,
+            "option_id": option["id"],
+            "part_bom_id": option["id"],
+            "display_label": option["display_label"],
+            "is_part_wrapper": option["is_part_wrapper"],
+            "entry_type": "part" if option["is_part_wrapper"] else "bom",
+            "cost_totals": cost_totals,
         })
+        if len(rows) >= limit:
+            break
     return rows
 
 
+def bom_builder_part_rows(db_session, query_text="", supplier="", material="", currency="", price_min="", price_max="", limit=50):
+    """Return searchable part rows that can be inserted into a BOM."""
+
+    rows = bom_builder_library_rows(
+        db_session,
+        query_text=query_text,
+        supplier=supplier,
+        material=material,
+        currency=currency,
+        price_min=price_min,
+        price_max=price_max,
+        limit=limit,
+    )
+    return [row for row in rows if row["is_part_wrapper"]]
+
+
 def register_routes(app, parts_library):
+    """Register all public routes on a Flask application.
+
+    :param app: Flask application instance.
+    :param parts_library: Initialized :class:`openpartslibrary.db.PartsLibrary`.
+    :return: ``None``.
+    """
+
     session = parts_library.session
     cad_dir = app.config["CAD_DIR"]
     file_dir = app.config["FILE_DIR"]
@@ -232,9 +389,9 @@ def register_routes(app, parts_library):
         currency_filter = request.args.get("currency", "")
         price_min = request.args.get("price_min", "")
         price_max = request.args.get("price_max", "")
-        sort_key = request.args.get("sort", "name")
+        sort_key = request.args.get("sort", "")
         direction = request.args.get("direction", "asc")
-        explicit_sort = "sort" in request.args
+        explicit_sort = sort_key in {"name", "number", "supplier", "unit_price", "description"}
 
         query = session.query(Component).outerjoin(Component.supplier)
 
@@ -281,7 +438,10 @@ def register_routes(app, parts_library):
             else:
                 component_results = matching_components
         else:
-            component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
+            if explicit_sort:
+                component_results = query.order_by(sort_direction(sort_column)).limit(1000).all()
+            else:
+                component_results = query.all()
 
         suppliers = (
             session.query(Supplier)
@@ -312,11 +472,16 @@ def register_routes(app, parts_library):
 
         component_cad_filenames = {}
         for component in component_results:
-            if component.cad_file is None:
-                continue
-            cad_filename = f"{component.cad_file.uuid}.FCStd"
-            if (cad_dir / cad_filename).exists():
+            cad_filename = component_cad_filename(component, cad_dir)
+            if cad_filename:
                 component_cad_filenames[component.uuid] = cad_filename
+
+        if not search_query and not explicit_sort:
+            popularity_counts = component_popularity_counts(session, component_results)
+            component_results = sorted(
+                component_results,
+                key=lambda component: default_component_sort_key(component, component_cad_filenames, popularity_counts),
+            )[:1000]
 
         return render_template(
             "components.html",
@@ -363,7 +528,7 @@ def register_routes(app, parts_library):
     def bom_builder_parts_library():
         ensure_part_boms(session)
         return jsonify({
-            "parts": bom_builder_part_rows(
+            "parts": bom_builder_library_rows(
                 session,
                 request.args.get("search_query", ""),
                 request.args.get("supplier", ""),
@@ -398,7 +563,7 @@ def register_routes(app, parts_library):
             show_load_bom_button=False,
             public_builder=True,
             parts_library_filters=bom_builder_filter_options(session),
-            initial_parts_library_parts=bom_builder_part_rows(session),
+            initial_parts_library_parts=bom_builder_library_rows(session),
             format_bom_cost=format_bom_cost,
         )
 
@@ -432,7 +597,7 @@ def register_routes(app, parts_library):
             show_load_bom_button=False,
             public_builder=True,
             parts_library_filters=bom_builder_filter_options(session),
-            initial_parts_library_parts=bom_builder_part_rows(session),
+            initial_parts_library_parts=bom_builder_library_rows(session),
             format_bom_cost=format_bom_cost,
         )
 
@@ -482,12 +647,15 @@ def register_routes(app, parts_library):
             bom_has_cad_files=lambda bom: bom_has_cad_files(bom, cad_dir),
         )
 
-    @app.route("/bom/<int:bom_id>/download")
-    def bom_download(bom_id):
-        ensure_part_boms(session)
-        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
-        if bom is None:
-            return _("BOM not found."), 404
+    def zip_download_response(bom, download_event_type, cad_item_event_type, default_name):
+        """Create a CAD/SPDX ZIP response for a BOM-like object.
+
+        :param bom: Persistent or session BOM to package.
+        :param download_event_type: Download-event category for the ZIP file.
+        :param cad_item_event_type: Download-event category for each CAD item.
+        :param default_name: Fallback archive stem when the BOM has no name.
+        :return: Flask response or ``(message, status)`` tuple.
+        """
 
         zip_buffer = io.BytesIO()
         files_added = 0
@@ -500,51 +668,79 @@ def register_routes(app, parts_library):
                 if component is None:
                     continue
 
-                part_number = component.number or component.uuid
-                archive_name = None
+                archive_name = add_component_cad_to_zip(zip_file, component, cad_item_event_type)
+                if archive_name:
+                    files_added += 1
 
-                if component.cad_file is not None:
-                    cad_filename = f"{component.cad_file.uuid}.FCStd"
-                    cad_path = cad_dir / cad_filename
-                    if cad_path.exists():
-                        original_name = component.cad_file.name or cad_filename
-                        archive_name = branded_part_filename(part_number, original_name)
-                        zip_file.write(cad_path, archive_name)
-                        files_added += 1
-                        record_download_event(
-                            session,
-                            "bom_cad_item",
-                            archive_name,
-                            component=component,
-                            file=component.cad_file,
-                            quantity=1,
-                        )
+                bom_components.append(component_hbom_row(component, quantity, archive_name))
 
-                bom_components.append({
-                    "uuid": component.uuid,
-                    "name": component.name,
-                    "part_number": component.number,
-                    "quantity": quantity,
-                    "price_per_item": str(component.unit_price or ""),
-                    "currency": component.currency or "",
-                    "cad_file": archive_name,
-                    "description": component.description or "",
-                    "supplier": component.supplier.name if component.supplier else "",
-                })
-
-            if bom_components:
-                zip_file.writestr(
-                    branded_library_filename("hardware-bom.spdx.jsonld"),
-                    json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
-                )
+            write_hbom_manifest(zip_file, bom_components)
 
         if files_added == 0 and not bom_components:
             return _("No CAD files found for this BOM."), 404
 
         zip_buffer.seek(0)
-        zip_download_name = branded_library_filename(f"{bom.number or bom.name or 'bom'}.zip")
-        record_download_event(session, "bom_zip", zip_download_name, quantity=1)
+        zip_download_name = branded_library_filename(f"{bom.number or bom.name or default_name}.zip")
+        record_download_event(session, download_event_type, zip_download_name, quantity=1)
         return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
+
+    def add_component_cad_to_zip(zip_file, component, download_event_type):
+        """Add a component's CAD file to an open ZIP archive when available."""
+
+        if component.cad_file is None:
+            return None
+
+        cad_filename = f"{component.cad_file.uuid}.FCStd"
+        cad_path = cad_dir / cad_filename
+        if not cad_path.exists():
+            return None
+
+        part_number = component.number or component.uuid
+        original_name = component.cad_file.name or cad_filename
+        archive_name = branded_part_filename(part_number, original_name)
+        zip_file.write(cad_path, archive_name)
+        record_download_event(
+            session,
+            download_event_type,
+            archive_name,
+            component=component,
+            file=component.cad_file,
+            quantity=1,
+        )
+        return archive_name
+
+    def component_hbom_row(component, quantity, archive_name=None):
+        """Convert a component and quantity into SPDX hardware BOM input."""
+
+        return {
+            "uuid": component.uuid,
+            "name": component.name,
+            "part_number": component.number,
+            "quantity": quantity,
+            "price_per_item": str(component.unit_price or ""),
+            "currency": component.currency or "",
+            "cad_file": archive_name,
+            "description": component.description or "",
+            "supplier": component.supplier.name if component.supplier else "",
+        }
+
+    def write_hbom_manifest(zip_file, bom_components):
+        """Write the SPDX hardware BOM manifest into an archive."""
+
+        if bom_components:
+            zip_file.writestr(
+                branded_library_filename("hardware-bom.spdx.jsonld"),
+                json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
+            )
+
+    @app.route("/bom/<int:bom_id>/download")
+    def bom_download(bom_id):
+        ensure_part_boms(session)
+        bom = session.query(BillOfMaterials).filter_by(id=bom_id, is_part_wrapper=False).first()
+        if bom is None:
+            return _("BOM not found."), 404
+
+        return zip_download_response(bom, "bom_zip", "bom_cad_item", "bom")
 
     @app.route("/session-bom/<bom_uuid>/download")
     def session_bom_download(bom_uuid):
@@ -553,62 +749,7 @@ def register_routes(app, parts_library):
         if bom is None:
             return _("BOM not found."), 404
 
-        zip_buffer = io.BytesIO()
-        files_added = 0
-        bom_components = []
-
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            for row in bom_part_quantities(bom).values():
-                component = row["component"]
-                quantity = row["quantity"]
-                if component is None:
-                    continue
-
-                part_number = component.number or component.uuid
-                archive_name = None
-
-                if component.cad_file is not None:
-                    cad_filename = f"{component.cad_file.uuid}.FCStd"
-                    cad_path = cad_dir / cad_filename
-                    if cad_path.exists():
-                        original_name = component.cad_file.name or cad_filename
-                        archive_name = branded_part_filename(part_number, original_name)
-                        zip_file.write(cad_path, archive_name)
-                        files_added += 1
-                        record_download_event(
-                            session,
-                            "session_bom_cad_item",
-                            archive_name,
-                            component=component,
-                            file=component.cad_file,
-                            quantity=1,
-                        )
-
-                bom_components.append({
-                    "uuid": component.uuid,
-                    "name": component.name,
-                    "part_number": component.number,
-                    "quantity": quantity,
-                    "price_per_item": str(component.unit_price or ""),
-                    "currency": component.currency or "",
-                    "cad_file": archive_name,
-                    "description": component.description or "",
-                    "supplier": component.supplier.name if component.supplier else "",
-                })
-
-            if bom_components:
-                zip_file.writestr(
-                    branded_library_filename("hardware-bom.spdx.jsonld"),
-                    json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
-                )
-
-        if files_added == 0 and not bom_components:
-            return _("No CAD files found for this BOM."), 404
-
-        zip_buffer.seek(0)
-        zip_download_name = branded_library_filename(f"{bom.name or 'bom'}.zip")
-        record_download_event(session, "session_bom_zip", zip_download_name, quantity=1)
-        return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
+        return zip_download_response(bom, "session_bom_zip", "session_bom_cad_item", "bom")
 
     @app.route("/component_view/<uuid>")
     def component_view(uuid):
@@ -724,43 +865,12 @@ def register_routes(app, parts_library):
                 if component is None:
                     continue
 
-                part_number = component.number or component.uuid
-                archive_name = None
+                archive_name = add_component_cad_to_zip(zip_file, component, "selection_cad_item")
+                if archive_name:
+                    files_added += 1
+                bom_components.append(component_hbom_row(component, quantity, archive_name))
 
-                if component.cad_file is not None:
-                    cad_filename = f"{component.cad_file.uuid}.FCStd"
-                    cad_path = cad_dir / cad_filename
-                    if cad_path.exists():
-                        original_name = component.cad_file.name or cad_filename
-                        archive_name = branded_part_filename(part_number, original_name)
-                        zip_file.write(cad_path, archive_name)
-                        files_added += 1
-                        record_download_event(
-                            session,
-                            "selection_cad_item",
-                            archive_name,
-                            component=component,
-                            file=component.cad_file,
-                            quantity=1,
-                        )
-
-                bom_components.append({
-                    "uuid": component.uuid,
-                    "name": component.name,
-                    "part_number": component.number,
-                    "quantity": quantity,
-                    "price_per_item": str(component.unit_price or ""),
-                    "currency": component.currency or "",
-                    "cad_file": archive_name,
-                    "description": component.description or "",
-                    "supplier": component.supplier.name if component.supplier else "",
-                })
-
-            if bom_components:
-                zip_file.writestr(
-                    branded_library_filename("hardware-bom.spdx.jsonld"),
-                    json.dumps(build_spdx_hardware_bom(bom_components), indent=2),
-                )
+            write_hbom_manifest(zip_file, bom_components)
 
         if files_added == 0 and not bom_components:
             return _("No CAD files found for My Bill of Materials."), 404
@@ -905,20 +1015,3 @@ def register_routes(app, parts_library):
     @app.route("/static/cad/<filename>")
     def serve_model_file(filename):
         return send_from_directory(str(cad_dir), filename)
-
-    @app.route("/run-freecad-gui/<filepath>")
-    def run_freecad_gui(filepath):
-        open_with_default_application(filepath)
-        return "", 204
-
-    @app.route("/run-libreoffice-gui/<filepath>")
-    def run_libreoffice_gui(filepath):
-        return "", 204
-
-    @app.route("/run-prepomax-gui/<filepath>")
-    def run_prepomax_gui(filepath):
-        return "", 204
-
-    @app.route("/run-kicad-gui/<filepath>")
-    def run_kicad_gui(filepath):
-        return "", 204

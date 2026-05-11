@@ -1,3 +1,5 @@
+"""Admin views, fallback admin pages, and BOM editor route helpers."""
+
 import json
 import math
 from collections import defaultdict
@@ -30,10 +32,14 @@ DOWNLOAD_DASHBOARD_TIMEFRAMES = {
 
 
 def download_event_quantity(event):
+    """Return the quantity contribution for one download event."""
+
     return 1
 
 
 def download_part_key(event):
+    """Return the grouping key for per-part download analytics."""
+
     if not event.component_uuid:
         return None
     return (
@@ -44,6 +50,14 @@ def download_part_key(event):
 
 
 def get_download_dashboard_data(session, timeframe_key):
+    """Build chart and ranking data for the downloads dashboard.
+
+    :param session: SQLAlchemy session.
+    :param timeframe_key: Selected timeframe key such as ``30d`` or ``all``.
+    :return: Dashboard data dictionary for templates.
+    :rtype: dict
+    """
+
     timeframe_key = timeframe_key if timeframe_key in DOWNLOAD_DASHBOARD_TIMEFRAMES else "30d"
     timeframe_label, timeframe_days = DOWNLOAD_DASHBOARD_TIMEFRAMES[timeframe_key]
     now = datetime.utcnow()
@@ -144,13 +158,9 @@ def get_download_dashboard_data(session, timeframe_key):
     }
 
 
-
-
-
-
-
-
 def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
+    """Render one expandable BOM row for the admin BOM tree table."""
+
     visited = set(visited or set())
     children_id = f"bom-children-{bom.id}-{depth}"
     child_rows = []
@@ -228,11 +238,15 @@ def render_bom_row(bom, depth=0, visited=None, relation_quantity=None):
 
 
 def render_bom_item_row(item, depth, visited):
+    """Render a child BOM item row by delegating to :func:`render_bom_row`."""
+
     quantity = item.quantity.normalize() if item.quantity else 1
     return render_bom_row(item.child_bom, depth, visited, quantity)
 
 
 def bom_form_items_from_request():
+    """Parse flat BOM child item form fields from the current request."""
+
     item_ids = request.form.getlist("child_bom_id")
     quantities = request.form.getlist("quantity")
     return [
@@ -246,6 +260,8 @@ def bom_form_items_from_request():
 
 
 def initial_bom_items(bom, bom_options):
+    """Serialize current child BOM rows for the classic table editor."""
+
     labels_by_id = {option["id"]: option["display_label"] for option in bom_options}
     return [
         {
@@ -258,6 +274,8 @@ def initial_bom_items(bom, bom_options):
 
 
 def initial_bom_tree_items(bom, bom_options, visited=None, readonly=False):
+    """Serialize a nested BOM tree for the node editor."""
+
     visited = set(visited or set())
     labels_by_id = {option["id"]: option["display_label"] for option in bom_options}
     tree_items = []
@@ -280,6 +298,8 @@ def initial_bom_tree_items(bom, bom_options, visited=None, readonly=False):
 
 
 def node_editor_payload_from_request():
+    """Parse the JSON node tree submitted by the BOM node editor."""
+
     try:
         payload = json.loads(request.form.get("node_tree") or "{}")
     except (TypeError, ValueError):
@@ -288,6 +308,8 @@ def node_editor_payload_from_request():
 
 
 def resolve_node_editor_child_bom(session, node):
+    """Resolve an editor node to an existing or newly created child BOM."""
+
     if not isinstance(node, dict):
         return None
 
@@ -312,6 +334,8 @@ def resolve_node_editor_child_bom(session, node):
 
 
 def save_nested_bom_nodes(session, parent_bom, nodes, visited=None):
+    """Persist nested node-editor children under a parent BOM."""
+
     visited = set(visited or set())
     if parent_bom is None or parent_bom.id in visited:
         return
@@ -338,6 +362,8 @@ def save_nested_bom_nodes(session, parent_bom, nodes, visited=None):
 
 
 def save_node_editor_bom(session, bom, name, description, payload):
+    """Update one BOM from the node editor payload and commit it."""
+
     bom.name = str(name or "").strip()
     bom.description = str(description or "").strip() or None
     save_nested_bom_nodes(session, bom, payload.get("children", []))
@@ -346,6 +372,8 @@ def save_node_editor_bom(session, bom, name, description, payload):
 
 
 def register_bom_admin_routes(app, session):
+    """Register custom BOM admin routes when they are not already present."""
+
     if "admin_bill_of_materials" in app.view_functions:
         return
 
@@ -488,12 +516,21 @@ def register_bom_admin_routes(app, session):
 
 
 def setup_admin(app, session):
+    """Install Flask-Admin views or fallback admin routes.
+
+    :param app: Flask application.
+    :param session: SQLAlchemy session.
+    :return: Flask-Admin instance or fallback marker dictionary.
+    """
+
     register_bom_admin_routes(app, session)
 
     if Admin is None or ModelView is None:
         return setup_fallback_admin(app, session)
 
     class DownloadEventAdminView(ModelView):
+        """Read-only Flask-Admin view for download audit events."""
+
         can_create = False
         can_edit = False
         can_delete = False
@@ -519,13 +556,19 @@ def setup_admin(app, session):
         column_filters = ("download_type", "date_downloaded", "component_number")
 
     class ComponentAdminView(ModelView):
+        """Flask-Admin model view for component records."""
+
         column_labels = {
             "unit_price": lazy_gettext("Estimated unit price"),
         }
 
     class DownloadsDashboardIndexView(AdminIndexView):
+        """Custom Flask-Admin index page showing download analytics."""
+
         @expose("/")
         def index(self):
+            """Render the downloads dashboard."""
+
             data = get_download_dashboard_data(session, request.args.get("timeframe", "30d"))
             return render_template(
                 "admin/downloads_dashboard.html",
@@ -550,6 +593,8 @@ def setup_admin(app, session):
 
 
 def setup_fallback_admin(app, session):
+    """Register read-only fallback admin pages when Flask-Admin is unavailable."""
+
     model_links = (
         ("Downloads dashboard", None),
         ("Bill of Materials", None),

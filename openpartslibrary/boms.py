@@ -1,3 +1,5 @@
+"""Business logic for persistent and generated bills of materials."""
+
 import uuid
 from decimal import Decimal, InvalidOperation
 import re
@@ -11,6 +13,12 @@ BOM_NUMBER_PREFIX = "BOM"
 
 
 def ensure_part_boms(session):
+    """Create or update one part-wrapper BOM for every component.
+
+    :param session: SQLAlchemy session.
+    :return: ``None``.
+    """
+
     components = session.query(Component).all()
     existing_by_component_id = {
         bom.component_id: bom
@@ -47,6 +55,12 @@ def ensure_part_boms(session):
 
 
 def decimal_quantity(value):
+    """Normalize user-entered quantities to positive whole-number decimals.
+
+    :param value: Raw quantity from a form, JSON payload, or database value.
+    :return: Valid positive integer quantity as :class:`decimal.Decimal`.
+    """
+
     try:
         quantity = Decimal(str(value or "1"))
     except (InvalidOperation, ValueError):
@@ -58,6 +72,13 @@ def decimal_quantity(value):
 
 
 def next_bom_number(session):
+    """Return the next generated BOM number.
+
+    :param session: SQLAlchemy session.
+    :return: Number in the ``BOM000001`` style.
+    :rtype: str
+    """
+
     highest_number = 0
     existing_numbers = (
         session.query(BillOfMaterials.number)
@@ -77,6 +98,14 @@ def next_bom_number(session):
 
 
 def bom_cost_totals(bom, visited=None):
+    """Calculate recursive BOM cost totals grouped by currency.
+
+    :param bom: BOM-like object with ``children`` and ``is_part_wrapper``.
+    :param visited: Internal cycle-protection set.
+    :return: Mapping of currency code to total amount.
+    :rtype: dict[str, decimal.Decimal]
+    """
+
     visited = set(visited or set())
     if bom is None or bom.id in visited:
         return {}
@@ -103,6 +132,13 @@ def bom_cost_totals(bom, visited=None):
 
 
 def format_cost_totals(totals):
+    """Format currency totals for display.
+
+    :param totals: Mapping returned by :func:`bom_cost_totals`.
+    :return: Human-readable cost string or ``-``.
+    :rtype: str
+    """
+
     visible_totals = [
         (currency, amount)
         for currency, amount in sorted(totals.items(), key=lambda row: row[0])
@@ -117,10 +153,18 @@ def format_cost_totals(totals):
 
 
 def format_bom_cost(bom):
+    """Format a BOM's recursive total cost for templates."""
+
     return format_cost_totals(bom_cost_totals(bom))
 
 
 def bom_contains(session, root_bom_id, searched_bom_id):
+    """Check whether one BOM exists inside another BOM tree.
+
+    :return: ``True`` when ``searched_bom_id`` is in the root tree.
+    :rtype: bool
+    """
+
     if root_bom_id == searched_bom_id:
         return True
 
@@ -146,6 +190,16 @@ def bom_contains(session, root_bom_id, searched_bom_id):
 
 
 def create_bom(session, name, description="", items=None, number=None):
+    """Create a persistent BOM and attach validated child items.
+
+    :param session: SQLAlchemy session.
+    :param name: BOM display name.
+    :param description: Optional BOM description.
+    :param items: Child BOM dictionaries containing IDs and quantities.
+    :param number: Optional explicit BOM number.
+    :return: Created BOM model.
+    """
+
     bom = BillOfMaterials(
         uuid=str(uuid.uuid4()),
         name=str(name or "").strip(),
@@ -176,6 +230,14 @@ def create_bom(session, name, description="", items=None, number=None):
 
 
 def replace_bom_items(session, bom, items=None):
+    """Replace a BOM's children with validated child item rows.
+
+    :param session: SQLAlchemy session.
+    :param bom: BOM model to update.
+    :param items: Child BOM dictionaries containing IDs and quantities.
+    :return: ``None``.
+    """
+
     for item in list(bom.children):
         session.delete(item)
     session.flush()
@@ -196,6 +258,8 @@ def replace_bom_items(session, bom, items=None):
 
 
 def update_bom(session, bom, name, description="", items=None):
+    """Update a BOM's metadata and child items."""
+
     bom.name = str(name or "").strip()
     bom.description = str(description or "").strip() or None
     replace_bom_items(session, bom, items)
@@ -204,6 +268,8 @@ def update_bom(session, bom, name, description="", items=None):
 
 
 def copy_bom(session, bom):
+    """Create a shallow copy of a BOM and its child item references."""
+
     copied_bom = BillOfMaterials(
         uuid=str(uuid.uuid4()),
         name=f"{bom.name} (copy)",
@@ -229,6 +295,15 @@ def copy_bom(session, bom):
 
 
 def bom_part_quantities(bom, multiplier=Decimal("1"), visited=None):
+    """Flatten a BOM tree into total part quantities.
+
+    :param bom: BOM-like object.
+    :param multiplier: Quantity multiplier passed during recursion.
+    :param visited: Internal cycle-protection set.
+    :return: Mapping of component UUID to component/quantity rows.
+    :rtype: dict
+    """
+
     visited = set(visited or set())
     if bom is None or bom.id in visited:
         return {}
@@ -248,6 +323,8 @@ def bom_part_quantities(bom, multiplier=Decimal("1"), visited=None):
 
 
 def get_created_boms(session):
+    """Return user-created persistent BOMs sorted for display."""
+
     return (
         session.query(BillOfMaterials)
         .options(selectinload(BillOfMaterials.children).selectinload(BillOfMaterialsItem.child_bom))
@@ -258,6 +335,8 @@ def get_created_boms(session):
 
 
 def get_bom_options(session):
+    """Return JSON-serializable BOM picker options for editors."""
+
     boms = (
         session.query(BillOfMaterials)
         .options(selectinload(BillOfMaterials.children).selectinload(BillOfMaterialsItem.child_bom))

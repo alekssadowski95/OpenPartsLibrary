@@ -1,3 +1,9 @@
+"""CAD thumbnail generation helpers.
+
+Thumbnails are generated in two stages: FreeCAD exports ``.FCStd`` to ``.3mf``,
+then Blender renders the mesh to PNG.  Missing tools fall back to SVG previews.
+"""
+
 import os
 import shlex
 import subprocess
@@ -10,6 +16,14 @@ THUMBNAIL_SIZE = 512
 
 @dataclass(frozen=True)
 class ThumbnailResult:
+    """Result returned by thumbnail generation checks.
+
+    :param status: Short status string such as ``ready`` or ``missing_cad``.
+    :param thumbnail_path: Generated PNG path when ready.
+    :param mesh_path: Intermediate 3MF mesh path when available.
+    :param message: Human-readable failure or pending message.
+    """
+
     status: str
     thumbnail_path: Path | None = None
     mesh_path: Path | None = None
@@ -17,10 +31,14 @@ class ThumbnailResult:
 
     @property
     def ready(self):
+        """Return whether a usable thumbnail exists."""
+
         return self.status == "ready" and self.thumbnail_path is not None
 
 
 def placeholder_thumbnail_svg(label="No preview"):
+    """Build a simple SVG placeholder for unavailable CAD thumbnails."""
+
     safe_label = str(label or "No preview")
     return f"""<svg xmlns="http://www.w3.org/2000/svg" width="{THUMBNAIL_SIZE}" height="{THUMBNAIL_SIZE}" viewBox="0 0 {THUMBNAIL_SIZE} {THUMBNAIL_SIZE}">
   <rect width="100%" height="100%" fill="#f3f5f8"/>
@@ -31,15 +49,21 @@ def placeholder_thumbnail_svg(label="No preview"):
 
 
 def split_command(command):
+    """Split a configured command string for the current platform."""
+
     return shlex.split(command, posix=os.name != "nt")
 
 
 def format_command(command_template, **values):
+    """Fill command placeholders and split the result for subprocess use."""
+
     formatted = command_template.format(**{key: str(value) for key, value in values.items()})
     return split_command(formatted)
 
 
 def run_command(command_template, timeout, **values):
+    """Run a configured external command with captured output."""
+
     if not command_template:
         return False, "Command is not configured."
 
@@ -59,6 +83,8 @@ def run_command(command_template, timeout, **values):
 
 
 def ensure_3mf_mesh(cad_path, mesh_path, command_template, timeout=120):
+    """Ensure the intermediate 3MF mesh is current for a CAD file."""
+
     cad_path = Path(cad_path)
     mesh_path = Path(mesh_path)
     if mesh_path.exists() and mesh_path.stat().st_mtime >= cad_path.stat().st_mtime:
@@ -74,6 +100,8 @@ def ensure_3mf_mesh(cad_path, mesh_path, command_template, timeout=120):
 
 
 def ensure_thumbnail(mesh_path, thumbnail_path, command_template, timeout=120):
+    """Ensure the PNG thumbnail is current for a mesh file."""
+
     mesh_path = Path(mesh_path)
     thumbnail_path = Path(thumbnail_path)
     if thumbnail_path.exists() and thumbnail_path.stat().st_mtime >= mesh_path.stat().st_mtime:
@@ -90,6 +118,11 @@ def ensure_thumbnail(mesh_path, thumbnail_path, command_template, timeout=120):
 
 
 def ensure_cad_thumbnail(cad_file_uuid, cad_dir, mesh_dir, thumbnail_dir, freecad_command, blender_command):
+    """Ensure a CAD file has a rendered thumbnail.
+
+    :return: :class:`ThumbnailResult` describing readiness or the next blocker.
+    """
+
     cad_path = Path(cad_dir) / f"{cad_file_uuid}.FCStd"
     mesh_path = Path(mesh_dir) / f"{cad_file_uuid}.3mf"
     thumbnail_path = Path(thumbnail_dir) / f"{cad_file_uuid}.png"

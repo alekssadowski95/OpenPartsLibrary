@@ -58,7 +58,7 @@
                 <button id="load-bom-button" type="button" class="btn btn-outline-secondary" onclick="openLoadBomModal()"><i class="bi bi-folder2-open me-1" aria-hidden="true"></i>{{ _('Load BOM') }}</button>
                 {% endif %}
                 {% if public_builder|default(false) %}
-                <button id="parts-library-toggle-button" type="button" class="btn btn-outline-secondary" onclick="togglePartsLibraryPanel()"><i class="bi bi-layout-sidebar-inset-reverse me-1" aria-hidden="true"></i>{{ _('Parts library') }}</button>
+                <button id="parts-library-toggle-button" type="button" class="btn btn-outline-secondary" onclick="togglePartsLibraryPanel()"><i class="bi bi-layout-sidebar-inset-reverse me-1" aria-hidden="true"></i>{{ _('Library') }}</button>
                 {% endif %}
                 <button id="clear-node-editor-button" type="button" class="btn btn-outline-secondary" onclick="openClearModal()">{{ _('Clear') }}</button>
                 <button class="btn btn-primary" type="submit">{{ _('Save BOM') if public_builder|default(false) or edit_bom else _('Create BOM') }}</button>
@@ -80,12 +80,12 @@
                 </div>
             </div>
             {% if public_builder|default(false) %}
-            <aside id="parts-library-panel" class="parts-library-panel d-none" aria-label="{{ _('Parts library') }}">
+            <aside id="parts-library-panel" class="parts-library-panel d-none" aria-label="{{ _('Library') }}">
                 <div class="parts-library-header">
-                    <h2>{{ _('Parts library') }}</h2>
+                    <h2>{{ _('Library') }}</h2>
                     <button type="button" class="btn btn-outline-secondary btn-sm" onclick="togglePartsLibraryPanel()" title="{{ _('Close') }}" aria-label="{{ _('Close') }}"><i class="bi bi-x-lg"></i></button>
                 </div>
-                <form id="parts-library-form" class="parts-library-filters">
+                <div id="parts-library-form" class="parts-library-filters">
                     <input id="parts-library-search" class="form-control form-control-sm" name="search_query" type="search" placeholder="{{ _('Search...') }}" aria-label="{{ _('Search') }}">
                     <div class="parts-library-filter-grid">
                         <select class="form-select form-select-sm" name="supplier" aria-label="{{ _('Supplier') }}">
@@ -98,19 +98,22 @@
                         <input class="form-control form-control-sm" name="price_max" type="number" min="0" step="0.01" placeholder="{{ _('Max price') }}" aria-label="{{ _('Max price') }}">
                     </div>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm flex-fill" type="submit">{{ _('Apply') }}</button>
+                        <button id="parts-library-apply-button" class="btn btn-primary btn-sm flex-fill" type="button">{{ _('Apply') }}</button>
                         <button class="btn btn-outline-secondary btn-sm" type="button" onclick="resetPartsLibraryFilters()">{{ _('Reset') }}</button>
                     </div>
-                </form>
-                <div id="parts-library-status" class="parts-library-status">{{ ngettext('%(num)s part found.', '%(num)s parts found.', initial_parts_library_parts|length) }}</div>
+                </div>
+                <div id="parts-library-status" class="parts-library-status">{{ ngettext('%(num)s item found.', '%(num)s items found.', initial_parts_library_parts|length) }}</div>
                 <div id="parts-library-list" class="parts-library-list">
                     {% for part in initial_parts_library_parts %}
-                    <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="{{ part.part_bom_id }}" data-display-label="{{ part.display_label }}">
-                        <div class="parts-library-card-title">{{ part.display_label }}</div>
-                        <div class="parts-library-card-price">{{ part.unit_price }} {{ part.currency }}</div>
+                    <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="{{ part.option_id }}" data-display-label="{{ part.display_label }}">
+                        <div class="parts-library-card-title"><i class="bi {{ 'bi-box-fill text-primary' if part.is_part_wrapper else 'bi-table' }}" aria-hidden="true"></i>{{ part.display_label }}</div>
+                        <div class="parts-library-card-meta">{{ _('Part') if part.is_part_wrapper else _('BOM') }}</div>
+                        {% if part.price_label %}
+                        <div class="parts-library-card-price">{{ part.price_label }}</div>
+                        {% endif %}
                     </div>
                     {% else %}
-                    <div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>
+                    <div class="parts-library-card-meta">{{ _('No matching library items.') }}</div>
                     {% endfor %}
                 </div>
             </aside>
@@ -286,9 +289,9 @@
             renderNodes();
         }
 
-        function addPartOptionToNode(path, optionId, displayLabel) {
+        function addLibraryOptionToNode(path, optionId, displayLabel) {
             const option = bomOptions.find((candidate) => String(candidate.id) === String(optionId));
-            if (!option || !option.is_part_wrapper) {
+            if (!option) {
                 return false;
             }
 
@@ -303,7 +306,7 @@
                 source_type: "existing",
                 readonly: false,
                 quantity: "1",
-                children: [],
+                children: readonlyChildrenForOption(option.id),
             }));
             renderNodes();
             return true;
@@ -814,8 +817,21 @@
             if (!form) {
                 return;
             }
-            form.reset();
+            form.querySelectorAll("input, select").forEach((control) => {
+                control.value = "";
+            });
             loadPartsLibrary();
+        }
+
+        function partsLibraryParams(form) {
+            const params = new URLSearchParams();
+            form.querySelectorAll("input[name], select[name]").forEach((control) => {
+                const value = String(control.value || "").trim();
+                if (value) {
+                    params.set(control.name, value);
+                }
+            });
+            return params;
         }
 
         async function loadPartsLibrary() {
@@ -826,24 +842,28 @@
                 return;
             }
             status.textContent = {{ _('Searching...')|tojson }};
-            const params = new URLSearchParams(new FormData(form));
+            const params = partsLibraryParams(form);
             try {
                 const response = await fetch(`${partsLibraryUrl}?${params.toString()}`);
                 const payload = response.ok ? await response.json() : { parts: [] };
                 const parts = Array.isArray(payload.parts) ? payload.parts : [];
-                status.textContent = {{ ngettext('%(num)s part found.', '%(num)s parts found.', 0)|tojson }}.replace("0", String(parts.length));
-                list.innerHTML = parts.length ? parts.map((part) => partsLibraryCard(part)).join("") : `<div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>`;
+                status.textContent = {{ ngettext('%(num)s item found.', '%(num)s items found.', 0)|tojson }}.replace("0", String(parts.length));
+                list.innerHTML = parts.length ? parts.map((part) => partsLibraryCard(part)).join("") : `<div class="parts-library-card-meta">{{ _('No matching library items.') }}</div>`;
             } catch (error) {
-                status.textContent = {{ _('No matching parts.')|tojson }};
-                list.innerHTML = `<div class="parts-library-card-meta">{{ _('No matching parts.') }}</div>`;
+                status.textContent = {{ _('No matching library items.')|tojson }};
+                list.innerHTML = `<div class="parts-library-card-meta">{{ _('No matching library items.') }}</div>`;
             }
         }
 
         function partsLibraryCard(part) {
-            const price = `${part.unit_price || ""} ${part.currency || ""}`.trim();
+            const price = part.price_label || `${part.unit_price || ""} ${part.currency || ""}`.trim();
+            const isPart = Boolean(part.is_part_wrapper);
+            const icon = isPart ? "bi-box-fill text-primary" : "bi-table";
+            const entryType = isPart ? {{ _('Part')|tojson }} : {{ _('BOM')|tojson }};
             return `
-                <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="${escapeHtml(part.part_bom_id)}" data-display-label="${escapeHtml(part.display_label)}">
-                    <div class="parts-library-card-title">${escapeHtml(part.display_label)}</div>
+                <div class="parts-library-card" draggable="true" tabindex="0" data-option-id="${escapeHtml(part.option_id || part.part_bom_id)}" data-display-label="${escapeHtml(part.display_label)}">
+                    <div class="parts-library-card-title"><i class="bi ${icon}" aria-hidden="true"></i>${escapeHtml(part.display_label)}</div>
+                    <div class="parts-library-card-meta">${escapeHtml(entryType)}</div>
                     ${price ? `<div class="parts-library-card-price">${escapeHtml(price)}</div>` : ""}
                 </div>
             `;
@@ -1259,11 +1279,17 @@
             const partsLibraryForm = document.getElementById("parts-library-form");
             const partsLibrarySearch = document.getElementById("parts-library-search");
             const partsLibraryList = document.getElementById("parts-library-list");
+            const partsLibraryApplyButton = document.getElementById("parts-library-apply-button");
             if (partsLibraryForm) {
-                partsLibraryForm.addEventListener("submit", (event) => {
-                    event.preventDefault();
-                    loadPartsLibrary();
+                partsLibraryForm.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter") {
+                        event.preventDefault();
+                        loadPartsLibrary();
+                    }
                 });
+            }
+            if (partsLibraryApplyButton) {
+                partsLibraryApplyButton.addEventListener("click", loadPartsLibrary);
             }
             if (partsLibrarySearch) {
                 partsLibrarySearch.addEventListener("input", () => {
@@ -1348,7 +1374,7 @@
                 event.preventDefault();
                 const key = card.dataset.nodePath || "root";
                 const path = key === "root" ? [] : pathFromKey(key);
-                addPartOptionToNode(path, draggedPartOption.optionId, draggedPartOption.displayLabel);
+                addLibraryOptionToNode(path, draggedPartOption.optionId, draggedPartOption.displayLabel);
                 draggedPartOption = null;
                 clearDropTarget();
             });

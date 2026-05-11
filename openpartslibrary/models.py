@@ -1,14 +1,28 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, Numeric, Enum, ForeignKey, UniqueConstraint, Boolean, Text
-from sqlalchemy.orm import DeclarativeBase, relationship, backref
+"""Database models for parts, suppliers, files, BOMs, and download events.
+
+The application uses SQLAlchemy's declarative ORM.  These models are created
+automatically for the local SQLite database used by the Flask and desktop apps.
+"""
+
 from datetime import datetime
 
-class Base(DeclarativeBase):
-  pass
+from sqlalchemy import Boolean, Column, DateTime, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase, relationship, backref
 
-'''
-Relationship tables
-'''
+
+class Base(DeclarativeBase):
+    """Base class for all SQLAlchemy ORM models."""
+
+    pass
+
+
 class ComponentComponent(Base):
+    """Association table for parent/child part relationships.
+
+    :param parent_component_id: Database ID of the parent component.
+    :param child_component_id: Database ID of the child component.
+    """
+
     __tablename__ = 'component_component'
 
     id = Column(Integer, primary_key=True)
@@ -21,12 +35,13 @@ class ComponentComponent(Base):
     def __repr__(self):
         return f"<ComponentComponent(id={self.id}, parent_component_id={self.parent_component_id}, child_component_id={self.child_component_id})>"
 
-class ComponentSupplier(Base):
-    __tablename__ = 'component_supplier'
-
-    id = Column(Integer, primary_key=True)
-
 class ComponentFile(Base):
+    """Association table between components and general attached files.
+
+    :param component_id: Database ID of the component.
+    :param file_id: Database ID of the linked file.
+    """
+
     __tablename__ = 'component_file'
 
     id = Column(Integer, primary_key=True)
@@ -34,9 +49,15 @@ class ComponentFile(Base):
     file_id = Column(Integer, ForeignKey('files.id'), nullable=False)
     date_linked = Column(DateTime, default=datetime.utcnow)
 
-    __table__args__ = (UniqueConstraint('component_id', 'file_id', name='uq_component_file'),)
+    __table_args__ = (UniqueConstraint('component_id', 'file_id', name='uq_component_file'),)
 
 class Component(Base):
+    """Reusable mechanical part stored in the library.
+
+    Components hold searchable engineering metadata, supplier information,
+    optional CAD-file references, and optional links to supporting files.
+    """
+
     __tablename__ = 'components'
 
     id = Column(Integer, unique=True, primary_key=True)
@@ -79,13 +100,27 @@ class Component(Base):
     is_archived = Column(Boolean, default=False)
 
     def __repr__(self):
+        """Return a compact debugging representation for logs and admin pages."""
+
         return f"<Component(id={self.id}, number={self.number}, name={self.name})>"
 
     def to_dict(self):
+        """Serialize the model's scalar columns.
+
+        :return: Dictionary keyed by database column name.
+        :rtype: dict
+        """
+
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 
 class BillOfMaterials(Base):
+    """Reusable bill of materials or generated wrapper around a single part.
+
+    Normal BOMs are user-created assemblies.  Part-wrapper BOMs point to one
+    component so parts and assemblies can share the same tree structure.
+    """
+
     __tablename__ = "bill_of_materials"
 
     id = Column(Integer, primary_key=True)
@@ -112,10 +147,19 @@ class BillOfMaterials(Base):
     )
 
     def __repr__(self):
+        """Return a compact debugging representation."""
+
         return f"<BillOfMaterials(id={self.id}, name={self.name})>"
 
 
 class BillOfMaterialsItem(Base):
+    """Parent-child relation between two BOM records.
+
+    :param parent_bom_id: Database ID of the containing BOM.
+    :param child_bom_id: Database ID of the nested BOM or part wrapper.
+    :param quantity: Required quantity of the child in the parent BOM.
+    """
+
     __tablename__ = "bill_of_materials_items"
 
     id = Column(Integer, primary_key=True)
@@ -134,9 +178,13 @@ class BillOfMaterialsItem(Base):
     )
 
     def __repr__(self):
+        """Return a compact debugging representation."""
+
         return f"<BillOfMaterialsItem(parent_bom_id={self.parent_bom_id}, child_bom_id={self.child_bom_id}, quantity={self.quantity})>"
     
 class Supplier(Base):
+    """Supplier or manufacturer record used by components."""
+
     __tablename__ = 'suppliers'
 
     id = Column(Integer, primary_key=True)
@@ -154,9 +202,17 @@ class Supplier(Base):
     components = relationship('Component', back_populates='supplier')
     
     def to_dict(self):
+        """Serialize the model's scalar columns.
+
+        :return: Dictionary keyed by database column name.
+        :rtype: dict
+        """
+
         return {column.name: getattr(self, column.name) for column in self.__table__.columns}
 
 class File(Base):
+    """Stored file metadata for CAD files and general component attachments."""
+
     __tablename__ = 'files'
 
     id = Column(Integer, primary_key=True)
@@ -173,6 +229,8 @@ class File(Base):
     cad_component = relationship('Component', back_populates='cad_file', uselist=False, foreign_keys='Component.cad_file_id')
 
 class DownloadEvent(Base):
+    """Audit record for file, CAD, selection, and BOM downloads."""
+
     __tablename__ = 'download_events'
 
     id = Column(Integer, primary_key=True)
@@ -189,8 +247,13 @@ class DownloadEvent(Base):
     user_agent = Column(String(500))
     date_downloaded = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-# Future feature, not part of MVP
 class Material(Base):
+    """Material metadata exposed in the admin interface.
+
+    This table is reserved for material-property enrichment while components
+    continue to store their current material label directly.
+    """
+
     __tablename__ = "materials"
 
     id = Column(Integer, primary_key=True)
@@ -226,29 +289,6 @@ class Material(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self):
+        """Return a compact debugging representation."""
+
         return f"<Material {self.name}>"
-
-# Future feature, not part of MVP
-class Requirement(Base):
-    __tablename__ = "requirements"
-
-    id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)            
-    title = Column(String(200), nullable=False)                           
-    description = Column(Text, nullable=False)                            
-    requirement_type = Column(Enum("mandatory", "minimum", "desirable", name="requirement_type"), nullable=False)
-    owner = Column(String(100))                                
-    acceptance_criteria = Column(Text)      
-    source = Column(String(200))      
-    created_at = Column(DateTime, default=datetime.utcnow)                                                    
-    last_updated = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    def __repr__(self):
-        return f"<Requirement {self.uuid}: {self.title}>"
-
-
-
-
-
-
-    

@@ -12,7 +12,7 @@
     {% if public_builder|default(false) %}
     <header class="opl-admin-header">
         <div class="opl-admin-header-inner opl-public-header-inner">
-            <a class="opl-admin-brand" href="{{ url_for('components') }}">
+            <a class="opl-admin-brand" href="{{ url_for('parts') }}">
                 <img src="{{ url_for('static', filename='nut-bolt.png') }}" alt="" width="36" height="36">
                 <span>OpenPartsLibrary</span>
             </a>
@@ -23,7 +23,7 @@
             </div>
             <div class="opl-admin-header-right">
                 <nav class="opl-admin-navigation" aria-label="{{ _('Main navigation') }}">
-                    <a class="opl-admin-nav-link" href="{{ url_for('components') }}">{{ _('Parts') }}</a>
+                    <a class="opl-admin-nav-link" href="{{ url_for('parts') }}">{{ _('Parts') }}</a>
                     <a class="opl-admin-nav-link" href="{{ url_for('boms') }}">{{ _('BOMs') }}</a>
                     <a class="opl-admin-nav-link is-active" href="{{ url_for('public_bom_node_editor') }}">{{ _('BOM Builder') }}</a>
                 </nav>
@@ -1266,7 +1266,7 @@
                         params.set("search_query", value);
                     }
                     const queryString = params.toString();
-                    window.location.href = "{{ url_for('components') }}" + (queryString ? "?" + queryString : "");
+                    window.location.href = "{{ url_for('parts') }}" + (queryString ? "?" + queryString : "");
                 });
             }
             const restoredDraft = restoreDraft();

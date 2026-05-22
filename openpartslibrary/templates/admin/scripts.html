@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="{{ current_locale.replace('_', '-') }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ _('Scripts') }} | OpenPartsLibrary</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-5.3.3-dist/css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap-icons-1.11.3/font/bootstrap-icons.min.css') }}">
+    <style>
+        body { background: #f8f9fa; }
+        .opl-admin-header { width: 100%; background: #042c61; color: white; border-bottom: 1px solid #0a3b7a; }
+        .opl-admin-header-inner { width: 100%; min-height: 52px; padding: 0 14px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .opl-admin-brand, .opl-admin-brand:hover { display: inline-flex; align-items: center; gap: 8px; color: white; text-decoration: none; font-size: 18px; white-space: nowrap; }
+        .opl-admin-brand img { filter: brightness(0.5); }
+        .opl-admin-header-right, .opl-admin-navigation, .opl-admin-header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+        .opl-admin-nav-link, .opl-admin-nav-link:hover, .opl-admin-header-actions a, .opl-admin-header-actions a:hover { color: white; text-decoration: none; font-size: 0.9rem; }
+        .opl-admin-nav-link { display: inline-flex; align-items: center; min-height: 32px; padding: 4px 8px; border-radius: 4px; }
+        .opl-admin-nav-link:hover { background: rgba(255, 255, 255, 0.14); }
+        .script-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, auto); gap: 16px; align-items: center; }
+        .script-action { display: flex; justify-content: flex-end; gap: 8px; align-items: center; }
+        .script-file-input { max-width: 280px; }
+        @media (max-width: 575.98px) {
+            .opl-admin-header-inner, .script-row { align-items: stretch; flex-direction: column; grid-template-columns: 1fr; }
+            .opl-admin-header-right, .opl-admin-navigation, .opl-admin-header-actions { justify-content: flex-start; }
+            .script-action { justify-content: flex-start; flex-direction: column; align-items: stretch; }
+            .script-file-input { max-width: none; }
+        }
+    </style>
+</head>
+<body>
+    {% include 'admin/_header.html' %}
+    <main class="container-fluid py-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h1 class="h3 mb-0">{{ _('Scripts') }}</h1>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.index') if admin_available else url_for('fallback_admin_index') }}">{{ _('Admin home') }}</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category if category in ['success', 'danger', 'warning', 'info'] else 'info' }}" role="alert">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="list-group mb-4">
+            {% for script in scripts %}
+            <div class="list-group-item">
+                <div class="script-row">
+                    <div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi {{ script.icon }}" aria-hidden="true"></i>
+                            <h2 class="h5 mb-0">{{ script.name }}</h2>
+                        </div>
+                        <p class="text-body-secondary mb-0 mt-1">{{ script.description }}</p>
+                    </div>
+                    {% if script.modal_target %}
+                    <div class="script-action">
+                        <button class="btn {{ script.button_class }}" type="button" data-bs-toggle="modal" data-bs-target="#{{ script.modal_target }}">{{ script.button_label }}</button>
+                    </div>
+                    {% elif script.confirmation %}
+                    <div class="script-action">
+                        <button class="btn {{ script.button_class }}" type="button" data-bs-toggle="modal" data-bs-target="#confirm-{{ script.id }}">{{ script.button_label }}</button>
+                    </div>
+                    {% else %}
+                    <form class="script-action" method="post" action="{{ url_for('admin_run_script', script_id=script.id) }}"{% if script.file_field %} enctype="multipart/form-data"{% endif %}>
+                        {% if script.file_field %}
+                        <input class="form-control script-file-input" name="{{ script.file_field }}" type="file" accept="{{ script.file_accept }}">
+                        {% endif %}
+                        <button class="btn {{ script.button_class }}" type="submit">{{ script.button_label }}</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% for script in scripts if script.confirmation %}
+        <div class="modal fade" id="confirm-{{ script.id }}" tabindex="-1" aria-labelledby="confirm-{{ script.id }}-label" aria-hidden="true">
+            <div class="modal-dialog">
+                <form class="modal-content" method="post" action="{{ url_for('admin_run_script', script_id=script.id) }}">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="confirm-{{ script.id }}-label">{{ script.name }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">{{ script.confirmation }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                        <button class="btn {{ script.button_class }}" type="submit">{{ _('Confirm') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="modal fade" id="samplePackagesModal" tabindex="-1" aria-labelledby="samplePackagesModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-scrollable">
+                <form class="modal-content" method="post" action="{{ url_for('admin_run_script', script_id='import_sample_parts_package') }}">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="samplePackagesModalLabel">{{ _('Sample parts packages') }}</h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ _('Close') }}"></button>
+                    </div>
+                    <div class="modal-body">
+                        {% if sample_packages %}
+                        <div class="list-group">
+                            {% for package in sample_packages %}
+                            <label class="list-group-item d-flex align-items-center gap-3">
+                                <input class="form-check-input m-0" type="checkbox" name="sample_packages" value="{{ package.name }}">
+                                <span class="flex-grow-1">
+                                    <span class="d-block fw-semibold">{{ package.name }}</span>
+                                    <span class="d-block text-body-secondary small">{{ package.size_kb }} KB &middot; {{ package.modified }}</span>
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-warning mb-0" role="alert">
+                            {{ _('No sample parts package zip files were found in the sample folder.') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">{{ _('Cancel') }}</button>
+                        <button class="btn btn-primary" type="submit"{% if not sample_packages %} disabled{% endif %}>{{ _('Import selected') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+    {% include '_copyright_bar.html' %}
+    <script src="{{ url_for('static', filename='bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js') }}"></script>
+</body>
+</html>

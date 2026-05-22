@@ -47,11 +47,11 @@ def selection_quantities_from_payload(selection_items):
     return selected_quantities
 
 
-def build_components_url(overrides=None):
-    """Build a components-page URL while preserving active query filters.
+def build_parts_url(overrides=None):
+    """Build a parts-page URL while preserving active query filters.
 
     :param overrides: Query-parameter values to set or remove.
-    :return: Relative URL for the components route.
+    :return: Relative URL for the parts route.
     :rtype: str
     """
 
@@ -64,8 +64,8 @@ def build_components_url(overrides=None):
 
     query_string = urlencode(query_args)
     if not query_string:
-        return url_for("components")
-    return f"{url_for('components')}?{query_string}"
+        return url_for("parts")
+    return f"{url_for('parts')}?{query_string}"
 
 
 def component_sort_value(component, sort_key):
@@ -97,9 +97,13 @@ def component_cad_filename(component, cad_dir):
     if component.cad_file is None:
         return None
 
-    cad_filename = f"{component.cad_file.uuid}.FCStd"
-    if (cad_dir / cad_filename).exists():
-        return cad_filename
+    candidate_names = [
+        component.cad_file.name,
+        f"{component.cad_file.uuid}.FCStd",
+    ]
+    for cad_filename in candidate_names:
+        if cad_filename and (cad_dir / cad_filename).exists():
+            return cad_filename
     return None
 
 
@@ -379,10 +383,10 @@ def register_routes(app, parts_library):
 
     @app.route("/")
     def home():
-        return redirect(url_for("components"))
+        return redirect(url_for("parts"))
 
-    @app.route("/components", defaults={"search_query": None})
-    def components(search_query):
+    @app.route("/parts", defaults={"search_query": None})
+    def parts(search_query):
         search_query = request.args.get("search_query", "").strip()
         supplier_filter = request.args.get("supplier", "")
         material_filter = request.args.get("material", "")
@@ -501,7 +505,7 @@ def register_routes(app, parts_library):
             },
             sort_key=sort_key,
             direction=direction,
-            components_url=build_components_url,
+            parts_url=build_parts_url,
         )
 
     @app.route("/boms")
@@ -690,13 +694,12 @@ def register_routes(app, parts_library):
         if component.cad_file is None:
             return None
 
-        cad_filename = f"{component.cad_file.uuid}.FCStd"
-        cad_path = cad_dir / cad_filename
-        if not cad_path.exists():
+        cad_path = parts_library.stored_cad_path(component)
+        if cad_path is None or not cad_path.exists():
             return None
 
         part_number = component.number or component.uuid
-        original_name = component.cad_file.name or cad_filename
+        original_name = component.cad_file.name or cad_path.name
         archive_name = branded_part_filename(part_number, original_name)
         zip_file.write(cad_path, archive_name)
         record_download_event(
@@ -761,8 +764,8 @@ def register_routes(app, parts_library):
         component_cad_filepath = None
         component_cad_filename = None
         if component.cad_file is not None:
-            cad_path = cad_dir / f"{component.cad_file.uuid}.FCStd"
-            if cad_path.exists():
+            cad_path = parts_library.stored_cad_path(component)
+            if cad_path is not None and cad_path.exists():
                 component_cad_filepath = str(cad_path.resolve())
                 component_cad_filename = cad_path.name
 
@@ -794,13 +797,12 @@ def register_routes(app, parts_library):
         if component is None or component.cad_file is None:
             return _("CAD file not found."), 404
 
-        cad_filename = f"{component.cad_file.uuid}.FCStd"
-        cad_path = cad_dir / cad_filename
-        if not cad_path.exists():
+        cad_path = parts_library.stored_cad_path(component)
+        if cad_path is None or not cad_path.exists():
             return _("CAD file not found."), 404
 
         part_number = component.number or component.uuid
-        original_name = component.cad_file.name or cad_filename
+        original_name = component.cad_file.name or cad_path.name
         downloaded_filename = branded_part_filename(part_number, original_name)
         record_download_event(
             session,
@@ -819,10 +821,10 @@ def register_routes(app, parts_library):
         if component is None or component.cad_file is None:
             return placeholder_thumbnail_response()
 
-        return cad_thumbnail(component.cad_file.uuid)
+        return cad_thumbnail(component.cad_file.uuid, parts_library.stored_cad_path(component))
 
     @app.route("/thumbnail/cad/<cad_file_uuid>.png")
-    def cad_thumbnail(cad_file_uuid):
+    def cad_thumbnail(cad_file_uuid, cad_path=None):
         result = ensure_cad_thumbnail(
             cad_file_uuid,
             cad_dir,
@@ -830,6 +832,7 @@ def register_routes(app, parts_library):
             thumbnail_dir,
             app.config.get("FREECAD_3MF_EXPORT_COMMAND", ""),
             app.config.get("BLENDER_THUMBNAIL_COMMAND", ""),
+            cad_path=cad_path,
         )
         if result.ready:
             return send_file(result.thumbnail_path, mimetype="image/png")
@@ -880,8 +883,8 @@ def register_routes(app, parts_library):
         record_download_event(session, "selection_zip", zip_download_name, quantity=1)
         return send_file(zip_buffer, mimetype="application/zip", as_attachment=True, download_name=zip_download_name)
 
-    @app.route("/selection/components", methods=["POST"])
-    def selection_components():
+    @app.route("/selection/parts", methods=["POST"])
+    def selection_parts():
         selection_items = request.get_json(silent=True) or []
         if not isinstance(selection_items, list):
             return jsonify([])
@@ -894,10 +897,7 @@ def register_routes(app, parts_library):
             if component is None:
                 continue
 
-            has_cad = False
-            if component.cad_file is not None:
-                cad_filename = f"{component.cad_file.uuid}.FCStd"
-                has_cad = (cad_dir / cad_filename).exists()
+            has_cad = parts_library.stored_cad_path(component) is not None
 
             components.append({
                 "uuid": component.uuid,

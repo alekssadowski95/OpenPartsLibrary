@@ -5,4 +5,10 @@ __pycache__
 .venv
 venv
 instance
+build
+dist
+*.spec
+*.egg-info
+docs/_build
+openpartslibrary/static/data
 openpartslibrary/static/o3dv-2/node_modules

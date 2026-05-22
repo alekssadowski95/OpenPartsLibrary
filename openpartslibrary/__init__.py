@@ -25,7 +25,7 @@ def create_app():
     from openpartslibrary.i18n import init_i18n
     from openpartslibrary.paths import configure_paths
     from openpartslibrary.routes import register_routes
-    from openpartslibrary.startup import bootstrap_sample_data, migrate_legacy_database_schema
+    from openpartslibrary.startup import migrate_legacy_database_schema
 
     flask_app = Flask(__name__, instance_relative_config=True)
     flask_app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "afs87fas7bfsa98fbasbas98fh78oizu")
@@ -37,10 +37,9 @@ def create_app():
     migrate_legacy_database_schema(flask_app.config["DB_PATH"])
 
     parts_library = PartsLibrary(db_path=flask_app.config["DB_PATH"], data_dir_path=data_dir)
-    bootstrap_sample_data(parts_library)
     ensure_part_boms(parts_library.session)
 
-    admin = setup_admin(flask_app, parts_library.session)
+    admin = setup_admin(flask_app, parts_library)
 
     @flask_app.context_processor
     def inject_admin():

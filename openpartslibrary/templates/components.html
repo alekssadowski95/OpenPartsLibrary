@@ -136,7 +136,7 @@ tbody tr td {
 {% endblock view_buttons %}
 
 {% block main_view_content_list %}
-<form class="component-filter-bar px-3 py-2" method="get" action="{{ url_for('components') }}">
+<form class="component-filter-bar px-3 py-2" method="get" action="{{ url_for('parts') }}">
     <h1 class="mb-0 mt-1" style="font-size: x-large;">{{ _('Parts') }}</h1>
     <input type="hidden" name="search_query" value="{{ search_query }}">
     <input type="hidden" name="sort" value="{{ sort_key }}">
@@ -161,7 +161,7 @@ tbody tr td {
         </div>
         <div class="col-12 col-md-5 d-flex gap-2 justify-content-md-end">
             <button class="btn btn-primary btn-sm" type="submit">{{ _('Apply') }}</button>
-            <a class="btn btn-outline-secondary btn-sm" href="{{ components_url({'supplier': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">{{ _('Reset') }}</a>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ parts_url({'supplier': '', 'price_min': '', 'price_max': '', 'sort': '', 'direction': ''}) }}">{{ _('Reset') }}</a>
         </div>
     </div>
 </form>
@@ -171,15 +171,15 @@ tbody tr td {
         <tr>
             <th class="component-actions-col"></th>
             {% set next_direction = 'desc' if sort_key == 'number' and direction == 'asc' else 'asc' %}
-            <th class="part-number-col"><a class="component-sort-link text-nowrap" href="{{ components_url({'sort': 'number', 'direction': next_direction}) }}">{{ _('Part number') }}{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th class="part-number-col"><a class="component-sort-link text-nowrap" href="{{ parts_url({'sort': 'number', 'direction': next_direction}) }}">{{ _('Part number') }}{% if sort_key == 'number' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'name' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'name', 'direction': next_direction}) }}">{{ _('Name') }}{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ parts_url({'sort': 'name', 'direction': next_direction}) }}">{{ _('Name') }}{% if sort_key == 'name' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'unit_price' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'unit_price', 'direction': next_direction}) }}">{{ _('Estimated unit price') }}{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ parts_url({'sort': 'unit_price', 'direction': next_direction}) }}">{{ _('Estimated unit price') }}{% if sort_key == 'unit_price' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'supplier' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'supplier', 'direction': next_direction}) }}">{{ _('Supplier') }}{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ parts_url({'sort': 'supplier', 'direction': next_direction}) }}">{{ _('Supplier') }}{% if sort_key == 'supplier' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
             {% set next_direction = 'desc' if sort_key == 'description' and direction == 'asc' else 'asc' %}
-            <th><a class="component-sort-link" href="{{ components_url({'sort': 'description', 'direction': next_direction}) }}">{{ _('Description') }}{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
+            <th><a class="component-sort-link" href="{{ parts_url({'sort': 'description', 'direction': next_direction}) }}">{{ _('Description') }}{% if sort_key == 'description' %}<i class="bi-arrow-{{ 'down' if direction == 'desc' else 'up' }}-short"></i>{% endif %}</a></th>
         </tr>
     </thead>
     <tbody>

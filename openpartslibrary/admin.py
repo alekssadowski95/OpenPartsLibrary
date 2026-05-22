@@ -2,24 +2,30 @@
 
 import json
 import math
+import shutil
+import tempfile
 from collections import defaultdict
 from datetime import datetime, timedelta
+from pathlib import Path
 
 try:
     from flask_admin import Admin, AdminIndexView, expose
     from flask_admin.contrib.sqla import ModelView
+    from flask_admin.menu import MenuLink
 except ImportError:
     Admin = None
     AdminIndexView = None
     expose = None
     ModelView = None
+    MenuLink = None
 
-from flask import redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, send_file, url_for
 from markupsafe import escape
 
 from openpartslibrary.boms import copy_bom, create_bom, ensure_part_boms, format_bom_cost, get_bom_options, get_created_boms, replace_bom_items, update_bom
 from openpartslibrary.i18n import gettext as _, lazy_gettext
-from openpartslibrary.models import BillOfMaterials, BillOfMaterialsItem, Component, ComponentComponent, DownloadEvent, File, Material, Supplier
+from openpartslibrary.models import BillOfMaterials, BillOfMaterialsItem, Component, ComponentComponent, ComponentFile, DownloadEvent, File, Material, Supplier
+from openpartslibrary.parts_package import PartsPackage
 
 
 DOWNLOAD_DASHBOARD_TIMEFRAMES = {
@@ -29,6 +35,103 @@ DOWNLOAD_DASHBOARD_TIMEFRAMES = {
     "365d": ("Last 12 months", 365),
     "all": ("All time", None),
 }
+
+ADMIN_SCRIPT_DEFINITIONS = (
+    {
+        "id": "import_sample_parts_package",
+        "name": "Import sample parts package",
+        "description": "Pick one or more bundled sample packages to import.",
+        "button_label": "Choose packages",
+        "icon": "bi-box-arrow-in-down",
+        "modal_target": "samplePackagesModal",
+    },
+    {
+        "id": "export_parts_package",
+        "name": "Export parts package",
+        "description": "Download the current library as a parts package zip.",
+        "button_label": "Run export",
+        "icon": "bi-box-arrow-up",
+    },
+    {
+        "id": "import_parts_package",
+        "name": "Import parts package",
+        "description": "Upload and import a parts package zip.",
+        "button_label": "Import package",
+        "icon": "bi-upload",
+        "file_field": "package_file",
+        "file_accept": ".zip",
+    },
+    {
+        "id": "delete_system_boms",
+        "name": "Delete all system BOMs",
+        "description": "Delete generated part-wrapper BOM records.",
+        "button_label": "Run delete",
+        "icon": "bi-trash",
+        "button_class": "btn-outline-danger",
+        "confirmation": "This will delete all generated system BOMs. Parts will remain.",
+    },
+    {
+        "id": "delete_user_boms",
+        "name": "Delete all user BOMs",
+        "description": "Delete user-created BOM records and their BOM relations.",
+        "button_label": "Run delete",
+        "icon": "bi-trash",
+        "button_class": "btn-outline-danger",
+        "confirmation": "This will delete all user-created BOMs and their BOM relations. Parts will remain.",
+    },
+    {
+        "id": "delete_parts",
+        "name": "Delete all parts",
+        "description": "Delete all parts and generated part-wrapper BOMs.",
+        "button_label": "Run delete",
+        "icon": "bi-trash",
+        "button_class": "btn-outline-danger",
+        "confirmation": "This will delete all parts, part relations, component-file links, and generated system BOMs.",
+    },
+    {
+        "id": "delete_all_data",
+        "name": "Delete all data",
+        "description": "Delete all library records, events, and runtime data files.",
+        "button_label": "Run delete",
+        "icon": "bi-trash",
+        "button_class": "btn-danger",
+        "confirmation": "This will delete all library records, events, and runtime data files.",
+    },
+)
+
+
+def get_admin_script_definitions():
+    """Return translated admin script metadata."""
+
+    return [
+        {
+            **script,
+            "name": _(script["name"]),
+            "description": _(script["description"]),
+            "button_label": _(script["button_label"]),
+            "button_class": script.get("button_class", "btn-primary"),
+            "confirmation": _(script["confirmation"]) if script.get("confirmation") else None,
+        }
+        for script in ADMIN_SCRIPT_DEFINITIONS
+    ]
+
+
+def get_sample_parts_packages(parts_library):
+    """Return package zip files available in the bundled sample folder."""
+
+    sample_dir_path = parts_library.sample_data_dir_path
+    if not sample_dir_path.exists():
+        return []
+
+    return [
+        {
+            "name": package_path.name,
+            "size_kb": max(1, round(package_path.stat().st_size / 1024)),
+            "modified": datetime.fromtimestamp(package_path.stat().st_mtime).strftime("%Y-%m-%d %H:%M"),
+        }
+        for package_path in sorted(sample_dir_path.glob("*.zip"), key=lambda path: path.name.lower())
+        if package_path.is_file()
+    ]
 
 
 def download_event_quantity(event):
@@ -515,15 +618,236 @@ def register_bom_admin_routes(app, session):
         )
 
 
-def setup_admin(app, session):
+def delete_boms_by_system_flag(session, is_system_bom):
+    """Delete generated system BOMs or user-created BOMs."""
+
+    bom_ids = [
+        bom_id
+        for (bom_id,) in (
+            session.query(BillOfMaterials.id)
+            .filter(BillOfMaterials.is_part_wrapper.is_(is_system_bom))
+            .all()
+        )
+    ]
+    if not bom_ids:
+        return 0
+
+    session.query(BillOfMaterialsItem).filter(BillOfMaterialsItem.parent_bom_id.in_(bom_ids)).delete(synchronize_session=False)
+    session.query(BillOfMaterialsItem).filter(BillOfMaterialsItem.child_bom_id.in_(bom_ids)).delete(synchronize_session=False)
+    deleted_count = (
+        session.query(BillOfMaterials)
+        .filter(BillOfMaterials.id.in_(bom_ids))
+        .delete(synchronize_session=False)
+    )
+    session.commit()
+    return deleted_count
+
+
+def delete_all_parts(session):
+    """Delete all parts and direct part relation records."""
+
+    delete_boms_by_system_flag(session, True)
+    session.query(ComponentComponent).delete(synchronize_session=False)
+    session.query(ComponentFile).delete(synchronize_session=False)
+    deleted_count = session.query(Component).delete(synchronize_session=False)
+    session.commit()
+    return deleted_count
+
+
+def clear_runtime_data_files(parts_library):
+    """Remove runtime files while preserving the expected data directories."""
+
+    deleted_count = 0
+    for data_dir_path in (
+        parts_library.data_cad_dir_path,
+        parts_library.data_files_dir_path,
+        parts_library.data_dir_path / "mesh",
+        parts_library.data_dir_path / "thumbnails",
+    ):
+        if not data_dir_path.exists():
+            data_dir_path.mkdir(parents=True, exist_ok=True)
+            continue
+
+        for child_path in data_dir_path.iterdir():
+            if child_path.is_dir():
+                shutil.rmtree(child_path)
+            else:
+                child_path.unlink()
+            deleted_count += 1
+    return deleted_count
+
+
+def delete_all_library_data(parts_library):
+    """Delete all application records and runtime files."""
+
+    session = parts_library.session
+    deleted_counts = {
+        "bom_items": session.query(BillOfMaterialsItem).delete(synchronize_session=False),
+        "boms": session.query(BillOfMaterials).delete(synchronize_session=False),
+        "part_relations": session.query(ComponentComponent).delete(synchronize_session=False),
+        "component_files": session.query(ComponentFile).delete(synchronize_session=False),
+        "parts": session.query(Component).delete(synchronize_session=False),
+        "files": session.query(File).delete(synchronize_session=False),
+        "suppliers": session.query(Supplier).delete(synchronize_session=False),
+        "materials": session.query(Material).delete(synchronize_session=False),
+        "download_events": session.query(DownloadEvent).delete(synchronize_session=False),
+    }
+    session.commit()
+    deleted_counts["runtime_files"] = clear_runtime_data_files(parts_library)
+    return deleted_counts
+
+
+def register_admin_script_routes(app, parts_library):
+    """Register admin script routes for package import/export operations."""
+
+    if "admin_scripts" in app.view_functions:
+        return
+
+    package_interface = PartsPackage(parts_library)
+
+    @app.route("/admin/scripts", methods=["GET"])
+    def admin_scripts():
+        return render_template(
+            "admin/scripts.html",
+            scripts=get_admin_script_definitions(),
+            sample_packages=get_sample_parts_packages(parts_library),
+        )
+
+    @app.route("/admin/scripts/<script_id>/run", methods=["POST"])
+    def admin_run_script(script_id):
+        if script_id == "import_sample_parts_package":
+            available_packages = {
+                package["name"]: parts_library.sample_data_dir_path / package["name"]
+                for package in get_sample_parts_packages(parts_library)
+            }
+            selected_package_names = request.form.getlist("sample_packages")
+            selected_package_paths = [
+                available_packages[package_name]
+                for package_name in selected_package_names
+                if package_name in available_packages
+            ]
+            if not selected_package_paths:
+                flash(_("Choose at least one sample parts package to import."), "warning")
+                return redirect(url_for("admin_scripts"))
+
+            imported_count = 0
+            skipped_count = 0
+            imported_packages = 0
+            failed_packages = []
+            for sample_package_path in selected_package_paths:
+                try:
+                    import_result = package_interface.import_zip(sample_package_path)
+                    imported_count += import_result.imported_parts_count
+                    skipped_count += import_result.skipped_existing_uuid_count
+                    imported_packages += 1
+                except Exception as exc:
+                    failed_packages.append(f"{sample_package_path.name}: {exc}")
+
+            if imported_packages:
+                ensure_part_boms(parts_library.session)
+                flash(
+                    _(
+                        "Imported %(packages)d sample packages. %(imported)d parts imported, %(skipped)d skipped because their UUID already exists.",
+                        packages=imported_packages,
+                        imported=imported_count,
+                        skipped=skipped_count,
+                    ),
+                    "success",
+                )
+            if failed_packages:
+                flash(_("Sample package import failed: %(error)s", error="; ".join(failed_packages)), "danger")
+            return redirect(url_for("admin_scripts"))
+
+        if script_id == "export_parts_package":
+            try:
+                export_path = package_interface.export_zip()
+            except Exception as exc:
+                flash(_("Parts package export failed: %(error)s", error=str(exc)), "danger")
+                return redirect(url_for("admin_scripts"))
+            return send_file(
+                export_path,
+                as_attachment=True,
+                download_name=Path(export_path).name,
+                mimetype="application/zip",
+            )
+
+        if script_id == "import_parts_package":
+            package_file = request.files.get("package_file")
+            if package_file is None or not package_file.filename:
+                flash(_("Choose a parts package zip to import."), "warning")
+                return redirect(url_for("admin_scripts"))
+
+            suffix = Path(package_file.filename).suffix.lower()
+            if suffix != ".zip":
+                flash(_("Parts packages must be zip files."), "danger")
+                return redirect(url_for("admin_scripts"))
+
+            with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as temp_file:
+                temp_path = Path(temp_file.name)
+                package_file.save(temp_file)
+
+            try:
+                import_result = package_interface.import_zip(temp_path)
+                ensure_part_boms(parts_library.session)
+                flash(
+                    _(
+                        "Parts package imported. %(imported)d parts imported, %(skipped)d skipped because their UUID already exists.",
+                        imported=import_result.imported_parts_count,
+                        skipped=import_result.skipped_existing_uuid_count,
+                    ),
+                    "success",
+                )
+            except Exception as exc:
+                flash(_("Parts package import failed: %(error)s", error=str(exc)), "danger")
+            finally:
+                temp_path.unlink(missing_ok=True)
+            return redirect(url_for("admin_scripts"))
+
+        if script_id == "delete_system_boms":
+            deleted_count = delete_boms_by_system_flag(parts_library.session, True)
+            flash(_("Deleted %(count)d system BOMs.", count=deleted_count), "success")
+            return redirect(url_for("admin_scripts"))
+
+        if script_id == "delete_user_boms":
+            deleted_count = delete_boms_by_system_flag(parts_library.session, False)
+            flash(_("Deleted %(count)d user BOMs.", count=deleted_count), "success")
+            return redirect(url_for("admin_scripts"))
+
+        if script_id == "delete_parts":
+            deleted_count = delete_all_parts(parts_library.session)
+            flash(_("Deleted %(count)d parts.", count=deleted_count), "success")
+            return redirect(url_for("admin_scripts"))
+
+        if script_id == "delete_all_data":
+            deleted_counts = delete_all_library_data(parts_library)
+            flash(
+                _(
+                    "Deleted all data: %(parts)d parts, %(boms)d BOMs, %(files)d files, %(suppliers)d suppliers, %(events)d events, and %(runtime_files)d runtime files.",
+                    parts=deleted_counts["parts"],
+                    boms=deleted_counts["boms"],
+                    files=deleted_counts["files"],
+                    suppliers=deleted_counts["suppliers"],
+                    events=deleted_counts["download_events"],
+                    runtime_files=deleted_counts["runtime_files"],
+                ),
+                "success",
+            )
+            return redirect(url_for("admin_scripts"))
+
+        return _("Admin script not found."), 404
+
+
+def setup_admin(app, parts_library):
     """Install Flask-Admin views or fallback admin routes.
 
     :param app: Flask application.
-    :param session: SQLAlchemy session.
+    :param parts_library: Initialized :class:`openpartslibrary.db.PartsLibrary`.
     :return: Flask-Admin instance or fallback marker dictionary.
     """
 
+    session = parts_library.session
     register_bom_admin_routes(app, session)
+    register_admin_script_routes(app, parts_library)
 
     if Admin is None or ModelView is None:
         return setup_fallback_admin(app, session)
@@ -589,6 +913,8 @@ def setup_admin(app, session):
     admin.add_view(ModelView(BillOfMaterials, session, name=lazy_gettext("BOM records"), category=lazy_gettext("Library")))
     admin.add_view(ModelView(BillOfMaterialsItem, session, name=lazy_gettext("BOM relations"), category=lazy_gettext("Library")))
     admin.add_view(DownloadEventAdminView(DownloadEvent, session, name=lazy_gettext("Download events"), category=lazy_gettext("Events")))
+    if MenuLink is not None:
+        admin.add_link(MenuLink(name=lazy_gettext("Scripts"), category=lazy_gettext("Tools"), url="/admin/scripts"))
     return admin
 
 
@@ -597,6 +923,7 @@ def setup_fallback_admin(app, session):
 
     model_links = (
         ("Downloads dashboard", None),
+        ("Scripts", None),
         ("Bill of Materials", None),
         ("Parts", Component),
         ("Files", File),
@@ -615,6 +942,8 @@ def setup_fallback_admin(app, session):
                 "url": (
                     url_for("fallback_admin_downloads_dashboard")
                     if name == "Downloads dashboard"
+                    else url_for("admin_scripts")
+                    if name == "Scripts"
                     else url_for("admin_bill_of_materials")
                     if name == "Bill of Materials"
                     else url_for("fallback_admin_model", model_name=model.__tablename__)

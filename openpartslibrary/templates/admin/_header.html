@@ -8,6 +8,7 @@
             {% if admin_available %}
             <nav class="opl-admin-navigation" aria-label="{{ _('Admin navigation') }}">
                 <a class="opl-admin-nav-link" href="{{ url_for('admin.index') }}">{{ _('Dashboard') }}</a>
+                <a class="opl-admin-nav-link" href="{{ url_for('admin_scripts') }}">{{ _('Scripts') }}</a>
                 <a class="opl-admin-nav-link" href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                 <a class="opl-admin-nav-link" href="{{ url_for('admin_bom_node_editor') }}">{{ _('BOM Node Editor') }}</a>
                 <div class="dropdown">
@@ -29,9 +30,10 @@
             </nav>
             {% endif %}
             <nav class="opl-admin-header-actions" aria-label="{{ _('Admin actions') }}">
-                <a href="{{ url_for('components') }}">{{ _('Back to app') }}</a>
+                <a href="{{ url_for('parts') }}">{{ _('Back to app') }}</a>
                 {% if not admin_available %}
                 <a href="{{ url_for('fallback_admin_downloads_dashboard') }}">{{ _('Downloads dashboard') }}</a>
+                <a href="{{ url_for('admin_scripts') }}">{{ _('Scripts') }}</a>
                 <a href="{{ url_for('admin_bill_of_materials') }}">{{ _('Bill of Materials') }}</a>
                 <a href="{{ url_for('admin_bom_node_editor') }}">{{ _('BOM Node Editor') }}</a>
                 {% endif %}

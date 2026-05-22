@@ -117,13 +117,13 @@ def ensure_thumbnail(mesh_path, thumbnail_path, command_template, timeout=120):
     )
 
 
-def ensure_cad_thumbnail(cad_file_uuid, cad_dir, mesh_dir, thumbnail_dir, freecad_command, blender_command):
+def ensure_cad_thumbnail(cad_file_uuid, cad_dir, mesh_dir, thumbnail_dir, freecad_command, blender_command, cad_path=None):
     """Ensure a CAD file has a rendered thumbnail.
 
     :return: :class:`ThumbnailResult` describing readiness or the next blocker.
     """
 
-    cad_path = Path(cad_dir) / f"{cad_file_uuid}.FCStd"
+    cad_path = Path(cad_path) if cad_path is not None else Path(cad_dir) / f"{cad_file_uuid}.FCStd"
     mesh_path = Path(mesh_dir) / f"{cad_file_uuid}.3mf"
     thumbnail_path = Path(thumbnail_dir) / f"{cad_file_uuid}.png"
 

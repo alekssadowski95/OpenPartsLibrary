@@ -3,14 +3,19 @@ services:
     build: .
     image: openpartslibrary:latest
     restart: unless-stopped
-    ports:
-      - "${OPENPARTSLIBRARY_PORT:-5000}:5000"
+    # Dokploy routes domains to this internal service port. For local-only
+    # compose testing, temporarily replace expose with:
+    # ports:
+    #   - "${OPENPARTSLIBRARY_PORT:-5000}:5000"
+    expose:
+      - "5000"
     environment:
       HOST: 0.0.0.0
       PORT: 5000
       FLASK_DEBUG: "0"
+      SECRET_KEY: "${SECRET_KEY:-change-me}"
       OPENPARTSLIBRARY_DATA_DIR: /app/data
-      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-2}"
+      GUNICORN_WORKERS: "${GUNICORN_WORKERS:-1}"
       GUNICORN_TIMEOUT: "${GUNICORN_TIMEOUT:-120}"
       FREECAD_3MF_EXPORT_COMMAND: ""
       BLENDER_THUMBNAIL_COMMAND: ""

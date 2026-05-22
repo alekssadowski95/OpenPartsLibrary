@@ -124,7 +124,7 @@ class BillOfMaterials(Base):
     __tablename__ = "bill_of_materials"
 
     id = Column(Integer, primary_key=True)
-    uuid = Column(String(32), unique=True, nullable=False)
+    uuid = Column(String(8), unique=True, nullable=False)
     number = Column(String(50))
     name = Column(String(200), nullable=False)
     description = Column(Text)
@@ -235,7 +235,7 @@ class DownloadEvent(Base):
 
     id = Column(Integer, primary_key=True)
     download_type = Column(String(50), nullable=False)
-    component_uuid = Column(String(32))
+    component_uuid = Column(String(8))
     component_name = Column(String(200))
     component_number = Column(String(50))
     file_uuid = Column(String(32))

@@ -361,7 +361,7 @@
             <!-- Right side alighed elements -->
             <div class="app-actions-column col-md-3 text-end">
                 <nav class="app-primary-nav me-2" aria-label="{{ _('Main navigation') }}">
-                    <a href="{{ url_for('components') }}" class="{% if request.endpoint == 'components' %}active{% endif %}">{{ _('Parts') }}</a>
+                    <a href="{{ url_for('parts') }}" class="{% if request.endpoint == 'parts' %}active{% endif %}">{{ _('Parts') }}</a>
                     <a href="{{ url_for('boms') }}" class="{% if request.endpoint == 'boms' %}active{% endif %}">{{ _('BOMs') }}</a>
                     <a href="{{ url_for('public_bom_node_editor') }}" class="{% if request.endpoint == 'public_bom_node_editor' %}active{% endif %}">{{ _('BOM Builder') }}</a>
                 </nav>
@@ -497,7 +497,7 @@
                 return;
             }
 
-            const response = await fetch("{{ url_for('selection_components') }}", {
+            const response = await fetch("{{ url_for('selection_parts') }}", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -747,7 +747,7 @@
                 }
 
                 const queryString = params.toString();
-                window.location.href = "{{ url_for('components') }}" + (queryString ? "?" + queryString : "");
+                window.location.href = "{{ url_for('parts') }}" + (queryString ? "?" + queryString : "");
             });
         });
 

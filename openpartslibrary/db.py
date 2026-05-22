@@ -1,6 +1,7 @@
 """Database setup and spreadsheet import services."""
 
 import shutil
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -73,12 +74,13 @@ class PartsLibrary:
         suppliers_by_uuid = self._import_suppliers(suppliers_df)
 
         for _, row in components_df.iterrows():
-            if pd.isna(row.get("uuid")) or pd.isna(row.get("number")) or pd.isna(row.get("name")):
+            component_uuid = self._clean_value(row.get("uuid"))
+            if not self._is_valid_part_uuid(component_uuid) or pd.isna(row.get("number")) or pd.isna(row.get("name")):
                 continue
 
-            component = self.session.query(Component).filter_by(uuid=str(row["uuid"])).first()
+            component = self.session.query(Component).filter_by(uuid=component_uuid).first()
             if component is None:
-                component = Component(uuid=str(row["uuid"]))
+                component = Component(uuid=component_uuid)
                 self.session.add(component)
 
             component.number = str(row["number"])
@@ -109,7 +111,7 @@ class PartsLibrary:
         for _, row in components_df.iterrows():
             component_uuid = self._clean_value(row.get("uuid"))
             cad_file_name = self._clean_value(row.get("cad_file_name"))
-            if not component_uuid or not cad_file_name:
+            if not self._is_valid_part_uuid(component_uuid) or not cad_file_name:
                 continue
 
             component = self.session.query(Component).filter_by(uuid=component_uuid).first()
@@ -117,16 +119,19 @@ class PartsLibrary:
                 continue
 
             cad_file = component.cad_file
-            if cad_file is None:
-                cad_file = File(uuid=str(uuid.uuid4()), name=cad_file_name, description="This is a CAD file.")
-                component.cad_file = cad_file
-                self.session.add(cad_file)
-
             source_path = self._find_cad_source(spreadsheet_path, cad_file_name, row.get("cad_file_link"))
             if source_path is None:
                 continue
 
-            destination_path = self.data_cad_dir_path / f"{cad_file.uuid}{source_path.suffix}"
+            destination_name = self._stored_cad_filename(component, source_path.suffix)
+            if cad_file is None:
+                cad_file = File(uuid=str(uuid.uuid4()), name=destination_name, description="This is a CAD file.")
+                component.cad_file = cad_file
+                self.session.add(cad_file)
+            else:
+                cad_file.name = destination_name
+
+            destination_path = self.data_cad_dir_path / destination_name
             if not destination_path.exists():
                 shutil.copy2(source_path, destination_path)
 
@@ -151,7 +156,7 @@ class PartsLibrary:
 
         for _, row in components_df.iterrows():
             component_uuid = self._clean_value(row.get("uuid"))
-            if not component_uuid:
+            if not self._is_valid_part_uuid(component_uuid):
                 continue
 
             component = self.session.query(Component).filter_by(uuid=component_uuid).first()
@@ -207,21 +212,59 @@ class PartsLibrary:
         if not cad_file_name:
             return
 
-        if component.cad_file is None:
-            component.cad_file = File(uuid=str(uuid.uuid4()), name=cad_file_name, description="This is a CAD file.")
-        else:
-            component.cad_file.name = cad_file_name
-
         if components_cad_dir_path is None:
+            if component.cad_file is None:
+                component.cad_file = File(uuid=str(uuid.uuid4()), name=cad_file_name, description="This is a CAD file.")
+            else:
+                component.cad_file.name = cad_file_name
             return
 
         source_path = self._find_cad_source(Path(spreadsheet_file_path), cad_file_name, row.get("cad_file_link"), components_cad_dir_path)
         if source_path is None:
+            if component.cad_file is None:
+                component.cad_file = File(uuid=str(uuid.uuid4()), name=cad_file_name, description="This is a CAD file.")
+            else:
+                component.cad_file.name = cad_file_name
             return
 
-        destination_path = self.data_cad_dir_path / f"{component.cad_file.uuid}{source_path.suffix}"
+        destination_name = self._stored_cad_filename(component, source_path.suffix)
+        if component.cad_file is None:
+            component.cad_file = File(uuid=str(uuid.uuid4()), name=destination_name, description="This is a CAD file.")
+        else:
+            component.cad_file.name = destination_name
+
+        destination_path = self.data_cad_dir_path / destination_name
         if not destination_path.exists():
             shutil.copy2(source_path, destination_path)
+
+    def stored_cad_path_candidates(self, component):
+        """Return supported stored CAD paths for a component."""
+
+        if component.cad_file is None:
+            return []
+
+        cad_file_name = self._clean_value(component.cad_file.name)
+        suffix = Path(cad_file_name).suffix if cad_file_name else ".FCStd"
+        return [
+            self.data_cad_dir_path / self._stored_cad_filename(component, suffix),
+            self.data_cad_dir_path / cad_file_name if cad_file_name else None,
+            self.data_cad_dir_path / f"{component.cad_file.uuid}{suffix}",
+            self.data_cad_dir_path / f"{component.cad_file.uuid}.FCStd",
+        ]
+
+    def stored_cad_path(self, component):
+        """Return the first existing stored CAD path for a component."""
+
+        return next((candidate for candidate in self.stored_cad_path_candidates(component) if candidate and candidate.exists()), None)
+
+    def _stored_cad_filename(self, component, source_suffix=".FCStd"):
+        """Build the stored CAD filename from part name and 8-character UUID."""
+
+        safe_name = str(component.name or component.number or "part").strip().replace(" ", "_")
+        safe_name = re.sub(r'[<>:"/\\\\|?*]+', "_", safe_name)
+        safe_name = re.sub(r"_+", "_", safe_name).strip("._") or "part"
+        suffix = source_suffix or ".FCStd"
+        return f"{safe_name}_{component.uuid}{suffix}"
 
     def _find_cad_source(self, spreadsheet_path, cad_file_name, cad_link=None, components_cad_dir_path=None):
         """Find a CAD source file near the spreadsheet or in the sample CAD dir."""
@@ -252,6 +295,11 @@ class PartsLibrary:
         spreadsheet_path = Path(spreadsheet_file_path).expanduser().resolve()
         engine = "odf" if spreadsheet_path.suffix.lower() == ".ods" else None
         return pd.read_excel(spreadsheet_path, sheet_name=sheet_name, dtype=dtype, engine=engine)
+
+    def _is_valid_part_uuid(self, value):
+        """Return whether a part UUID has exactly 8 characters."""
+
+        return isinstance(value, str) and len(value) == 8
 
     def _clean_value(self, value):
         """Normalize empty spreadsheet values to ``None`` and trim text."""

@@ -385,6 +385,10 @@ def register_routes(app, parts_library):
     def home():
         return redirect(url_for("parts"))
 
+    @app.route("/components", defaults={"search_query": None})
+    def legacy_components_redirect(search_query):
+        return redirect(build_parts_url(), code=301)
+
     @app.route("/parts", defaults={"search_query": None})
     def parts(search_query):
         search_query = request.args.get("search_query", "").strip()
@@ -918,6 +922,10 @@ def register_routes(app, parts_library):
         components.sort(key=selection_sort_value, reverse=True)
 
         return jsonify(components)
+
+    @app.route("/selection/components", methods=["POST"])
+    def legacy_selection_components_redirect():
+        return redirect(url_for("selection_parts"), code=307)
 
     @app.route("/selection/bom-draft", methods=["POST"])
     def selection_bom_draft():

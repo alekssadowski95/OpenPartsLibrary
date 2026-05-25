@@ -1,0 +1,21 @@
+name: Mirror to openCode
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to openCode
+        run: |
+          git remote add opencode https://${{ secrets.OPENCODE_USERNAME }}:${{ secrets.OPENCODE_TOKEN }}@gitlab.opencode.de/aleksander-sadowski-group/OpenPartsLibrary.git
+          git push --mirror opencode

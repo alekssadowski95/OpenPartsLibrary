@@ -1,0 +1,99 @@
+publiccodeYmlVersion: "0.4"
+name: "OpenPartsLibrary"
+url: "https://github.com/alekssadowski95/OpenPartsLibrary"
+landingURL: "https://github.com/alekssadowski95/OpenPartsLibrary"
+softwareVersion: "0.1.15"
+releaseDate: "2026-05-22"
+logo: "openpartslibrary/images/openpartslibrary-logo.png"
+platforms:
+  - web
+  - windows
+  - linux
+categories:
+  - cad
+  - inventory-management
+  - procurement
+developmentStatus: development
+softwareType: "standalone/web"
+
+intendedAudience:
+  scope:
+    - manufacturing
+    - science-and-technology
+
+description:
+  en:
+    localisedName: "OpenPartsLibrary"
+    genericName: "CAD parts library"
+    shortDescription: "CAD and BOM library for reusable machine-building components."
+    longDescription: >
+      OpenPartsLibrary helps hardware startups, small manufacturing teams, and
+      mechanical engineers reuse practical standard components during machine
+      design. It combines searchable part records, supplier information,
+      dimensions, CAD previews, CAD downloads, and reusable bill-of-materials
+      modules in one browser-based interface. Teams can collect components in
+      My Bill of Materials, review cost and CAD availability, and download CAD
+      packages for use in FreeCAD assemblies, procurement handoff, prototypes,
+      fixtures, automation equipment, test rigs, and early production machines.
+      The project is especially useful when reusable CAD files, standard part
+      data, and supplier references would otherwise be scattered across local
+      folders, old projects, and supplier downloads.
+    features:
+      - "Engineering search for standard mechanical parts, suppliers, part numbers, and dimensions"
+      - "CAD preview and CAD download for reusable machine components"
+      - "Reusable bill-of-materials modules for common machine subsystems"
+      - "One-click download packages for complete BOMs with available CAD files"
+      - "Temporary My Bill of Materials collection for design and procurement work"
+      - "Multilingual user interface"
+    screenshots:
+      - "openpartslibrary/images/openpartslibrary-2026_05_04.png"
+  de:
+    localisedName: "OpenPartsLibrary"
+    genericName: "CAD-Teilebibliothek"
+    shortDescription: "CAD- und BOM-Bibliothek fuer wiederverwendbare Maschinenbau-Komponenten."
+    longDescription: >
+      OpenPartsLibrary unterstuetzt Hardware-Startups, kleine Fertigungsteams
+      und Maschinenbau-Ingenieure dabei, praktische Standardkomponenten im
+      Maschinendesign wiederzuverwenden. Die Anwendung verbindet durchsuchbare
+      Teileinformationen, Lieferantendaten, Abmessungen, CAD-Vorschauen,
+      CAD-Downloads und wiederverwendbare Stuecklistenmodule in einer
+      browserbasierten Oberflaeche. Teams koennen Komponenten in My Bill of
+      Materials sammeln, Kosten und CAD-Verfuegbarkeit pruefen und CAD-Pakete
+      fuer FreeCAD-Baugruppen, Beschaffung, Prototypen, Vorrichtungen,
+      Automatisierungstechnik, Pruefstaende und fruehe Produktionsmaschinen
+      herunterladen.
+    features:
+      - "Technische Suche nach Standardteilen, Lieferanten, Teilenummern und Abmessungen"
+      - "CAD-Vorschau und CAD-Download fuer wiederverwendbare Maschinenkomponenten"
+      - "Wiederverwendbare Stuecklistenmodule fuer haeufige Maschinenbaugruppen"
+      - "Download-Pakete fuer vollstaendige BOMs mit verfuegbaren CAD-Dateien"
+      - "Temporare My Bill of Materials Sammlung fuer Design- und Beschaffungsarbeit"
+      - "Mehrsprachige Benutzeroberflaeche"
+    screenshots:
+      - "openpartslibrary/images/openpartslibrary-2026_05_04.png"
+
+legal:
+  license: "AGPL-3.0-or-later"
+  mainCopyrightOwner: "Aleksander Sadowski"
+
+maintenance:
+  type: "community"
+  contacts:
+    - name: "Aleksander Sadowski"
+      email: "aleksander.sadowski@alsado.de"
+
+localisation:
+  localisationReady: true
+  availableLanguages:
+    - de
+    - en-US
+    - es
+    - fr
+    - it
+    - pl
+
+dependsOn:
+  open:
+    - name: "Python"
+      versionMin: "3.10"
+      optional: false

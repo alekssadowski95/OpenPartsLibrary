@@ -13,7 +13,7 @@ OpenPartsLibrary is for hardware startups, small manufacturing teams, and mechan
 
 ![OpenPartsLibrary interface](openpartslibrary/images/openpartslibrary-2026_05_04.png)
 
-## Key Features
+## Key Features 
 
 OpenPartsLibrary focuses on practical part reuse for FreeCAD-based machine development.
 

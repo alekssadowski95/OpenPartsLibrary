@@ -18,4 +18,5 @@ jobs:
       - name: Push to openCode
         run: |
           git remote add opencode https://${{ secrets.OPENCODE_USERNAME }}:${{ secrets.OPENCODE_TOKEN }}@gitlab.opencode.de/aleksander-sadowski-group/OpenPartsLibrary.git
-          git push --mirror opencode
+          git push opencode refs/heads/main:refs/heads/main --force
+          git push opencode refs/tags/*:refs/tags/* --force

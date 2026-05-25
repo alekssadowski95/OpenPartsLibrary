@@ -64,8 +64,6 @@ My Bill of Materials is a temporary collection for parts selected during design 
 
 Users can review quantities, estimated cost, CAD availability, and download the selected package.
 
-![My Bill of Materials workflow](openpartslibrary/images/readme-my-bill-of-materials.png)
-
 ## FreeCAD Focused
 
 The library is focused on assemblies created with FreeCAD.
@@ -82,15 +80,11 @@ Typical part families include:
 - Plates, panels, adapters, and mounting parts
 - Purchased standard components used in machine frames and mechanisms
 
-![FreeCAD focused part page](openpartslibrary/images/readme-freecad-focused.png)
-
 ## Multiple Languages
 
 OpenPartsLibrary supports multiple interface languages.
 
 This helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
-
-![Multilingual interface](openpartslibrary/images/readme-multiple-languages.png)
 
 ## Running Locally
 

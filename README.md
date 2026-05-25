@@ -30,6 +30,8 @@ Search is tuned for mechanical part discovery. Engineers can use familiar terms 
 
 For users, the result is simple: searches return practical engineering matches, including useful standard-size alternatives when the exact requested dimension is not available.
 
+![Engineering search results](openpartslibrary/images/readme-engineering-search.png)
+
 ## Reusable BOM Modules
 
 Precreated BOMs represent frequently combined parts that are often reused as machine modules.
@@ -38,17 +40,31 @@ Examples include complete linear axes, rail sets, motor and bracket combinations
 
 Instead of collecting every rail, carriage, motor, fastener, and mounting bracket one by one, engineers can start from an existing BOM that already reflects a useful combination.
 
+![Reusable BOM modules](openpartslibrary/images/readme-reusable-bom-modules.png)
+
+## BOM Node Builder
+
+The BOM node builder is a visual editor for creating reusable assemblies from existing BOMs and individual parts.
+
+Users can start with a new root BOM, add child BOMs or parts from the library, set quantities, and save the result as a reusable BOM module. The builder is useful for nested assemblies such as rail sets, axis frames, fixture modules, and other machine subsystems where the structure matters as much as the flat parts list.
+
+![BOM node builder](openpartslibrary/images/readme-bom-node-builder.png)
+
 ## One-Click BOM Packages
 
 Complete BOMs can be downloaded as one package, including available CAD files and hardware BOM data.
 
 This makes it faster to move from a reusable module in the library to a working FreeCAD assembly, procurement request, or manufacturing handoff.
 
+![One-click BOM package download](openpartslibrary/images/readme-one-click-bom-packages.png)
+
 ## My Bill Of Materials
 
 My Bill of Materials is a temporary collection for parts selected during design work.
 
 Users can review quantities, estimated cost, CAD availability, and download the selected package.
+
+![My Bill of Materials workflow](openpartslibrary/images/readme-my-bill-of-materials.png)
 
 ## FreeCAD Focused
 
@@ -66,21 +82,41 @@ Typical part families include:
 - Plates, panels, adapters, and mounting parts
 - Purchased standard components used in machine frames and mechanisms
 
+![FreeCAD focused part page](openpartslibrary/images/readme-freecad-focused.png)
+
 ## Multiple Languages
 
 OpenPartsLibrary supports multiple interface languages.
 
 This helps small international teams, distributed suppliers, and mixed engineering/manufacturing environments work from the same part library.
 
+![Multilingual interface](openpartslibrary/images/readme-multiple-languages.png)
+
 ## Running Locally
 
-Install dependencies:
+OpenPartsLibrary requires Python 3.10 or newer.
+
+Create and activate a virtual environment:
 
 ```console
+python -m venv .venv
+.\.venv\Scripts\activate
+```
+
+On Linux or macOS, activate it with:
+
+```console
+source .venv/bin/activate
+```
+
+Install the Python dependencies:
+
+```console
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Run the web app:
+Run the Flask web app:
 
 ```console
 python app.py
@@ -92,19 +128,25 @@ Open:
 http://localhost:5000
 ```
 
-Desktop wrapper:
-
-```console
-python run_desktop.py
-```
-
 Runtime data is stored in:
 
 ```text
 instance/data/
 ```
 
-Windows desktop ZIP build:
+If the local database is empty, open the admin scripts page and import the bundled sample package:
+
+```text
+http://localhost:5000/admin/scripts
+```
+
+You can also run the web app with Docker Compose:
+
+```console
+docker compose up --build
+```
+
+Build the Windows desktop ZIP with:
 
 ```console
 powershell -ExecutionPolicy Bypass -File scripts/build_windows_desktop.ps1
@@ -120,9 +162,9 @@ After extraction, start the app with `OpenPartsLibrary.exe`. The desktop build s
 
 ## Contributing
 
-This section is for software developers and technical contributors.
+Before contributing, read [CONTRIBUTING.md](CONTRIBUTING.md). By submitting a pull request, patch, CAD file, data file, translation, or other material, you agree to the contribution terms in that file.
 
-Useful project areas:
+Useful project areas for software developers and technical contributors:
 
 ```text
 openpartslibrary/search.py     Search scoring and ranking

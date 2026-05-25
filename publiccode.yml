@@ -4,7 +4,7 @@ url: "https://github.com/alekssadowski95/OpenPartsLibrary"
 landingURL: "https://github.com/alekssadowski95/OpenPartsLibrary"
 softwareVersion: "0.1.15"
 releaseDate: "2026-05-22"
-logo: "openpartslibrary/images/openpartslibrary-logo.png"
+logo: "openpartslibrary-logo.png"
 platforms:
   - web
   - windows
